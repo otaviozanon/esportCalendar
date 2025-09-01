@@ -48,11 +48,17 @@ try:
             if not any(team in [team1, team2] for team in BRAZILIAN_TEAMS):
                 continue
 
-            # Pega o horário diretamente do elemento renderizado
-            time_span = card_el.find_element(By.CSS_SELECTOR, "small[class*='MatchCardSimple__MatchTime'] span")
-            hour_min = time_span.text.strip()
+            # Pega o horário via JavaScript (renderizado dinamicamente)
+            hour_min = driver.execute_script(
+                "return arguments[0].querySelector('small[class*=\"MatchCardSimple__MatchTime\"] span')?.innerText;", 
+                card_el
+            )
 
-            # Data de referência: hoje
+            if not hour_min:
+                print(f"⚠️ Horário não encontrado para o jogo: {team1} vs {team2}")
+                continue
+
+            # Usa data atual como referência (pode ser ajustado para a data real do jogo)
             today_str = datetime.now().strftime("%d/%m/%Y")
             event_time = datetime.strptime(f"{today_str} {hour_min}", "%d/%m/%Y %H:%M")
 
