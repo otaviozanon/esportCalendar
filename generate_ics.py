@@ -41,7 +41,12 @@ if os.path.exists("calendar.ics"):
         try:
             # 🔹 Remove linhas inválidas (comentários) antes de parsear
             cleaned_lines = [line for line in f.readlines() if not line.startswith(";")]
-            my_calendar = Calendar("".join(cleaned_lines))
+            
+            # 🔹 Suporta múltiplos calendários
+            calendars = Calendar.parse_multiple("".join(cleaned_lines))
+            for cal in calendars:
+                my_calendar.events.update(cal.events)
+
             print("🔹 calendar.ics antigo carregado (mantendo eventos anteriores).")
         except Exception as e:
             print(f"⚠️ Não foi possível carregar o calendário antigo: {e}")
