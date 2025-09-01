@@ -7,7 +7,7 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-CATEGORIES:Gaming,CS:GO
+CATEGORIES:CS:GO,Gaming
 DTSTAMP:20250831T200857Z
 DESCRIPTION:ð¥ MOUZ vs FURIA\n\nð Event: BLAST Open London 2025\nâ­ Rating: â­â­â­\nð® Format: Best of 3\nðºï¸ Maps to win: 2\n\nâ° Match starting soon!
 DTEND:20250901T180000Z
@@ -24,7 +24,7 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-CATEGORIES:Gaming,CS:GO
+CATEGORIES:CS:GO,Gaming
 DTSTAMP:20250831T200857Z
 DESCRIPTION:ð Spirit vs FURIA\n\nð Event: BLAST Open London 2025\nâ­ Rating: â­â­â­\nð® Format: Best of 3\nðºï¸ Maps to win: 2\n\nð Final Result: 0-2\nð Winner: FURIA
 DTEND:20250830T203538Z
