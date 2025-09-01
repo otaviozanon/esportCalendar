@@ -8,6 +8,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
+import time
 
 # Lista de times brasileiros
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "LOUD", "MIBR", "INTZ", "VIVO KEYD"]
@@ -24,10 +25,13 @@ try:
     print(f"🔹 Acessando URL: {url}")
     driver.get(url)
 
-    # Espera até pelo menos um card aparecer
+    # Espera genérica para qualquer card aparecer
     WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "div.MatchCardSimple__Match-sc-wcmxha-8"))
+        EC.presence_of_element_located((By.CSS_SELECTOR, "div.MatchCardSimple__Match"))
     )
+
+    # Opcional: espera extra para garantir que todos os cards carreguem
+    time.sleep(3)
 
     html = driver.page_source
 finally:
