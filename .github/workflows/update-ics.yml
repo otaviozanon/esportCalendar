@@ -35,15 +35,8 @@ jobs:
 
       # 🔹 Executar script de atualização do ICS
       - name: Executar script generate_ics.py
-        run: python generate_ics.py
-
-      # 🔹 Exibir status do Git e diferenças no calendar.ics
-      - name: Verificar mudanças no calendar.ics
         run: |
-          echo "📂 Status do Git:"
-          git status
-          echo "🔍 Diferenças no calendar.ics:"
-          git diff calendar.ics || true
+          python generate_ics.py | grep -E "✅ Adicionado|📌"
 
       # 🔹 Commit automático apenas se houver mudanças
       - name: Commit e publicar calendar.ics
