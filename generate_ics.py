@@ -20,18 +20,17 @@ try:
     print(f"🔹 Acessando URL: {url}")
     driver.get(url)
 
-    # Loop de espera simples: até 15s procurando por cards
-    cards = []
+    # Espera simples de 1s até 15s para os cards carregarem
+    cards_elements = []
     for _ in range(15):
-        cards = driver.find_elements("css selector", "div[class*='MatchCardSimple__Match']")
-        if cards:
+        cards_elements = driver.find_elements("css selector", "div[class*='MatchCardSimple__Match']")
+        if cards_elements:
             break
         time.sleep(1)
     else:
         print("⚠️ Nenhum card encontrado após 15 segundos")
 
     html = driver.page_source
-
 finally:
     driver.quit()
 
@@ -43,6 +42,7 @@ total_found = 0
 
 for card in cards:
     try:
+        # Times
         teams_divs = card.find_all("div", class_=lambda c: c and "MatchCardSimple__MatchTeam" in c)
         if len(teams_divs) != 2:
             continue
@@ -53,15 +53,18 @@ for card in cards:
         if not any(team in [team1, team2] for team in BRAZILIAN_TEAMS):
             continue
 
+        # Horário
         time_small = card.find("small", class_=lambda c: c and "MatchCardSimple__MatchTime" in c)
         if not time_small:
             print(f"⚠️ Horário não encontrado para o jogo: {team1} vs {team2}")
             continue
-        hour_min = time_small.find("span").text.strip()
+        hour_min = time_small.get_text(strip=True)
 
+        # Data atual como referência
         today_str = datetime.now().strftime("%d/%m/%Y")
         event_time = datetime.strptime(f"{today_str} {hour_min}", "%d/%m/%Y %H:%M")
 
+        # Adiciona ao calendário
         e = Event()
         e.name = f"{team1} vs {team2}"
         e.begin = event_time
