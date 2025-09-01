@@ -1,9 +1,8 @@
 name: Atualizar ICS Draft5
 
-# Dispara todo dia às 12:00 UTC e também permite rodar manualmente
 on:
   schedule:
-    - cron: '0 12 * * *'
+    - cron: '0 12 * * *'  # Todo dia às 12:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -25,20 +24,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install selenium ics
+          pip install selenium webdriver-manager ics
 
-      # 4️⃣ Baixar Chrome e ChromeDriver (necessário para Selenium headless)
-      - name: Setup Chrome
-        uses: browser-actions/setup-chrome@v1
-
-      - name: Setup ChromeDriver
-        uses: nanasess/setup-chromedriver@v1
-
-      # 5️⃣ Rodar o script que gera o ICS
+      # 4️⃣ Rodar o script que gera o ICS
       - name: Generate ICS
         run: python generate_ics.py
 
-      # 6️⃣ Commit e push usando o token automático do Actions
+      # 5️⃣ Commit e push usando token automático
       - name: Commit ICS
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
