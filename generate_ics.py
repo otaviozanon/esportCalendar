@@ -26,7 +26,7 @@ try:
 
     # Espera até pelo menos um card aparecer
     WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "div[class*='MatchCard']"))
+        EC.presence_of_element_located((By.CSS_SELECTOR, "div.MatchCardSimple__Match-sc-wcmxha-8"))
     )
 
     html = driver.page_source
@@ -35,48 +35,41 @@ finally:
 
 soup = BeautifulSoup(html, "html.parser")
 
-# Seleciona todos os cards de partida
-cards = soup.find_all("div", class_=lambda c: c and "MatchCard" in c)
+# Seleciona todos os cards de partidas
+cards = soup.find_all("div", class_=lambda c: c and "MatchCardSimple__Match" in c)
 
 calendar = Calendar()
 total_found = 0
 
 for card in cards:
     try:
-        # Procura os spans dentro do card
-        spans = card.find_all("span")
-        team1 = team2 = None
-        event_time = None
-
-        for span in spans:
-            text = span.get_text(" ", strip=True)
-            # Procura times brasileiros
-            for team in BRAZILIAN_TEAMS:
-                if team in text:
-                    if not team1:
-                        team1 = team
-                    elif not team2 and team != team1:
-                        team2 = team
-            # Procura horário no formato HH:MM
-            if ':' in text and any(char.isdigit() for char in text):
-                event_time = text
-
-        if not team1 or not team2 or not event_time:
+        # Pega os dois times
+        teams_divs = card.find_all("div", class_=lambda c: c and "MatchCardSimple__MatchTeam" in c)
+        if len(teams_divs) != 2:
             continue
 
-        # Tenta extrair hora e data, assumindo data atual se não estiver
-        import re
-        time_match = re.search(r"(\d{2}:\d{2})", event_time)
-        if not time_match:
+        team1 = teams_divs[0].find("span").text.strip()
+        team2 = teams_divs[1].find("span").text.strip()
+
+        # Filtra apenas se houver um time brasileiro
+        if not any(team in [team1, team2] for team in BRAZILIAN_TEAMS):
             continue
-        hour_min = time_match.group(1)
+
+        # Pega horário
+        time_small = card.find("small", class_=lambda c: c and "MatchCardSimple__MatchTime" in c)
+        if not time_small:
+            print(f"⚠️ Horário não encontrado para o jogo: {team1} vs {team2}")
+            continue
+        hour_min = time_small.find("span").text.strip()
+
         # Usa data de hoje como referência
         today_str = datetime.now().strftime("%d/%m/%Y")
-        dt = datetime.strptime(f"{today_str} {hour_min}", "%d/%m/%Y %H:%M")
+        event_time = datetime.strptime(f"{today_str} {hour_min}", "%d/%m/%Y %H:%M")
 
+        # Cria evento
         e = Event()
         e.name = f"{team1} vs {team2}"
-        e.begin = dt
+        e.begin = event_time
         e.duration = timedelta(hours=1)
         calendar.events.add(e)
         total_found += 1
