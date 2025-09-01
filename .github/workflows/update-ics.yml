@@ -36,18 +36,21 @@ jobs:
       - name: Executar script generate_ics.py
         run: python generate_ics.py
 
-      - name: Verificar status e diff do calendar.ics
+      - name: Verificar mudanças no calendar.ics
         run: |
           echo "📂 Status do Git:"
           git status
           echo "🔍 Diferenças no calendar.ics:"
           git diff calendar.ics || true
 
-      - name: Commit e publicar calendar.ics (sempre)
+      - name: Commit e publicar calendar.ics (commit forçado)
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
           git add calendar.ics
-          git commit -m "Atualizar ICS HLTV (commit forçado)" || echo "Sem alterações para commit"
+
+          # Commit normal ou, se não houver mudanças, commit vazio para forçar push
+          git commit -m "Atualizar ICS HLTV (commit forçado)" || git commit --allow-empty -m "Commit vazio para forçar atualização ICS HLTV"
+
           git push
