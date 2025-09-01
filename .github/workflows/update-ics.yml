@@ -30,15 +30,14 @@ jobs:
       - name: Generate ICS
         run: python generate_ics.py
 
-      # 5️⃣ Commit e push do arquivo .ics usando GITHUB_TOKEN
+      # 5️⃣ Commit e push do arquivo .ics usando PAT
       - name: Commit ICS
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}  # Crie o PAT no GitHub e adicione como secret
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add calendar.ics
           git diff-index --quiet HEAD || git commit -m "Atualizar ICS Draft5"
-          # Atualiza o remote para usar o token
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}.git
           git push origin HEAD:main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
