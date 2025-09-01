@@ -1,60 +1,65 @@
-import requests
-from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
 from ics import Calendar, Event
+from datetime import datetime, timedelta
+import requests
+import pytz
 
-# Lista de times brasileiros
-BRAZILIAN_TEAMS = {"FURIA", "paiN", "MIBR", "LOUD", "Imperial", "Vivo Keyd", "INTZ"}
+# Times brasileiros que queremos acompanhar
+BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
+
+# Timezone Brasil
+tz_brazil = pytz.timezone("America/Sao_Paulo")
+
+# Data inicial = hoje no Brasil
+today_brazil = datetime.now(tz_brazil).date()
+
+# Próximos 7 dias (total 8 dias incluindo hoje)
+date_range = [(today_brazil + timedelta(days=i)) for i in range(8)]
 
 calendar = Calendar()
-total = 0
+total_games = 0
 
-# Loop de hoje até 7 dias à frente
-today = datetime.today()
-for i in range(8):
-    day = today + timedelta(days=i)
-    date_str = day.strftime("%Y-%m-%d")
-    url = f"https://www.hltv.org/matches?selectedDate={date_str}"
+print(f"🔹 Buscando jogos de {date_range[0]} até {date_range[-1]}")
 
-    print(f"🔹 Buscando jogos em: {url}")
-    resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-    soup = BeautifulSoup(resp.text, "html.parser")
+for d in date_range:
+    url = f"https://hltv-api.vercel.app/api/matches?date={d.strftime('%Y-%m-%d')}"
+    print(f"🔹 Acessando: {url}")
 
-    for match in soup.select(".upcomingMatch"):
-        teams = [t.get_text(strip=True) for t in match.select(".team")]
-        if len(teams) < 2:
+    try:
+        resp = requests.get(url, timeout=15)
+        resp.raise_for_status()
+        matches = resp.json()
+    except Exception as e:
+        print(f"⚠️ Erro ao acessar {url}: {e}")
+        continue
+
+    for match in matches:
+        team1 = match.get("team1", {}).get("name", "")
+        team2 = match.get("team2", {}).get("name", "")
+
+        # Filtra só times brasileiros
+        if not any(team in BRAZILIAN_TEAMS for team in [team1, team2]):
             continue
 
-        # Filtro: só times brasileiros
-        if not any(team in BRAZILIAN_TEAMS for team in teams):
+        timestamp = match.get("time")  # já vem em ms (epoch)
+        if not timestamp:
+            print(f"⚠️ Horário não encontrado para {team1} vs {team2}")
             continue
 
-        time_str = match.select_one(".time")
-        if not time_str:
-            continue
+        # Converte para datetime no fuso do Brasil
+        dt = datetime.fromtimestamp(timestamp / 1000, pytz.utc).astimezone(tz_brazil)
 
-        hour = time_str.get_text(strip=True)
+        event = Event()
+        event.name = f"{team1} vs {team2}"
+        event.begin = dt
+        event.end = dt + timedelta(hours=2)  # duração estimada
+        event.description = f"Campeonato: {match.get('event', {}).get('name', 'Desconhecido')}"
+        event.location = "HLTV.org"
 
-        try:
-            dt = datetime.strptime(f"{date_str} {hour}", "%Y-%m-%d %H:%M")
-        except:
-            print(f"⚠️ Não consegui converter horário: {hour}")
-            continue
+        calendar.events.add(event)
+        total_games += 1
 
-        event_name = match.select_one(".event-name")
-        event_label = event_name.get_text(strip=True) if event_name else "Partida HLTV"
-
-        # Criar evento ICS
-        e = Event()
-        e.name = f"{teams[0]} vs {teams[1]} ({event_label})"
-        e.begin = dt
-        e.duration = timedelta(hours=2)
-        calendar.events.add(e)
-        total += 1
-        print(f"✅ Adicionado: {e.name} em {date_str} às {hour}")
-
-# Salvar arquivo ICS
+# Salva o calendário
 with open("calendar.ics", "w", encoding="utf-8") as f:
-    f.writelines(calendar)
+    f.writelines(calendar.serialize_iter())
 
-print(f"🗓️ Arquivo calendar.ics gerado com {total} jogos de times brasileiros (próximos 7 dias).")
+print(f"🔹 calendar.ics gerado com sucesso! Total de jogos adicionados: {total_games}")
