@@ -9,69 +9,79 @@ from datetime import datetime, timedelta
 import pytz
 import time
 
-# Configurações
+# --- Configurações ---
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
 tz_brazil = pytz.timezone("America/Sao_Paulo")
-
-# Datas
 today = datetime.now(tz_brazil).date()
-dates = [(today + timedelta(days=i)) for i in range(8)]  # Hoje + próximos 7 dias
-
+date_range = [(today + timedelta(days=i)) for i in range(8)]  # hoje + 7 dias
 calendar = Calendar()
+
+# --- Configurar Selenium headless ---
+chrome_options = Options()
+chrome_options.add_argument("--headless=new")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+driver = webdriver.Chrome(service=Service(), options=chrome_options)
+
 total_games = 0
+print(f"🔹 Buscando jogos de {date_range[0]} até {date_range[-1]}")
 
-# Configura Selenium (headless)
-options = Options()
-options.headless = True
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
-
-driver = webdriver.Chrome(service=Service(), options=options)
-
-for d in dates:
+for d in date_range:
     url = f"https://www.hltv.org/matches?selectedDate={d.strftime('%Y-%m-%d')}"
     print(f"🔹 Acessando {url}")
-    driver.get(url)
-
+    
     try:
-        # Espera carregar os matches
+        driver.get(url)
+        # Espera até a lista de partidas carregar
         WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "div.match-day"))
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.upcomingMatch"))
         )
-    except:
-        print(f"⚠️ Erro: página não carregou ou bloqueada para {url}")
+        time.sleep(1)  # espera extra para garantir carregamento
+        matches = driver.find_elements(By.CSS_SELECTOR, "div.upcomingMatch")
+    except Exception as e:
+        print(f"⚠️ Erro ao acessar {url}: {e}")
         continue
 
-    match_days = driver.find_elements(By.CSS_SELECTOR, "div.match-day")
-    for day in match_days:
-        matches = day.find_elements(By.CSS_SELECTOR, "div.match")
-        for match in matches:
-            try:
-                team1 = match.find_element(By.CSS_SELECTOR, "div.matchTeam .matchTeamName").text
-                team2 = match.find_element(By.CSS_SELECTOR, "div.matchTeam:nth-child(2) .matchTeamName").text
-                time_str = match.find_element(By.CSS_SELECTOR, "div.matchTime").text  # ex: "12:00"
+    for m in matches:
+        try:
+            teams = m.find_elements(By.CSS_SELECTOR, "div.matchTeamName")
+            if len(teams) < 2:
+                continue
+            team1 = teams[0].text.strip()
+            team2 = teams[1].text.strip()
 
-                if not any(team in BRAZILIAN_TEAMS for team in [team1, team2]):
-                    continue
+            # Filtra só times brasileiros
+            if not any(team in BRAZILIAN_TEAMS for team in [team1, team2]):
+                continue
 
-                # Converte para datetime
-                hour, minute = map(int, time_str.split(":"))
-                match_dt = datetime(d.year, d.month, d.day, hour, minute, tzinfo=tz_brazil)
+            # Captura horário
+            time_element = m.find_element(By.CSS_SELECTOR, "div.matchTime")  # pode mudar dependendo do HLTV
+            match_time_text = time_element.text.strip()  # exemplo: "12:00"
+            if not match_time_text:
+                print(f"⚠️ Horário não encontrado para {team1} vs {team2}")
+                continue
 
-                event = Event()
-                event.name = f"{team1} vs {team2}"
-                event.begin = match_dt
-                event.end = match_dt + timedelta(hours=2)
-                event.location = "HLTV.org"
-                calendar.events.add(event)
-                total_games += 1
-                print(f"✅ Jogo adicionado: {team1} vs {team2} - {match_dt}")
-            except Exception as e:
-                print(f"⚠️ Erro ao processar match: {e}")
+            # Converte para datetime no fuso de Brasil
+            hour, minute = map(int, match_time_text.split(":"))
+            dt = datetime.combine(d, datetime.min.time(), tzinfo=tz_brazil)
+            dt = dt.replace(hour=hour, minute=minute)
+
+            # Evento
+            event = Event()
+            event.name = f"{team1} vs {team2}"
+            event.begin = dt
+            event.end = dt + timedelta(hours=2)
+            event.location = "HLTV.org"
+
+            calendar.events.add(event)
+            total_games += 1
+            print(f"✅ Jogo adicionado: {team1} vs {team2} às {dt.strftime('%H:%M')}")
+        except Exception as e:
+            print(f"⚠️ Erro ao processar card: {e}")
 
 driver.quit()
 
-# Salva o calendar
+# Salvar arquivo .ics
 with open("calendar.ics", "w", encoding="utf-8") as f:
     f.writelines(calendar.serialize_iter())
 
