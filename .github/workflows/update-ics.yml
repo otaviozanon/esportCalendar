@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Permite push usando GITHUB_TOKEN
+  contents: write
   actions: read
 
 jobs:
@@ -63,12 +63,12 @@ jobs:
                   continue  # Ignora eventos sem data
               event_time = event.begin
               if event_time.tzinfo is None:
-                  event_time = event_time.replace(tzinfo=timezone.utc)  # assume UTC
+                  event_time = event_time.replace(tzinfo=timezone.utc)
               if any(team in event.name for team in BRAZILIAN_TEAMS) and event_time > now_utc:
                   my_calendar.events.add(event)
                   print(f"✅ Adicionado: {remove_emojis(event.name)} em {event.begin}")
 
-          # Salvar ICS filtrado sem emojis
+          # Salvar ICS filtrado sem emojis na root (para GitHub Pages)
           with open("calendar.ics", "w", encoding="utf-8") as f:
               for line in my_calendar.serialize_iter():
                   f.write(remove_emojis(line) + "\n")
