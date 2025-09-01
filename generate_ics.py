@@ -13,7 +13,7 @@ total_games = 0
 
 print(f"🔹 Buscando jogos de {date_range[0]} até {date_range[-1]}")
 
-# --- Buscar partidas ---
+# --- Inicializa HLTV ---
 hltv = HLTV()
 
 for d in date_range:
@@ -24,7 +24,7 @@ for d in date_range:
         print(f"⚠️ Erro ao buscar partidas em {d}: {repr(e)}")
         continue
 
-    for match in matches:
+    for idx, match in enumerate(matches, start=1):
         try:
             team1 = match['team1']['name']
             team2 = match['team2']['name']
@@ -44,10 +44,11 @@ for d in date_range:
             calendar.events.add(event)
             total_games += 1
             print(f"✅ Jogo adicionado: {team1} vs {team2} às {dt_brazil.strftime('%H:%M')}")
-        except Exception as e:
-            print(f"⚠️ Erro ao processar partida: {repr(e)}")
 
-# Salvar ICS
+        except Exception as e:
+            print(f"⚠️ Erro ao processar partida {idx}: {repr(e)}")
+
+# Salvar arquivo .ics
 with open("calendar.ics", "w", encoding="utf-8") as f:
     f.writelines(calendar.serialize_iter())
 
