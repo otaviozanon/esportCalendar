@@ -25,6 +25,9 @@ chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument(
     "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
 )
+# Indica o binário do Chromium no Ubuntu runner
+chrome_options.binary_location = "/usr/bin/chromium-browser"
+
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
 total_games = 0
@@ -39,7 +42,7 @@ for d in date_range:
         WebDriverWait(driver, 15).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.match-day"))
         )
-        time.sleep(1)  # espera extra para garantir carregamento
+        time.sleep(1)  # espera extra
         matches = driver.find_elements(By.CSS_SELECTOR, "div.match-day div.upcomingMatch")
     except Exception as e:
         print(f"⚠️ Erro ao acessar {url}: {e}")
@@ -57,28 +60,28 @@ for d in date_range:
             if not any(team in BRAZILIAN_TEAMS for team in [team1, team2]):
                 continue
 
-            # Captura horário
+            # Captura horário (HLTV está em UTC)
             time_element = m.find_element(By.CSS_SELECTOR, "div.matchTime")
             match_time_text = time_element.text.strip()  # exemplo: "12:00"
             if not match_time_text:
                 print(f"⚠️ Horário não encontrado para {team1} vs {team2}")
                 continue
 
-            # Converte para datetime no fuso de Brasil
             hour, minute = map(int, match_time_text.split(":"))
-            dt = datetime.combine(d, datetime.min.time(), tzinfo=tz_brazil)
-            dt = dt.replace(hour=hour, minute=minute)
+            dt_utc = datetime.combine(d, datetime.min.time()) + timedelta(hours=hour, minutes=minute)
+            dt_utc = pytz.utc.localize(dt_utc)
+            dt_brazil = dt_utc.astimezone(tz_brazil)
 
             # Evento
             event = Event()
             event.name = f"{team1} vs {team2}"
-            event.begin = dt
-            event.end = dt + timedelta(hours=2)
+            event.begin = dt_brazil
+            event.end = dt_brazil + timedelta(hours=2)
             event.location = "HLTV.org"
 
             calendar.events.add(event)
             total_games += 1
-            print(f"✅ Jogo adicionado: {team1} vs {team2} às {dt.strftime('%H:%M')}")
+            print(f"✅ Jogo adicionado: {team1} vs {team2} às {dt_brazil.strftime('%H:%M')}")
         except Exception as e:
             print(f"⚠️ Erro ao processar card: {e}")
 
