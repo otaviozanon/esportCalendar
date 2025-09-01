@@ -21,8 +21,10 @@ jobs:
 
       - name: Instalar dependências
         run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
           python -m pip install --upgrade pip
-          pip install ics requests beautifulsoup4
+          pip install ics requests beautifulsoup4 selenium pytz
 
       - name: Rodar generate_ics.py
         run: python generate_ics.py
