@@ -10,35 +10,59 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout do repositório (força usar token no push)
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          persist-credentials: false
 
+      # 2️⃣ Configurar Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
+      # 3️⃣ Instalar dependências
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install selenium webdriver-manager ics beautifulsoup4
 
+      # 4️⃣ Rodar o script que gera o ICS
       - name: Generate ICS
         run: python generate_ics.py
 
+      # 5️⃣ Commit e push do arquivo .ics usando PAT com log detalhado
       - name: Commit and push ICS
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
+          echo "=== Configurando git ==="
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          # Atualiza URL do remoto com token
+          echo "=== Atualizando URL do remoto com token ==="
           git remote set-url origin https://x-access-token:${PAT_TOKEN}@github.com/${{ github.repository }}.git
+          git remote -v
 
-          # Adiciona e commita mudanças
+          echo "=== Verificando status do repositório ==="
+          git status
+          git log -1 --oneline
+
+          echo "=== Adicionando calendar.ics ==="
           git add calendar.ics
-          git diff-index --quiet HEAD || git commit -m "Atualizar ICS Draft5"
 
-          # Push para main
+          echo "=== Verificando diferenças ==="
+          git diff --staged || echo "Nenhuma diferença encontrada"
+
+          if git diff-index --quiet HEAD; then
+            echo "Nenhuma mudança para commitar."
+          else
+            echo "=== Commitando mudanças ==="
+            git commit -m "Atualizar ICS Draft5"
+          fi
+
+          echo "=== Tentando push para main ==="
+          set -x  # habilita log detalhado do push
           git push origin main
+          set +x
