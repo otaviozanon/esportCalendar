@@ -1,19 +1,23 @@
 import os
 import requests
-from ics import Calendar
+from ics import Calendar, Event
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pytz
 
 # --- Configurações ---
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
 BR_TZ = pytz.timezone('America/Sao_Paulo')  # Fuso horário de Curitiba
+MAX_AGE_DAYS = 30  # Jogos com mais de 30 dias serão removidos
 
 def remove_emojis(text: str) -> str:
     return re.sub(r'[^\x00-\x7F]+', '', text)
 
 now_utc = datetime.now(timezone.utc)
+cutoff_time = now_utc - timedelta(days=MAX_AGE_DAYS)
+
 print(f"🕒 Agora (UTC): {now_utc}")
+print(f"🗑️ Jogos anteriores a {cutoff_time} serão removidos.")
 
 url = "https://calendar.hltv.events/events.ics"
 print(f"🔹 Baixando ICS oficial do HLTV.Events: {url}")
@@ -32,8 +36,16 @@ if os.path.exists("calendar.ics"):
         except Exception as e:
             print(f"⚠️ Não foi possível carregar o calendário antigo: {e}")
 
-event_count = 0
+# --- Limpar eventos antigos (>30 dias) ---
+old_count = len(my_calendar.events)
+my_calendar.events = {
+    ev for ev in my_calendar.events
+    if ev.begin and ev.begin > cutoff_time
+}
+print(f"🧹 Removidos {old_count - len(my_calendar.events)} eventos antigos.")
 
+# --- Adicionar novos eventos ---
+added_count = 0
 for event in source_calendar.events:
     event_name_clean = remove_emojis(event.name).lower()
     event_time = event.begin
@@ -42,19 +54,18 @@ for event in source_calendar.events:
         event_time = event_time.replace(tzinfo=timezone.utc)
 
     if any(team.lower() in event_name_clean for team in BRAZILIAN_TEAMS):
-        # ✅ Sempre mantém os jogos dos BRs (passados e futuros)
-        if event not in my_calendar.events:
+        # Usar UID para evitar duplicação
+        if not any(ev.uid == event.uid for ev in my_calendar.events):
             my_calendar.events.add(event)
             event_time_br = event_time.astimezone(BR_TZ)
             print(f"✅ Adicionado: {event_name_clean} em {event_time_br}")
-            event_count += 1
+            added_count += 1
 
-if event_count == 0:
-    print("⚠️ Nenhum evento novo encontrado (mas jogos antigos foram mantidos).")
+print(f"📌 {added_count} novos eventos adicionados.")
 
 with open("calendar.ics", "w", encoding="utf-8") as f:
     for line in my_calendar.serialize_iter():
         f.write(remove_emojis(line) + "\n")
     f.write(f"; Gerado em {datetime.now(timezone.utc).isoformat()}\n")
 
-print("🔹 calendar.ics atualizado com eventos antigos + novos!")
+print("🔹 calendar.ics atualizado com eventos novos e antigos!")
