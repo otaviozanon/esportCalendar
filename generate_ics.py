@@ -5,15 +5,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
 import re
 
-# Lista de times brasileiros
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "LOUD", "MIBR", "INTZ", "VIVO KEYD"]
 
-# Configurações do Chrome
 options = Options()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
@@ -24,61 +21,37 @@ try:
     url = "https://draft5.gg/proximas-partidas"
     print(f"🔹 Acessando URL: {url}")
     driver.get(url)
-
-    # Espera até 15s pelo carregamento do primeiro card
-    WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "div"))
-    )
-    print("🔹 Cards carregados no site.")
-
+    WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
     html = driver.page_source
 finally:
     driver.quit()
 
-soup = BeautifulSoup(html, "html.parser")
+# Extrai apenas o texto visível da página
+text = html.replace("\n", " ").replace("\r", " ")
 
-# Lista para armazenar os cards relevantes
-cards = []
+# Regex para encontrar partidas: TIME1 vs TIME2 + horário
+# Exemplo de padrão: "FURIA 0 MOUZ 0 02/09 - 17:00"
+pattern = r"([A-Za-z0-9\s]+?)\s0\s([A-Za-z0-9\s]+?)\s0\s(\d{2}/\d{2})\s[-–]\s(\d{2}:\d{2})"
 
-# Procura todos os divs e verifica se contêm algum time brasileiro
-for div in soup.find_all("div"):
-    text = div.get_text(" ", strip=True)
-    if any(team in text for team in BRAZILIAN_TEAMS):
-        cards.append(div)
-
-print(f"🔹 Total de cards encontrados com times brasileiros: {len(cards)}")
+matches = re.findall(pattern, text)
+print(f"🔹 Total de jogos encontrados: {len(matches)}")
 
 calendar = Calendar()
 
-for card in cards:
-    try:
-        # Extrai todos os times no texto do card
-        teams_in_card = []
-        for team in BRAZILIAN_TEAMS:
-            if team in card.get_text():
-                teams_in_card.append(team)
-        
-        # Extrai horário do jogo usando regex (HH:MM - DD/MM/YYYY)
-        text = card.get_text(" ", strip=True)
-        match = re.search(r"(\d{2}:\d{2})\s*[-–]\s*(\d{2}/\d{2}/\d{4})", text)
-        if not match:
-            print(f"⚠️ Horário não encontrado no card: {text}")
-            continue
-        time_str, date_str = match.groups()
-        event_time = datetime.strptime(f"{date_str} {time_str}", "%d/%m/%Y %H:%M")
+for m in matches:
+    team1, team2, date_str, time_str = m
+    # Verifica se algum time é brasileiro
+    if not any(team in [team1.strip(), team2.strip()] for team in BRAZILIAN_TEAMS):
+        continue
 
-        # Cria evento
-        e = Event()
-        e.name = " vs ".join(teams_in_card)
-        e.begin = event_time
-        e.duration = timedelta(hours=1)
-        calendar.events.add(e)
-        print(f"✅ Jogo adicionado: {e.name} - {e.begin}")
+    event_time = datetime.strptime(f"{date_str} {time_str}", "%d/%m %H:%M")
+    e = Event()
+    e.name = f"{team1.strip()} vs {team2.strip()}"
+    e.begin = event_time
+    e.duration = timedelta(hours=1)
+    calendar.events.add(e)
+    print(f"✅ Jogo adicionado: {e.name} - {e.begin}")
 
-    except Exception as ex:
-        print(f"⚠️ Erro ao processar card: {card.get_text(' ', strip=True)}\n{ex}")
-
-# Salva o .ics
 with open("calendar.ics", "w", encoding="utf-8") as f:
     f.writelines(calendar)
 
