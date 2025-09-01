@@ -1,6 +1,6 @@
 import os
 import requests
-from ics import Calendar, Event
+from ics import Calendar
 import re
 from datetime import datetime, timezone, timedelta
 import pytz
@@ -66,6 +66,7 @@ print(f"📌 {added_count} novos eventos adicionados.")
 with open("calendar.ics", "w", encoding="utf-8") as f:
     for line in my_calendar.serialize_iter():
         f.write(remove_emojis(line) + "\n")
-    f.write(f"; Gerado em {datetime.now(timezone.utc).isoformat()}\n")
+    # 🔹 usar propriedade X-VAL válida no padrão iCalendar
+    f.write(f"X-GENERATED-TIME:{datetime.now(timezone.utc).isoformat()}\n")
 
 print("🔹 calendar.ics atualizado com eventos novos e antigos!")
