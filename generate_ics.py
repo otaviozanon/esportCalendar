@@ -4,6 +4,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 from ics import Calendar, Event
 from datetime import datetime, timedelta
 import pytz
@@ -21,7 +22,10 @@ chrome_options = Options()
 chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
-driver = webdriver.Chrome(service=Service(), options=chrome_options)
+chrome_options.add_argument(
+    "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
+)
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
 total_games = 0
 print(f"🔹 Buscando jogos de {date_range[0]} até {date_range[-1]}")
@@ -32,19 +36,18 @@ for d in date_range:
     
     try:
         driver.get(url)
-        # Espera até a lista de partidas carregar
         WebDriverWait(driver, 15).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.upcomingMatch"))
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.match-day"))
         )
         time.sleep(1)  # espera extra para garantir carregamento
-        matches = driver.find_elements(By.CSS_SELECTOR, "div.upcomingMatch")
+        matches = driver.find_elements(By.CSS_SELECTOR, "div.match-day div.upcomingMatch")
     except Exception as e:
         print(f"⚠️ Erro ao acessar {url}: {e}")
         continue
 
     for m in matches:
         try:
-            teams = m.find_elements(By.CSS_SELECTOR, "div.matchTeamName")
+            teams = m.find_elements(By.CSS_SELECTOR, "div.matchTeamName span")
             if len(teams) < 2:
                 continue
             team1 = teams[0].text.strip()
@@ -55,7 +58,7 @@ for d in date_range:
                 continue
 
             # Captura horário
-            time_element = m.find_element(By.CSS_SELECTOR, "div.matchTime")  # pode mudar dependendo do HLTV
+            time_element = m.find_element(By.CSS_SELECTOR, "div.matchTime")
             match_time_text = time_element.text.strip()  # exemplo: "12:00"
             if not match_time_text:
                 print(f"⚠️ Horário não encontrado para {team1} vs {team2}")
