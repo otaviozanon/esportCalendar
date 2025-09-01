@@ -1,8 +1,14 @@
 import requests
 from ics import Calendar
+import unicodedata
 
 # --- Configurações ---
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
+
+# Função para normalizar texto, removendo caracteres problemáticos do terminal
+def clean_text(text: str) -> str:
+    # Normaliza Unicode (NFC) e ignora caracteres inválidos
+    return unicodedata.normalize("NFC", text)
 
 # Baixar ICS oficial do HLTV.Events
 url = "https://calendar.hltv.events/events.ics"
@@ -18,12 +24,11 @@ my_calendar = Calendar()
 for event in source_calendar.events:
     if any(team in event.name for team in BRAZILIAN_TEAMS):
         my_calendar.events.add(event)
-        # Forçar log em UTF-8
-        print("✅ Adicionado: {}".format(event.name.encode("utf-8", errors="ignore").decode("utf-8")), 
-              "em", event.begin)
+        print(f"✅ Adicionado: {clean_text(event.name)} em {event.begin}")
 
 # Salvar ICS filtrado com UTF-8 explícito
 with open("calendar.ics", "w", encoding="utf-8") as f:
-    f.writelines(my_calendar.serialize_iter())
+    for line in my_calendar.serialize_iter():
+        f.write(clean_text(line) + "\n")
 
 print("🔹 calendar.ics gerado com sucesso!")
