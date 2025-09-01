@@ -43,14 +43,11 @@ jobs:
           echo "🔍 Diferenças no calendar.ics:"
           git diff calendar.ics || true
 
-      - name: Commit e publicar calendar.ics (commit forçado)
+      - name: Commit e publicar calendar.ics
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
           git add calendar.ics
-
-          # Commit normal ou, se não houver mudanças, commit vazio para forçar push
-          git commit -m "Atualizar ICS HLTV (commit forçado)" || git commit --allow-empty -m "Commit vazio para forçar atualização ICS HLTV"
-
+          git commit -m "Atualizar ICS HLTV - $(date -u +"%Y-%m-%dT%H:%M:%SZ")" || echo "Sem mudanças para commitar"
           git push
