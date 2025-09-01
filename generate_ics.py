@@ -49,5 +49,7 @@ if event_count == 0:
 with open("calendar.ics", "w", encoding="utf-8") as f:
     for line in my_calendar.serialize_iter():
         f.write(remove_emojis(line) + "\n")
+    # Adiciona timestamp para forçar mudança no arquivo
+    f.write(f"; Gerado em {datetime.now(timezone.utc).isoformat()}\n")
 
 print("🔹 calendar.ics gerado com sucesso!")
