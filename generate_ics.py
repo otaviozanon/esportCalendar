@@ -1,52 +1,25 @@
-import asyncio
-from hltv_async_api import Hltv
+import requests
 from ics import Calendar, Event
-from datetime import datetime, timedelta
-import pytz
 
 # --- Configurações ---
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
-tz_brazil = pytz.timezone("America/Sao_Paulo")
-today = datetime.now(tz_brazil).date()
-date_range = [(today + timedelta(days=i)) for i in range(8)]  # hoje + 7 dias
-calendar = Calendar()
 
-async def fetch_matches():
-    total_games = 0
-    async with Hltv() as hltv:
-        matches = await hltv.get_matches(days=7)  # Obtém partidas para os próximos 7 dias
-        print(f"🔹 {len(matches)} partidas encontradas no HLTV")
+# Baixar ICS oficial do HLTV.Events
+url = "https://calendar.hltv.events/events.ics"
+response = requests.get(url)
+response.raise_for_status()
 
-        for idx, match in enumerate(matches, start=1):
-            try:
-                team1 = match['team1']['name']
-                team2 = match['team2']['name']
+source_calendar = Calendar(response.text)
+my_calendar = Calendar()
 
-                # Filtra só times brasileiros
-                if not any(t in BRAZILIAN_TEAMS for t in [team1, team2]):
-                    continue
+# Filtrar eventos de times brasileiros
+for event in source_calendar.events:
+    if any(team in event.name for team in BRAZILIAN_TEAMS):
+        my_calendar.events.add(event)
+        print(f"✅ Adicionado: {event.name} em {event.begin}")
 
-                dt_utc = match['time']  # datetime em UTC
-                dt_brazil = dt_utc.astimezone(tz_brazil)
+# Salvar ICS filtrado
+with open("calendar.ics", "w", encoding="utf-8") as f:
+    f.writelines(my_calendar.serialize_iter())
 
-                event = Event()
-                event.name = f"{team1} vs {team2}"
-                event.begin = dt_brazil
-                event.end = dt_brazil + timedelta(hours=2)
-                event.location = "HLTV.org"
-
-                calendar.events.add(event)
-                total_games += 1
-                print(f"✅ Jogo adicionado: {team1} vs {team2} às {dt_brazil.strftime('%H:%M')}")
-
-            except Exception as e:
-                print(f"⚠️ Erro ao processar partida {idx}: {repr(e)}")
-
-    # Salvar arquivo .ics
-    with open("calendar.ics", "w", encoding="utf-8") as f:
-        f.writelines(calendar.serialize_iter())
-
-    print(f"\n🔹 calendar.ics gerado com sucesso! Total de jogos adicionados: {total_games}")
-
-if __name__ == "__main__":
-    asyncio.run(fetch_matches())
+print("🔹 calendar.ics gerado com sucesso!")
