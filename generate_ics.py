@@ -8,7 +8,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
-import re
 
 # Lista de times brasileiros
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "LOUD", "MIBR", "INTZ", "VIVO KEYD"]
@@ -37,53 +36,54 @@ finally:
 soup = BeautifulSoup(html, "html.parser")
 
 # Seleciona todos os cards de partida
-cards = soup.find_all("div", class_=re.compile("MatchCard"))
+cards = soup.find_all("div", class_=lambda c: c and "MatchCard" in c)
 
 calendar = Calendar()
 total_found = 0
 
 for card in cards:
     try:
-        text = card.get_text(" ", strip=True)
+        # Procura os spans dentro do card
+        spans = card.find_all("span")
+        team1 = team2 = None
+        event_time = None
 
-        # Extrai times (simplesmente os nomes antes do primeiro e segundo "0")
-        match_teams = re.findall(r"([A-Za-z0-9\s]+?)\s0\s([A-Za-z0-9\s]+?)\s0", text)
-        if not match_teams:
+        for span in spans:
+            text = span.get_text(" ", strip=True)
+            # Procura times brasileiros
+            for team in BRAZILIAN_TEAMS:
+                if team in text:
+                    if not team1:
+                        team1 = team
+                    elif not team2 and team != team1:
+                        team2 = team
+            # Procura horário no formato HH:MM
+            if ':' in text and any(char.isdigit() for char in text):
+                event_time = text
+
+        if not team1 or not team2 or not event_time:
             continue
-        team1, team2 = match_teams[0]
-        team1 = team1.strip()
-        team2 = team2.strip()
 
-        # Filtra apenas se tiver pelo menos um time brasileiro
-        if not any(team in [team1, team2] for team in BRAZILIAN_TEAMS):
+        # Tenta extrair hora e data, assumindo data atual se não estiver
+        import re
+        time_match = re.search(r"(\d{2}:\d{2})", event_time)
+        if not time_match:
             continue
+        hour_min = time_match.group(1)
+        # Usa data de hoje como referência
+        today_str = datetime.now().strftime("%d/%m/%Y")
+        dt = datetime.strptime(f"{today_str} {hour_min}", "%d/%m/%Y %H:%M")
 
-        # Extrai horário (ex.: "02/09/2025 17:00" ou "02/09 17:00")
-        match_time = re.search(r"(\d{2}/\d{2}(?:/\d{4})?)\s(\d{2}:\d{2})", text)
-        if not match_time:
-            print(f"⚠️ Horário não encontrado para o jogo: {team1} vs {team2}")
-            continue
-
-        date_str, time_str = match_time.groups()
-
-        # Adiciona ano atual se não vier
-        if len(date_str.split("/")) == 2:
-            year = datetime.now().year
-            date_str += f"/{year}"
-
-        event_time = datetime.strptime(f"{date_str} {time_str}", "%d/%m/%Y %H:%M")
-
-        # Cria evento
         e = Event()
         e.name = f"{team1} vs {team2}"
-        e.begin = event_time
+        e.begin = dt
         e.duration = timedelta(hours=1)
         calendar.events.add(e)
         total_found += 1
         print(f"✅ Jogo adicionado: {e.name} - {e.begin}")
 
     except Exception as ex:
-        print(f"⚠️ Erro ao processar card: {text}\n{ex}")
+        print(f"⚠️ Erro ao processar card: {ex}")
 
 with open("calendar.ics", "w", encoding="utf-8") as f:
     f.writelines(calendar)
