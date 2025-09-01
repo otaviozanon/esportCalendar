@@ -26,19 +26,21 @@ my_calendar = Calendar()
 event_count = 0
 
 for event in source_calendar.events:
-    print(f"🔸 Evento encontrado: {remove_emojis(event.name)} - {event.begin}")
+    event_name_clean = remove_emojis(event.name).lower()
+    print(f"🔸 Evento encontrado: {event_name_clean} - {event.begin}")
 
     # Garantir que begin tenha timezone
     event_time = event.begin
     if event_time.tzinfo is None:
         event_time = event_time.replace(tzinfo=timezone.utc)
 
-    # Converter para o fuso horário de Curitiba
-    event_time_br = event_time.astimezone(BR_TZ)
-
-    if any(team in event.name for team in BRAZILIAN_TEAMS) and event_time_br > now_utc:
+    # Comparar no mesmo fuso (UTC)
+    if any(team.lower() in event_name_clean for team in BRAZILIAN_TEAMS) and event_time > now_utc:
+        # Adicionar o evento
         my_calendar.events.add(event)
-        print(f"✅ Adicionado: {remove_emojis(event.name)} em {event_time_br}")
+        # Mostrar o horário convertido para horário de Brasília (Curitiba)
+        event_time_br = event_time.astimezone(BR_TZ)
+        print(f"✅ Adicionado: {event_name_clean} em {event_time_br}")
         event_count += 1
 
 if event_count == 0:
