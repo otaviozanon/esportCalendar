@@ -1,13 +1,13 @@
 from ics import Calendar, Event
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import requests
-import pytz
 
 # Times brasileiros que queremos acompanhar
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
 
 # Timezone Brasil
-tz_brazil = pytz.timezone("America/Sao_Paulo")
+tz_brazil = ZoneInfo("America/Sao_Paulo")
 
 # Data inicial = hoje no Brasil
 today_brazil = datetime.now(tz_brazil).date()
@@ -46,7 +46,7 @@ for d in date_range:
             continue
 
         # Converte para datetime no fuso do Brasil
-        dt = datetime.fromtimestamp(timestamp / 1000, pytz.utc).astimezone(tz_brazil)
+        dt = datetime.fromtimestamp(timestamp / 1000, tz=ZoneInfo("UTC")).astimezone(tz_brazil)
 
         event = Event()
         event.name = f"{team1} vs {team2}"
