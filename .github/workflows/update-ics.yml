@@ -2,8 +2,7 @@ name: Atualizar calendário HLTV
 
 on:
   schedule:
-    # Todo dia às 06:00 UTC (~03:00 Brasília)
-    - cron: '0 6 * * *'
+    - cron: '0 6 * * *'  # Todo dia às 06:00 UTC (~03:00 Brasília)
   workflow_dispatch:
 
 permissions:
@@ -44,53 +43,38 @@ jobs:
           def remove_emojis(text: str) -> str:
               return re.sub(r'[^\x00-\x7F]+', '', text)
 
-          # Data/hora atual em UTC
           now_utc = datetime.now(timezone.utc)
 
-          # Baixar ICS oficial do HLTV.Events
           url = "https://calendar.hltv.events/events.ics"
-          print(f"🔹 Baixando ICS oficial do HLTV.Events: {url}")
           response = requests.get(url)
           response.raise_for_status()
-          print(f"🔹 Status code da requisição: {response.status_code}")
 
           source_calendar = Calendar(response.text)
           my_calendar = Calendar()
 
-          # Filtrar eventos de times brasileiros futuros
           for event in source_calendar.events:
               if event.begin is None:
-                  continue  # Ignora eventos sem data
+                  continue
               event_time = event.begin
               if event_time.tzinfo is None:
                   event_time = event_time.replace(tzinfo=timezone.utc)
               if any(team in event.name for team in BRAZILIAN_TEAMS) and event_time > now_utc:
                   my_calendar.events.add(event)
-                  print(f"✅ Adicionado: {remove_emojis(event.name)} em {event.begin}")
 
-          # Salvar ICS filtrado sem emojis na root (para GitHub Pages)
+          # Salvar na raiz da branch main para GitHub Pages
           with open("calendar.ics", "w", encoding="utf-8") as f:
               for line in my_calendar.serialize_iter():
                   f.write(remove_emojis(line) + "\n")
-
-          print("🔹 calendar.ics gerado com sucesso!")
           EOF
 
-      - name: Commit e publicar calendar.ics direto na main
+      - name: Commit e publicar calendar.ics
         run: |
           if [[ `git status --porcelain` ]]; then
-            echo "🔹 Configurando Git user"
             git config --global user.name "github-actions"
             git config --global user.email "actions@github.com"
 
-            echo "🔹 Adicionando calendar.ics"
             git add calendar.ics
-
-            echo "🔹 Commitando alterações"
             git commit -m "Atualizar ICS HLTV"
-
-            echo "🔹 Push para main"
             git push
           else
             echo "Nenhuma mudança detectada."
-          fi
