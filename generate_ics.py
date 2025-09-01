@@ -14,7 +14,7 @@ BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial"]
 URL = "https://draft5.gg/proximas-partidas"
 
 def fetch_games():
-    # Configuração Selenium headless
+    print("🔹 Iniciando Selenium headless...")
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--disable-gpu")
@@ -23,6 +23,7 @@ def fetch_games():
     options.add_argument("--window-size=1920,1080")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    print(f"🔹 Acessando URL: {URL}")
     driver.get(URL)
     time.sleep(5)  # esperar JS carregar
 
@@ -30,30 +31,42 @@ def fetch_games():
     soup = BeautifulSoup(html, "html.parser")
     games = []
 
-    # Seleciona todos os cards de partidas
-    match_cards = soup.select("div.MatchCardSimple__Match-sc-wcmxha-8")  # ajuste se necessário
+    match_cards = soup.select("div.MatchCardSimple__Match-sc-wcmxha-8")
+    print(f"🔹 Total de cards encontrados: {len(match_cards)}")
 
-    for card in match_cards:
+    for i, card in enumerate(match_cards, start=1):
         try:
+            print(f"\n🔹 Processando card {i}...")
             teams = [span.text.strip() for span in card.select("div.MatchCardSimple__TeamNameAndLogo-sc-wcmxha-40 span")]
             if len(teams) != 2:
+                print("⚠️ Card ignorado: número de times diferente de 2")
                 continue
             team1, team2 = teams
+            print(f"Times detectados: {team1} x {team2}")
 
-            # Ignora partidas com TBD
             if "TBD" in team1 or "TBD" in team2:
+                print("⚠️ Card ignorado: time TBD")
                 continue
 
-            # Filtra apenas times brasileiros
             if not any(t in BRAZILIAN_TEAMS for t in [team1, team2]):
+                print("⚠️ Card ignorado: nenhum time brasileiro")
                 continue
 
-            # Pega data e hora
-            datetime_str = card.select_one("div.MatchCardSimple__MatchDate-sc-wcmxha-37").text.strip()
-            dt = datetime.strptime(datetime_str, "%d/%m/%Y %H:%M")  # ajuste se necessário
+            datetime_el = card.select_one("div.MatchCardSimple__MatchDate-sc-wcmxha-37")
+            if not datetime_el:
+                print("⚠️ Card ignorado: data/hora não encontrada")
+                continue
+            datetime_str = datetime_el.text.strip()
+            try:
+                dt = datetime.strptime(datetime_str, "%d/%m/%Y %H:%M")
+            except ValueError:
+                print(f"⚠️ Formato de data inesperado: {datetime_str}")
+                continue
+            print(f"Data/hora: {dt}")
 
-            # Torneio
-            tournament = card.select_one("div.MatchCardSimple__TournamentName-sc-wcmxha-42").text.strip()
+            tournament_el = card.select_one("div.MatchCardSimple__TournamentName-sc-wcmxha-42")
+            tournament = tournament_el.text.strip() if tournament_el else "Torneio desconhecido"
+            print(f"Torneio: {tournament}")
 
             games.append({
                 "team1": team1,
@@ -61,14 +74,18 @@ def fetch_games():
                 "tournament": tournament,
                 "datetime": dt
             })
+            print("✅ Card adicionado à lista de jogos")
+
         except Exception as e:
-            print(f"⚠️ Erro processando um card: {e}")
+            print(f"⚠️ Erro processando o card: {e}")
             continue
 
     driver.quit()
+    print(f"\n🔹 Total de jogos capturados: {len(games)}")
     return games
 
 def generate_ics(games, filename="calendar.ics"):
+    print(f"🔹 Gerando arquivo {filename}...")
     cal = Calendar()
     for game in games:
         e = Event()
@@ -76,11 +93,16 @@ def generate_ics(games, filename="calendar.ics"):
         e.begin = game['datetime']
         e.duration = timedelta(hours=2)
         cal.events.add(e)
+        print(f"✅ Evento adicionado: {e.name} - {e.begin}")
 
     with open(filename, "w", encoding="utf-8") as f:
         f.writelines(cal)
-    print(f"{filename} gerado com {len(games)} jogos.")
+    print(f"✅ {filename} gerado com {len(games)} jogos.")
 
 if __name__ == "__main__":
+    print("🔹 Iniciando script de captura de jogos")
     games = fetch_games()
+    if not games:
+        print("⚠️ Nenhum jogo encontrado.")
     generate_ics(games)
+    print("🔹 Script finalizado")
