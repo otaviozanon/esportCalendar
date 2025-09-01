@@ -24,16 +24,18 @@ my_calendar = Calendar()
 event_count = 0
 
 for event in source_calendar.events:
-    print(f"🔸 Evento encontrado: {remove_emojis(event.name)} - {event.begin}")
+    event_name_clean = remove_emojis(event.name)
+    print(f"🔸 Evento encontrado: {event_name_clean} - {event.begin}")
 
-    # Garantir que begin tenha timezone
     event_time = event.begin
     if event_time.tzinfo is None:
         event_time = event_time.replace(tzinfo=timezone.utc)
 
-    if any(team in event.name for team in BRAZILIAN_TEAMS) and event_time > now_utc:
+    # Filtro case-insensitive para times brasileiros
+    matching_teams = [team for team in BRAZILIAN_TEAMS if team.lower() in event.name.lower()]
+    if matching_teams and event_time > now_utc:
         my_calendar.events.add(event)
-        print(f"✅ Adicionado: {remove_emojis(event.name)} em {event_time}")
+        print(f"✅ Adicionado: {event_name_clean} (times: {matching_teams}) em {event_time}")
         event_count += 1
 
 if event_count == 0:
