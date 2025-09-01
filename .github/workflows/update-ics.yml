@@ -2,8 +2,11 @@ name: Atualizar calendário HLTV
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # a cada 6 horas
-  workflow_dispatch: # permite rodar manualmente
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write  # <-- dá permissão de commit no repo
 
 jobs:
   build:
