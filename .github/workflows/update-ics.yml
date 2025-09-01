@@ -30,18 +30,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install ics requests pytz
 
-      - name: Gerar calendar.ics apenas com times brasileiros (sem emojis)
+      - name: Gerar calendar.ics apenas com jogos futuros de times brasileiros (sem emojis)
         run: |
           python <<'EOF'
           import requests
           from ics import Calendar
           import re
+          from datetime import datetime, timezone
 
           BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
 
           # Função para remover emojis e caracteres especiais
           def remove_emojis(text: str) -> str:
               return re.sub(r'[^\x00-\x7F]+', '', text)
+
+          # Data/hora atual em UTC
+          now_utc = datetime.now(timezone.utc)
 
           # Baixar ICS oficial do HLTV.Events
           url = "https://calendar.hltv.events/events.ics"
@@ -53,9 +57,14 @@ jobs:
           source_calendar = Calendar(response.text)
           my_calendar = Calendar()
 
-          # Filtrar eventos de times brasileiros
+          # Filtrar eventos de times brasileiros futuros
           for event in source_calendar.events:
-              if any(team in event.name for team in BRAZILIAN_TEAMS):
+              if event.begin is None:
+                  continue  # Ignora eventos sem data
+              event_time = event.begin
+              if event_time.tzinfo is None:
+                  event_time = event_time.replace(tzinfo=timezone.utc)  # assume UTC
+              if any(team in event.name for team in BRAZILIAN_TEAMS) and event_time > now_utc:
                   my_calendar.events.add(event)
                   print(f"✅ Adicionado: {remove_emojis(event.name)} em {event.begin}")
 
@@ -84,4 +93,4 @@ jobs:
             git push
           else
             echo "Nenhuma mudança detectada."
-            fi
+          fi
