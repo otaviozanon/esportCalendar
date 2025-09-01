@@ -1,73 +1,77 @@
-import requests
-from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from ics import Calendar, Event
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+import pytz
+import time
 
-# --- Configurações ---
+# Configurações
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
-tz_brazil = ZoneInfo("America/Sao_Paulo")
-today_brazil = datetime.now(tz_brazil).date()
-date_range = [(today_brazil + timedelta(days=i)) for i in range(8)]
+tz_brazil = pytz.timezone("America/Sao_Paulo")
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                  "AppleWebKit/537.36 (KHTML, like Gecko) "
-                  "Chrome/139.0.0.0 Safari/537.36",
-    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-}
+# Datas
+today = datetime.now(tz_brazil).date()
+dates = [(today + timedelta(days=i)) for i in range(8)]  # Hoje + próximos 7 dias
 
 calendar = Calendar()
 total_games = 0
 
-print(f"🔹 Buscando jogos de {date_range[0]} até {date_range[-1]}")
+# Configura Selenium (headless)
+options = Options()
+options.headless = True
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
 
-for d in date_range:
+driver = webdriver.Chrome(service=Service(), options=options)
+
+for d in dates:
     url = f"https://www.hltv.org/matches?selectedDate={d.strftime('%Y-%m-%d')}"
     print(f"🔹 Acessando {url}")
+    driver.get(url)
 
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=15)
-        resp.raise_for_status()
-    except Exception as e:
-        print(f"⚠️ Erro ao acessar {url}: {e}")
+        # Espera carregar os matches
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.match-day"))
+        )
+    except:
+        print(f"⚠️ Erro: página não carregou ou bloqueada para {url}")
         continue
 
-    soup = BeautifulSoup(resp.text, "html.parser")
-    matches = soup.select(".upcomingMatch")
+    match_days = driver.find_elements(By.CSS_SELECTOR, "div.match-day")
+    for day in match_days:
+        matches = day.find_elements(By.CSS_SELECTOR, "div.match")
+        for match in matches:
+            try:
+                team1 = match.find_element(By.CSS_SELECTOR, "div.matchTeam .matchTeamName").text
+                team2 = match.find_element(By.CSS_SELECTOR, "div.matchTeam:nth-child(2) .matchTeamName").text
+                time_str = match.find_element(By.CSS_SELECTOR, "div.matchTime").text  # ex: "12:00"
 
-    for match in matches:
-        teams = [t.get_text(strip=True) for t in match.select(".team")]
-        if len(teams) < 2:
-            continue
-        team1, team2 = teams[:2]
+                if not any(team in BRAZILIAN_TEAMS for team in [team1, team2]):
+                    continue
 
-        if not any(team in BRAZILIAN_TEAMS for team in [team1, team2]):
-            continue
+                # Converte para datetime
+                hour, minute = map(int, time_str.split(":"))
+                match_dt = datetime(d.year, d.month, d.day, hour, minute, tzinfo=tz_brazil)
 
-        time_elem = match.select_one(".matchTime")
-        if not time_elem or not time_elem.has_attr("data-unix"):
-            print(f"⚠️ Horário não encontrado para {team1} vs {team2}")
-            continue
+                event = Event()
+                event.name = f"{team1} vs {team2}"
+                event.begin = match_dt
+                event.end = match_dt + timedelta(hours=2)
+                event.location = "HLTV.org"
+                calendar.events.add(event)
+                total_games += 1
+                print(f"✅ Jogo adicionado: {team1} vs {team2} - {match_dt}")
+            except Exception as e:
+                print(f"⚠️ Erro ao processar match: {e}")
 
-        timestamp = int(time_elem["data-unix"]) / 1000
-        dt = datetime.fromtimestamp(timestamp, tz=ZoneInfo("UTC")).astimezone(tz_brazil)
+driver.quit()
 
-        event_elem = match.select_one(".matchEventName")
-        event_name = event_elem.get_text(strip=True) if event_elem else "Desconhecido"
-
-        event = Event()
-        event.name = f"{team1} vs {team2}"
-        event.begin = dt
-        event.end = dt + timedelta(hours=2)
-        event.description = f"Campeonato: {event_name}"
-        event.location = "HLTV.org"
-
-        calendar.events.add(event)
-        total_games += 1
-        print(f"✅ Jogo adicionado: {team1} vs {team2} - {dt}")
-
+# Salva o calendar
 with open("calendar.ics", "w", encoding="utf-8") as f:
     f.writelines(calendar.serialize_iter())
 
