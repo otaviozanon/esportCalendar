@@ -2,7 +2,7 @@ name: Atualizar calendário HLTV
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # A cada 30 minutos
+    - cron: '0 6 * * *'  # Todo dia às 06:00 UTC (~03:00 Brasília)
   workflow_dispatch:
 
 permissions:
