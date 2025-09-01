@@ -53,6 +53,8 @@ jobs:
           EOF
 
       - name: Commit e publicar calendar.ics direto na main
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           echo "🔹 Git status antes de commitar"
           git status
@@ -67,7 +69,7 @@ jobs:
           echo "🔹 Commitando alterações"
           git commit -m "Atualizar ICS HLTV" || echo "Nada para commitar"
 
-          echo "🔹 Tentando push usando GITHUB_TOKEN"
+          echo "🔹 Tentando push usando GH_TOKEN"
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           git push origin main
-
           echo "🔹 Push finalizado"
