@@ -2,9 +2,9 @@ name: Atualizar calendário HLTV
 
 on:
   schedule:
-    # Executa todo dia às 06:00 UTC (~03:00 Brasília)
+    # Todo dia às 06:00 UTC (~03:00 Brasília)
     - cron: '0 6 * * *'
-  workflow_dispatch: # Permite rodar manualmente
+  workflow_dispatch:
 
 jobs:
   build:
