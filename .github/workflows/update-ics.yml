@@ -2,7 +2,7 @@ name: Atualizar calendário HLTV
 
 on:
   schedule:
-    - cron: '0 6 * * *'  # Todo dia às 06:00 UTC (~03:00 Brasília)
+    - cron: '*/30 * * * *'  # 🔹 A cada 30 minutos
   workflow_dispatch:
 
 permissions:
@@ -18,10 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Atualizar branch local com a main remota
-        run: git pull origin main
+          fetch-depth: 0   # 🔹 pega histórico completo
 
       - name: Configurar Python
         uses: actions/setup-python@v5
