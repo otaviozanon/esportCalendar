@@ -1,84 +1,51 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-from ics import Calendar, Event
+import requests
+from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-import time
+from ics import Calendar, Event
 
-# Lista de times brasileiros
-BRAZILIAN_TEAMS = ["FURIA", "paiN", "LOUD", "MIBR", "INTZ", "VIVO KEYD"]
+BRAZILIAN_TEAMS = {"FURIA", "paiN", "MIBR", "LOUD", "Imperial", "Vivo Keyd", "INTZ"}
 
-# Configuração do Chrome headless
-options = Options()
-options.add_argument("--headless")
-options.add_argument("--disable-gpu")
-options.add_argument("--no-sandbox")
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+# Data de hoje
+today = datetime.today().strftime("%Y-%m-%d")
+url = f"https://www.hltv.org/matches?selectedDate={today}"
 
-try:
-    url = "https://draft5.gg/proximas-partidas"
-    print(f"🔹 Acessando URL: {url}")
-    driver.get(url)
+print(f"🔹 Buscando jogos em: {url}")
+resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+soup = BeautifulSoup(resp.text, "html.parser")
 
-    # Espera simples: até 15s procurando por cards
-    cards_elements = []
-    for _ in range(15):
-        cards_elements = driver.find_elements(By.CSS_SELECTOR, "div[class*='MatchCardSimple__Match']")
-        if cards_elements:
-            break
-        time.sleep(1)
-    else:
-        print("⚠️ Nenhum card encontrado após 15 segundos")
+calendar = Calendar()
+total = 0
 
-    calendar = Calendar()
-    total_found = 0
+for match in soup.select(".upcomingMatch"):
+    teams = [t.get_text(strip=True) for t in match.select(".team")]
+    if len(teams) < 2:
+        continue
 
-    for card_el in cards_elements:
-        try:
-            # Pega os times
-            teams_divs = card_el.find_elements(By.CSS_SELECTOR, "div[class*='MatchCardSimple__MatchTeam']")
-            if len(teams_divs) != 2:
-                continue
+    # filtro: só times brasileiros
+    if not any(team in BRAZILIAN_TEAMS for team in teams):
+        continue
 
-            team1 = teams_divs[0].find_element(By.TAG_NAME, "span").text.strip()
-            team2 = teams_divs[1].find_element(By.TAG_NAME, "span").text.strip()
+    time_str = match.select_one(".time")
+    if not time_str:
+        continue
 
-            if not any(team in [team1, team2] for team in BRAZILIAN_TEAMS):
-                continue
+    # converte hora HLTV -> datetime UTC
+    hour = time_str.get_text(strip=True)
+    try:
+        dt = datetime.strptime(f"{today} {hour}", "%Y-%m-%d %H:%M")
+    except:
+        continue
 
-            # Pega o horário via JavaScript (renderizado dinamicamente)
-            hour_min = driver.execute_script(
-                "return arguments[0].querySelector('small[class*=\"MatchCardSimple__MatchTime\"] span')?.innerText;", 
-                card_el
-            )
+    # cria evento ICS
+    e = Event()
+    e.name = f"{teams[0]} vs {teams[1]}"
+    e.begin = dt
+    e.duration = timedelta(hours=2)
+    calendar.events.add(e)
+    total += 1
+    print(f"✅ Adicionado: {e.name} às {hour}")
 
-            if not hour_min:
-                print(f"⚠️ Horário não encontrado para o jogo: {team1} vs {team2}")
-                continue
-
-            # Usa data atual como referência (pode ser ajustado para a data real do jogo)
-            today_str = datetime.now().strftime("%d/%m/%Y")
-            event_time = datetime.strptime(f"{today_str} {hour_min}", "%d/%m/%Y %H:%M")
-
-            # Cria evento no calendário
-            e = Event()
-            e.name = f"{team1} vs {team2}"
-            e.begin = event_time
-            e.duration = timedelta(hours=1)
-            calendar.events.add(e)
-            total_found += 1
-            print(f"✅ Jogo adicionado: {e.name} - {e.begin}")
-
-        except Exception as ex:
-            print(f"⚠️ Erro ao processar card: {ex}")
-
-finally:
-    driver.quit()
-
-# Gera o arquivo ICS
 with open("calendar.ics", "w", encoding="utf-8") as f:
     f.writelines(calendar)
 
-print(f"🔹 calendar.ics gerado com sucesso! Total de jogos adicionados: {total_found}")
+print(f"🗓️ Arquivo calendar.ics gerado com {total} jogos de times brasileiros para {today}")
