@@ -24,7 +24,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y chromium-browser chromium-chromedriver
           python -m pip install --upgrade pip
-          pip install ics requests beautifulsoup4 selenium pytz
+          pip install ics selenium pytz webdriver-manager
 
       - name: Rodar generate_ics.py
         run: python generate_ics.py
@@ -38,3 +38,14 @@ jobs:
           git add calendar.ics
           git commit -m "Atualizar ICS HLTV" || echo "Nada para commitar"
           git push https://$PAT_TOKEN@github.com/otaviozanon/esportCalendar.git main
+
+      - name: Publicar no GitHub Pages
+        run: |
+          # Criar branch gh-pages temporário
+          git checkout --orphan gh-pages
+          git rm -rf .
+          cp ../calendar.ics .
+          git add calendar.ics
+          git commit -m "Atualizar ICS HLTV"
+          git push -f https://$PAT_TOKEN@github.com/otaviozanon/esportCalendar.git gh-pages
+          git checkout main
