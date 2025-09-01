@@ -69,13 +69,16 @@ jobs:
 
       - name: Commit e publicar calendar.ics
         run: |
+          git status
+          git diff calendar.ics || true
+      
           if [[ `git status --porcelain` ]]; then
             git config --global user.name "github-actions"
             git config --global user.email "actions@github.com"
-
+      
             git add calendar.ics
             git commit -m "Atualizar ICS HLTV"
             git push
           else
             echo "Nenhuma mudança detectada."
-            fi
+          fi
