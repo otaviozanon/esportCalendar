@@ -7,8 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
-from datetime import datetime
-import time
+from datetime import datetime, timedelta
 import re
 
 # Lista de times brasileiros
@@ -28,7 +27,7 @@ try:
 
     # Espera até 15s pelo carregamento do primeiro card
     WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "div[class*='MatchCard']"))
+        EC.presence_of_element_located((By.CSS_SELECTOR, "div"))
     )
     print("🔹 Cards carregados no site.")
 
@@ -38,9 +37,11 @@ finally:
 
 soup = BeautifulSoup(html, "html.parser")
 
-# Seleciona todos os cards que contenham pelo menos um time brasileiro
+# Lista para armazenar os cards relevantes
 cards = []
-for div in soup.find_all("div", class_=re.compile("MatchCard")):
+
+# Procura todos os divs e verifica se contêm algum time brasileiro
+for div in soup.find_all("div"):
     text = div.get_text(" ", strip=True)
     if any(team in text for team in BRAZILIAN_TEAMS):
         cards.append(div)
@@ -51,30 +52,24 @@ calendar = Calendar()
 
 for card in cards:
     try:
-        # Extrai os times do jogo
-        teams = [t.get_text(strip=True) for t in card.find_all("span", class_=re.compile("team-name"))]
-        if not any(team in teams for team in BRAZILIAN_TEAMS):
-            continue  # ignora se nenhum time brasileiro estiver
-
-        # Extrai horário do jogo
-        time_div = card.find("div", class_=re.compile("match-time"))
-        if not time_div:
-            print(f"⚠️ Não foi possível encontrar horário no card: {' '.join(teams)}")
-            continue
-
-        time_text = time_div.get_text(strip=True)
-
-        # Formato esperado: "02:00 - 02/09/2025" ou similar
-        match = re.search(r"(\d{2}:\d{2})\s*-\s*(\d{2}/\d{2}/\d{4})", time_text)
+        # Extrai todos os times no texto do card
+        teams_in_card = []
+        for team in BRAZILIAN_TEAMS:
+            if team in card.get_text():
+                teams_in_card.append(team)
+        
+        # Extrai horário do jogo usando regex (HH:MM - DD/MM/YYYY)
+        text = card.get_text(" ", strip=True)
+        match = re.search(r"(\d{2}:\d{2})\s*[-–]\s*(\d{2}/\d{2}/\d{4})", text)
         if not match:
-            print(f"⚠️ Formato de horário inesperado: {time_text}")
+            print(f"⚠️ Horário não encontrado no card: {text}")
             continue
-
         time_str, date_str = match.groups()
         event_time = datetime.strptime(f"{date_str} {time_str}", "%d/%m/%Y %H:%M")
 
+        # Cria evento
         e = Event()
-        e.name = " vs ".join(teams)
+        e.name = " vs ".join(teams_in_card)
         e.begin = event_time
         e.duration = timedelta(hours=1)
         calendar.events.add(e)
