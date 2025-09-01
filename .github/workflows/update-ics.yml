@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Puxar o código do repositório
+      # 1️⃣ Checkout do repositório
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -30,13 +30,14 @@ jobs:
       - name: Generate ICS
         run: python generate_ics.py
 
-      # 5️⃣ Commit e push do arquivo .ics usando token automático
+      # 5️⃣ Commit e push do arquivo .ics usando GITHUB_TOKEN
       - name: Commit ICS
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add calendar.ics
           git diff-index --quiet HEAD || git commit -m "Atualizar ICS Draft5"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
