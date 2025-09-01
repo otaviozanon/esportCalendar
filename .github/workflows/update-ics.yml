@@ -3,7 +3,7 @@ name: Atualizar calendário HLTV
 on:
   schedule:
     - cron: '*/30 * * * *'  # 🔹 A cada 30 minutos
-  workflow_dispatch:
+  workflow_dispatch:          # 🔹 Permite execução manual
 
 permissions:
   contents: write
@@ -14,25 +14,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 🔹 Checkout do repositório completo
       - name: Checkout código
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0   # 🔹 pega histórico completo
+          fetch-depth: 0
 
+      # 🔹 Configurar Python 3.11
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
+      # 🔹 Instalar dependências
       - name: Instalar dependências Python
         run: |
           python -m pip install --upgrade pip
           pip install ics requests pytz
 
+      # 🔹 Executar script de atualização do ICS
       - name: Executar script generate_ics.py
         run: python generate_ics.py
 
+      # 🔹 Exibir status do Git e diferenças no calendar.ics
       - name: Verificar mudanças no calendar.ics
         run: |
           echo "📂 Status do Git:"
@@ -40,11 +45,12 @@ jobs:
           echo "🔍 Diferenças no calendar.ics:"
           git diff calendar.ics || true
 
+      # 🔹 Commit automático apenas se houver mudanças
       - name: Commit e publicar calendar.ics
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
-          git add -A
+          git add calendar.ics
           git commit -m "Atualizar ICS HLTV - $(date -u +"%Y-%m-%dT%H:%M:%SZ")" || echo "Sem mudanças para commitar"
           git push
