@@ -29,22 +29,19 @@ jobs:
       - name: Rodar generate_ics.py
         run: python generate_ics.py
 
-      - name: Commit calendar.ics usando PAT
-        env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+      - name: Configurar Git
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add calendar.ics
-          git commit -m "Atualizar ICS HLTV" || echo "Nada para commitar"
-          git push https://$PAT_TOKEN@github.com/otaviozanon/esportCalendar.git main
 
-      - name: Publicar no GitHub Pages
+      - name: Publicar calendar.ics no GitHub Pages
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           # Criar branch gh-pages temporário
           git checkout --orphan gh-pages
           git rm -rf .
-          cp ../calendar.ics .
+          cp calendar.ics .
           git add calendar.ics
           git commit -m "Atualizar ICS HLTV"
           git push -f https://$PAT_TOKEN@github.com/otaviozanon/esportCalendar.git gh-pages
