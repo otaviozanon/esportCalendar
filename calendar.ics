@@ -39,39 +39,4 @@ URL:https://www.hltv.org/events/7907/blast-open-london-2025
 
 END:VEVENT
 
-BEGIN:VEVENT
-
-BEGIN:VALARM
-
-ACTION:DISPLAY
-
-DESCRIPTION:
-
-TRIGGER:-PT15M
-
-END:VALARM
-
-CATEGORIES:Gaming,CS:GO
-
-DTSTAMP:20250831T200857Z
-
-DESCRIPTION: Spirit vs FURIA\n\n
- Event: BLAST Open London 2025\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 0-2\n Winner: FURIA
-
-DTEND:20250830T203538Z
-
-LOCATION:HLTV
-
-DTSTART:20250830T183000Z
-
-STATUS:CONFIRMED
-
-SUMMARY:[0-2] Spirit vs FURIA - BLAST Open London 2025
-
-UID:hltv-2384847@hltv.org
-
-URL:https://www.hltv.org/events/7907/blast-open-london-2025
-
-END:VEVENT
-
 END:VCALENDAR
