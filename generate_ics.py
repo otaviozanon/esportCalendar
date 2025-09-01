@@ -1,37 +1,91 @@
-import requests
-from ics import Calendar
-import re
-from datetime import datetime, timezone
+name: Atualizar calendário HLTV
 
-# --- Configurações ---
-BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
+on:
+  schedule:
+    # Todo dia às 06:00 UTC (~03:00 Brasília)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
 
-# Função para remover emojis e caracteres especiais
-def remove_emojis(text: str) -> str:
-    return re.sub(r'[^\x00-\x7F]+', '', text)
+permissions:
+  contents: write  # Permite push usando GITHUB_TOKEN
+  actions: read
 
-# Data/hora atual em UTC
-now_utc = datetime.now(timezone.utc)
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-# Baixar ICS oficial do HLTV.Events
-url = "https://calendar.hltv.events/events.ics"
-print(f"🔹 Baixando ICS oficial do HLTV.Events: {url}")
-response = requests.get(url)
-response.raise_for_status()
-print(f"🔹 Status code da requisição: {response.status_code}")
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-source_calendar = Calendar(response.text)
-my_calendar = Calendar()
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
 
-# Filtrar eventos de times brasileiros **futuros**
-for event in source_calendar.events:
-    if any(team in event.name for team in BRAZILIAN_TEAMS) and event.begin > now_utc:
-        my_calendar.events.add(event)
-        print(f"✅ Adicionado: {remove_emojis(event.name)} em {event.begin}")
+      - name: Instalar dependências Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install ics requests pytz
 
-# Salvar ICS filtrado sem emojis
-with open("calendar.ics", "w", encoding="utf-8") as f:
-    for line in my_calendar.serialize_iter():
-        f.write(remove_emojis(line) + "\n")
+      - name: Gerar calendar.ics apenas com jogos futuros de times brasileiros (sem emojis)
+        run: |
+          python <<'EOF'
+          import requests
+          from ics import Calendar
+          import re
+          from datetime import datetime, timezone
 
-print("🔹 calendar.ics gerado com sucesso!")
+          BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
+
+          # Função para remover emojis e caracteres especiais
+          def remove_emojis(text: str) -> str:
+              return re.sub(r'[^\x00-\x7F]+', '', text)
+
+          # Data/hora atual em UTC
+          now_utc = datetime.now(timezone.utc)
+
+          # Baixar ICS oficial do HLTV.Events
+          url = "https://calendar.hltv.events/events.ics"
+          print(f"🔹 Baixando ICS oficial do HLTV.Events: {url}")
+          response = requests.get(url)
+          response.raise_for_status()
+          print(f"🔹 Status code da requisição: {response.status_code}")
+
+          source_calendar = Calendar(response.text)
+          my_calendar = Calendar()
+
+          # Filtrar eventos de times brasileiros futuros
+          for event in source_calendar.events:
+              if any(team in event.name for team in BRAZILIAN_TEAMS) and event.begin > now_utc:
+                  my_calendar.events.add(event)
+                  print(f"✅ Adicionado: {remove_emojis(event.name)} em {event.begin}")
+
+          # Salvar ICS filtrado sem emojis
+          with open("calendar.ics", "w", encoding="utf-8") as f:
+              for line in my_calendar.serialize_iter():
+                  f.write(remove_emojis(line) + "\n")
+
+          print("🔹 calendar.ics gerado com sucesso!")
+          EOF
+
+      - name: Commit e publicar calendar.ics direto na main
+        run: |
+          if [[ `git status --porcelain` ]]; then
+            echo "🔹 Configurando Git user"
+            git config --global user.name "github-actions"
+            git config --global user.email "actions@github.com"
+
+            echo "🔹 Adicionando calendar.ics"
+            git add calendar.ics
+
+            echo "🔹 Commitando alterações"
+            git commit -m "Atualizar ICS HLTV"
+
+            echo "🔹 Push para main"
+            git push
+          else
+            echo "Nenhuma mudança detectada."
+          fi
