@@ -14,7 +14,7 @@ calendar = Calendar()
 async def fetch_matches():
     total_games = 0
     async with Hltv() as hltv:
-        matches = await hltv.upcoming_matches()
+        matches = await hltv.get_matches(days=7)  # Obtém partidas para os próximos 7 dias
         print(f"🔹 {len(matches)} partidas encontradas no HLTV")
 
         for idx, match in enumerate(matches, start=1):
