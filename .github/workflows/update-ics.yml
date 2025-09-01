@@ -84,3 +84,4 @@ jobs:
             git push
           else
             echo "Nenhuma mudança detectada."
+            fi
