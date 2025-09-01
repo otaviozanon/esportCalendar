@@ -57,19 +57,13 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit e publicar calendar.ics
+      - name: Commit e publicar calendar.ics direto na main
         env:
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          # Entrar na branch gh-pages (cria se não existir)
-          git checkout gh-pages || git checkout --orphan gh-pages
-
           # Adicionar e commitar apenas calendar.ics
           git add calendar.ics
           git commit -m "Atualizar ICS HLTV" || echo "Nada para commitar"
 
-          # Push para gh-pages
-          git push https://$PAT_TOKEN@github.com/${{ github.repository }}.git gh-pages
-
-          # Voltar para main
-          git checkout main
+          # Push para main usando PAT
+          git push https://$PAT_TOKEN@github.com/${{ github.repository }}.git main
