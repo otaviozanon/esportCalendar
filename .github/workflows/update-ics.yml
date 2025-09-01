@@ -6,20 +6,26 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write  # Permite push usando GITHUB_TOKEN
+  actions: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checar código
-        uses: actions/checkout@v3
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configurar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
-      - name: Instalar dependências
+      - name: Instalar dependências Python
         run: |
           python -m pip install --upgrade pip
           pip install ics requests pytz
@@ -53,23 +59,20 @@ jobs:
           EOF
 
       - name: Commit e publicar calendar.ics direto na main
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          echo "🔹 Git status antes de commitar"
-          git status
+          if [[ `git status --porcelain` ]]; then
+            echo "🔹 Configurando Git user"
+            git config --global user.name "github-actions"
+            git config --global user.email "actions@github.com"
 
-          echo "🔹 Configurando Git user"
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            echo "🔹 Adicionando calendar.ics"
+            git add calendar.ics
 
-          echo "🔹 Adicionando calendar.ics"
-          git add calendar.ics
+            echo "🔹 Commitando alterações"
+            git commit -m "Atualizar ICS HLTV"
 
-          echo "🔹 Commitando alterações"
-          git commit -m "Atualizar ICS HLTV" || echo "Nada para commitar"
-
-          echo "🔹 Tentando push usando GH_TOKEN"
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          git push origin main
-          echo "🔹 Push finalizado"
+            echo "🔹 Push para main"
+            git push
+          else
+            echo "Nenhuma mudança detectada."
+          fi
