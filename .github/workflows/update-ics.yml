@@ -52,9 +52,7 @@ jobs:
           print("🔹 calendar.ics gerado com sucesso!")
           EOF
 
-      - name: Commit e publicar calendar.ics direto na main com logs detalhados
-        env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+      - name: Commit e publicar calendar.ics direto na main
         run: |
           echo "🔹 Git status antes de commitar"
           git status
@@ -62,7 +60,6 @@ jobs:
           echo "🔹 Configurando Git user"
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local --list
 
           echo "🔹 Adicionando calendar.ics"
           git add calendar.ics
@@ -70,12 +67,7 @@ jobs:
           echo "🔹 Commitando alterações"
           git commit -m "Atualizar ICS HLTV" || echo "Nada para commitar"
 
-          echo "🔹 Verificando remote URL"
-          git remote -v
-
-          echo "🔹 Tentando push usando PAT"
-          set -x  # habilita print dos comandos
-          git push https://$PAT_TOKEN@github.com/${{ github.repository }}.git main
-          set +x
+          echo "🔹 Tentando push usando GITHUB_TOKEN"
+          git push origin main
 
           echo "🔹 Push finalizado"
