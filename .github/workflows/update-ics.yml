@@ -37,7 +37,8 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add calendar.ics
           git diff-index --quiet HEAD || git commit -m "Atualizar ICS Draft5"
+          # Atualiza o remote para usar o token
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-          git push
+          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
