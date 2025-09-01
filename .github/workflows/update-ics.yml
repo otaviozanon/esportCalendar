@@ -2,7 +2,7 @@ name: Atualizar calendário HLTV
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # A cada 30 minutos
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -69,7 +69,7 @@ jobs:
 
       - name: Commit e publicar calendar.ics
         run: |
-          if [[ $(git status --porcelain) ]]; then
+          if [[ `git status --porcelain` ]]; then
             git config --global user.name "github-actions"
             git config --global user.email "actions@github.com"
 
@@ -78,4 +78,4 @@ jobs:
             git push
           else
             echo "Nenhuma mudança detectada."
-          fi
+            fi
