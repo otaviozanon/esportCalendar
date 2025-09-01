@@ -2,9 +2,11 @@ import requests
 from ics import Calendar
 import re
 from datetime import datetime, timezone
+import pytz
 
 # --- Configurações ---
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
+BR_TZ = pytz.timezone('America/Sao_Paulo')  # Fuso horário de Curitiba
 
 def remove_emojis(text: str) -> str:
     return re.sub(r'[^\x00-\x7F]+', '', text)
@@ -24,18 +26,19 @@ my_calendar = Calendar()
 event_count = 0
 
 for event in source_calendar.events:
-    event_name_clean = remove_emojis(event.name)
-    print(f"🔸 Evento encontrado: {event_name_clean} - {event.begin}")
+    print(f"🔸 Evento encontrado: {remove_emojis(event.name)} - {event.begin}")
 
+    # Garantir que begin tenha timezone
     event_time = event.begin
     if event_time.tzinfo is None:
         event_time = event_time.replace(tzinfo=timezone.utc)
 
-    # Filtro case-insensitive para times brasileiros
-    matching_teams = [team for team in BRAZILIAN_TEAMS if team.lower() in event.name.lower()]
-    if matching_teams and event_time > now_utc:
+    # Converter para o fuso horário de Curitiba
+    event_time_br = event_time.astimezone(BR_TZ)
+
+    if any(team in event.name for team in BRAZILIAN_TEAMS) and event_time_br > now_utc:
         my_calendar.events.add(event)
-        print(f"✅ Adicionado: {event_name_clean} (times: {matching_teams}) em {event_time}")
+        print(f"✅ Adicionado: {remove_emojis(event.name)} em {event_time_br}")
         event_count += 1
 
 if event_count == 0:
