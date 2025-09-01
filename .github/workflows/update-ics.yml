@@ -19,12 +19,10 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Instalar dependências
+      - name: Instalar dependências Python
         run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium-chromedriver
           python -m pip install --upgrade pip
-          pip install ics selenium pytz webdriver-manager
+          pip install ics requests beautifulsoup4 pytz
 
       - name: Rodar generate_ics.py
         run: python generate_ics.py
