@@ -4,7 +4,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 from ics import Calendar, Event
 from datetime import datetime, timedelta
 import pytz
@@ -22,13 +21,14 @@ chrome_options = Options()
 chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--remote-debugging-port=9222")  # evita DevToolsActivePort
 chrome_options.add_argument(
     "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36"
 )
-# Indica o binário do Chromium no Ubuntu runner
 chrome_options.binary_location = "/usr/bin/chromium-browser"
 
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
 
 total_games = 0
 print(f"🔹 Buscando jogos de {date_range[0]} até {date_range[-1]}")
