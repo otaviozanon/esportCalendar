@@ -2,7 +2,7 @@ name: Atualizar calendário HLTV
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/30 * * * *'  # A cada 30 minutos
   workflow_dispatch:
 
 permissions:
@@ -17,7 +17,11 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
         with:
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Atualizar branch local com a main remota
+        run: git pull origin main
 
       - name: Configurar Python
         uses: actions/setup-python@v5
@@ -29,56 +33,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install ics requests pytz
 
-      - name: Gerar calendar.ics apenas com jogos futuros de times brasileiros (sem emojis)
+      - name: Executar script generate_ics.py
+        run: python generate_ics.py
+
+      - name: Verificar mudanças no calendar.ics
         run: |
-          python <<'EOF'
-          import requests
-          from ics import Calendar
-          import re
-          from datetime import datetime, timezone
-
-          BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
-
-          # Função para remover emojis e caracteres especiais
-          def remove_emojis(text: str) -> str:
-              return re.sub(r'[^\x00-\x7F]+', '', text)
-
-          now_utc = datetime.now(timezone.utc)
-
-          url = "https://calendar.hltv.events/events.ics"
-          response = requests.get(url)
-          response.raise_for_status()
-
-          source_calendar = Calendar(response.text)
-          my_calendar = Calendar()
-
-          for event in source_calendar.events:
-              if event.begin is None:
-                  continue
-              event_time = event.begin
-              if event_time.tzinfo is None:
-                  event_time = event_time.replace(tzinfo=timezone.utc)
-              if any(team in event.name for team in BRAZILIAN_TEAMS) and event_time > now_utc:
-                  my_calendar.events.add(event)
-
-          # Salvar na raiz da branch main para GitHub Pages
-          with open("calendar.ics", "w", encoding="utf-8") as f:
-              for line in my_calendar.serialize_iter():
-                  f.write(remove_emojis(line) + "\n")
-          EOF
+          echo "📂 Status do Git:"
+          git status
+          echo "🔍 Diferenças no calendar.ics:"
+          git diff calendar.ics || true
 
       - name: Commit e publicar calendar.ics
         run: |
-          git status
-          git diff calendar.ics || true
-      
-          if [[ `git status --porcelain` ]]; then
+          if [[ $(git status --porcelain) ]]; then
             git config --global user.name "github-actions"
             git config --global user.email "actions@github.com"
-      
+
             git add calendar.ics
             git commit -m "Atualizar ICS HLTV"
             git push
           else
-            echo "Nenhuma mudança detectada."
+            echo "✅ Nenhuma mudança detectada. Nenhum commit necessário."
           fi
