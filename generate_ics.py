@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import pytz
 
 # --- Configurações ---
-BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
+BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids", "BLUEJAYS"]
 BR_TZ = pytz.timezone('America/Sao_Paulo')  # Fuso horário de Curitiba
 
 def remove_emojis(text: str) -> str:
