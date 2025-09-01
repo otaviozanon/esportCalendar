@@ -19,14 +19,36 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Instalar dependências Python
+      - name: Instalar dependências
         run: |
-            python -m pip install --upgrade pip
-            pip install ics pytz hltv-async-api
+          python -m pip install --upgrade pip
+          pip install ics requests pytz
 
+      - name: Gerar calendar.ics apenas com times brasileiros
+        run: |
+          python <<'EOF'
+          import requests
+          from ics import Calendar, Event
 
-      - name: Rodar generate_ics.py
-        run: python generate_ics.py
+          BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
+
+          url = "https://calendar.hltv.events/events.ics"
+          response = requests.get(url)
+          response.raise_for_status()
+
+          source_calendar = Calendar(response.text)
+          my_calendar = Calendar()
+
+          for event in source_calendar.events:
+              if any(team in event.name for team in BRAZILIAN_TEAMS):
+                  my_calendar.events.add(event)
+                  print(f"✅ Adicionado: {event.name} em {event.begin}")
+
+          with open("calendar.ics", "w", encoding="utf-8") as f:
+              f.writelines(my_calendar.serialize_iter())
+
+          print("🔹 calendar.ics gerado com sucesso!")
+          EOF
 
       - name: Configurar Git
         run: |
@@ -43,5 +65,5 @@ jobs:
           cp calendar.ics .
           git add calendar.ics
           git commit -m "Atualizar ICS HLTV"
-          git push -f https://$PAT_TOKEN@github.com/otaviozanon/esportCalendar.git gh-pages
+          git push -f https://$PAT_TOKEN@github.com/${{ github.repository }}.git gh-pages
           git checkout main
