@@ -5,6 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
 import re
@@ -23,47 +24,68 @@ try:
     url = "https://draft5.gg/proximas-partidas"
     print(f"🔹 Acessando URL: {url}")
     driver.get(url)
-    WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+    # Espera até pelo menos um card aparecer
+    WebDriverWait(driver, 15).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "div[class*='MatchCard']"))
+    )
+
     html = driver.page_source
 finally:
     driver.quit()
 
-# Extrai apenas o texto da página
-text = html.replace("\n", " ").replace("\r", " ")
+soup = BeautifulSoup(html, "html.parser")
 
-# Regex adaptada ao formato real do site
-pattern = r"([A-Za-z0-9\s]+?)\s0\s([A-Za-z0-9\s]+?)\s0.*?(\d{2}/\d{2}(?:/\d{4})?)\s(\d{2}:\d{2})"
-
-matches = re.findall(pattern, text)
-print(f"🔹 Total de jogos encontrados: {len(matches)}")
+# Seleciona todos os cards de partida
+cards = soup.find_all("div", class_=re.compile("MatchCard"))
 
 calendar = Calendar()
+total_found = 0
 
-for m in matches:
-    team1, team2, date_str, time_str = m
-    team1 = team1.strip()
-    team2 = team2.strip()
+for card in cards:
+    try:
+        text = card.get_text(" ", strip=True)
 
-    # Ignora se nenhum time brasileiro estiver no jogo
-    if not any(team in [team1, team2] for team in BRAZILIAN_TEAMS):
-        continue
+        # Extrai times (simplesmente os nomes antes do primeiro e segundo "0")
+        match_teams = re.findall(r"([A-Za-z0-9\s]+?)\s0\s([A-Za-z0-9\s]+?)\s0", text)
+        if not match_teams:
+            continue
+        team1, team2 = match_teams[0]
+        team1 = team1.strip()
+        team2 = team2.strip()
 
-    # Adiciona ano atual se não vier no texto
-    if len(date_str.split("/")) == 2:
-        year = datetime.now().year
-        date_str += f"/{year}"
+        # Filtra apenas se tiver pelo menos um time brasileiro
+        if not any(team in [team1, team2] for team in BRAZILIAN_TEAMS):
+            continue
 
-    event_time = datetime.strptime(f"{date_str} {time_str}", "%d/%m/%Y %H:%M")
+        # Extrai horário (ex.: "02/09/2025 17:00" ou "02/09 17:00")
+        match_time = re.search(r"(\d{2}/\d{2}(?:/\d{4})?)\s(\d{2}:\d{2})", text)
+        if not match_time:
+            print(f"⚠️ Horário não encontrado para o jogo: {team1} vs {team2}")
+            continue
 
-    e = Event()
-    e.name = f"{team1} vs {team2}"
-    e.begin = event_time
-    e.duration = timedelta(hours=1)
-    calendar.events.add(e)
-    print(f"✅ Jogo adicionado: {e.name} - {e.begin}")
+        date_str, time_str = match_time.groups()
 
-# Salva o .ics
+        # Adiciona ano atual se não vier
+        if len(date_str.split("/")) == 2:
+            year = datetime.now().year
+            date_str += f"/{year}"
+
+        event_time = datetime.strptime(f"{date_str} {time_str}", "%d/%m/%Y %H:%M")
+
+        # Cria evento
+        e = Event()
+        e.name = f"{team1} vs {team2}"
+        e.begin = event_time
+        e.duration = timedelta(hours=1)
+        calendar.events.add(e)
+        total_found += 1
+        print(f"✅ Jogo adicionado: {e.name} - {e.begin}")
+
+    except Exception as ex:
+        print(f"⚠️ Erro ao processar card: {text}\n{ex}")
+
 with open("calendar.ics", "w", encoding="utf-8") as f:
     f.writelines(calendar)
 
-print("🔹 calendar.ics gerado com sucesso!")
+print(f"🔹 calendar.ics gerado com sucesso! Total de jogos adicionados: {total_found}")
