@@ -16,9 +16,9 @@ TRIGGER:-PT15M
 
 END:VALARM
 
-CATEGORIES:CS:GO,Gaming
+CATEGORIES:Gaming,CS:GO
 
-DTSTAMP:20250903T192036Z
+DTSTAMP:20250903T221705Z
 
 DESCRIPTION: Spirit vs FURIA\n\n
  Event: BLAST Open London 2025\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 0-2\n Winner: FURIA
@@ -51,9 +51,9 @@ TRIGGER:-PT15M
 
 END:VALARM
 
-CATEGORIES:CS:GO,Gaming
+CATEGORIES:Gaming,CS:GO
 
-DTSTAMP:20250903T192036Z
+DTSTAMP:20250903T221705Z
 
 DESCRIPTION: MOUZ vs FURIA\n\n
  Event: BLAST Open London 2025\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 0-2\n Winner: FURIA
@@ -86,9 +86,9 @@ TRIGGER:-PT15M
 
 END:VALARM
 
-CATEGORIES:CS:GO,Gaming
+CATEGORIES:Gaming,CS:GO
 
-DTSTAMP:20250903T192036Z
+DTSTAMP:20250903T221705Z
 
 DESCRIPTION: FURIA vs FaZe/G2 winner\n\n
  Event: BLAST Open London 2025 Finals\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Match starting soon!
@@ -110,4 +110,4 @@ URL:https://www.hltv.org/events/7912/blast-open-london-2025-finals
 END:VEVENT
 
 END:VCALENDAR
-X-GENERATED-TIME:2025-09-03T21:39:28.744333+00:00
+X-GENERATED-TIME:2025-09-03T22:22:19.164731+00:00
