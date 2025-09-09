@@ -14,7 +14,7 @@ warnings.filterwarnings(
 )
 
 # --- Configurações ---
-BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "O PLANO", "Sharks", "RED Canids"]
+BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "Sharks", "RED Canids", "Legacy", "ODDIK"]
 BR_TZ = pytz.timezone('America/Sao_Paulo')  # Fuso horário de Curitiba
 MAX_AGE_DAYS = 30  # Jogos com mais de 30 dias serão removidos
 
