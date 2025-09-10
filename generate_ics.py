@@ -27,67 +27,71 @@ def fetch_json(url):
 
 # --- Buscar eventos ---
 print(f"🔍 Buscando eventos...")
-events = fetch_json(f"{API_BASE}/events/search/all")  # "all" para pegar todos
-if not events:
-    events = []
-
+search_data = fetch_json(f"{API_BASE}/events/search/all")
+events = search_data.get("results", []) if search_data else []
 print(f"📦 {len(events)} eventos encontrados")
 
 added_count = 0
 
-for event in events:
+for event_summary in events:
     try:
-        event_id = event.get("id")
-        event_name = event.get("name", "Unknown Event")
-        print(f"\n🔹 Processando evento: {event_name} (ID: {event_id})")
+        event_id = event_summary.get("id")
+        event_name = event_summary.get("name", "Unknown Event")
+        event_url = event_summary.get("eventMatchesUrl", "#")
+        print(f"\n🔹 Processando evento: {event_name} (ID: {event_id}) | URL: {event_url}")
 
-        event_profile = fetch_json(f"{API_BASE}/events/{event_id}/profile")
-        if not event_profile:
+        profile_data = fetch_json(f"{API_BASE}/events/{event_id}/profile")
+        if not profile_data:
             continue
 
-        matches = event_profile.get("matches", [])
-        print(f"📦 {len(matches)} partidas encontradas no evento {event_name}")
+        event_profile = profile_data.get("eventProfile", {})
+        teams = event_profile.get("teams", [])
+        evps = event_profile.get("evps", [])
 
-        for match in matches:
+        # Mapear nomes de times
+        event_team_names = [team.get("names", [team.get("name", "")])[0] for team in teams]
+
+        # Filtrar times BR no evento
+        br_teams_in_event = [t for t in event_team_names if any(br.lower() in t.lower() for br in BRAZILIAN_TEAMS)]
+        if not br_teams_in_event:
+            print(f"⏭️ Nenhum time BR neste evento")
+            continue
+
+        # Criar evento ICS por partida/evp
+        for evp in evps:
             try:
-                team1 = match.get("team1", {}).get("name", "TBD")
-                team2 = match.get("team2", {}).get("name", "TBD")
-                time_str = match.get("date")
-                url = match.get("url", f"https://www.hltv.org/matches/{match.get('id')}")
+                match_id = evp.get("id")
+                match_name = evp.get("nickname", f"Partida {match_id}")
+                match_time_str = evp.get("eventStats")  # Pode precisar ajustar se houver datetime real
+                match_url = evp.get("eventStats", event_url)  # fallback
 
-                # Converter data/hora
+                # Tentar converter data/hora se disponível
                 try:
-                    match_time = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+                    match_time = datetime.fromisoformat(match_time_str.replace("Z", "+00:00"))
                 except Exception:
-                    match_time = datetime.fromtimestamp(int(time_str) / 1000, tz=timezone.utc)
+                    match_time = now_utc  # fallback: agora
 
                 if match_time < cutoff_time:
-                    print(f"⏭️ Ignorado: {team1} vs {team2} - partida antiga ({match_time})")
-                    continue
-
-                # Filtrar times BR
-                teams_lower = [team1.lower(), team2.lower()]
-                if not any(br.lower() in t for br in BRAZILIAN_TEAMS for t in teams_lower):
-                    print(f"⏭️ Ignorado: {team1} vs {team2} - nenhum time BR")
+                    print(f"⏭️ Ignorado: {match_name} - partida antiga ({match_time})")
                     continue
 
                 # Criar evento ICS
                 e = Event()
-                e.name = f"{team1} vs {team2} - {event_name}"
+                e.name = f"{match_name} - {event_name}"
                 e.begin = match_time.astimezone(BR_TZ)
                 e.end = e.begin + timedelta(hours=2)
-                e.description = f"Partida entre {team1} e {team2} no evento {event_name}"
-                e.url = url
+                e.description = f"Evento {event_name} | Times BR: {', '.join(br_teams_in_event)}"
+                e.url = match_url
 
                 cal.events.add(e)
                 added_count += 1
                 print(f"✅ Adicionado: {e.name} ({e.begin}) | URL: {e.url}")
 
             except Exception as e:
-                print(f"⚠️ Erro ao processar partida: {e}")
+                print(f"⚠️ Erro ao processar partida/evp: {e}")
 
     except Exception as e:
-        print(f"⚠️ Erro ao processar evento {event.get('id')}: {e}")
+        print(f"⚠️ Erro ao processar evento {event_summary}: {e}")
 
 # --- Salvar calendar.ics ---
 try:
