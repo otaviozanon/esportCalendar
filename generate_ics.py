@@ -22,7 +22,7 @@ def fetch_hltv_html(url):
         headers = {"User-Agent": "Mozilla/5.0"}
         resp = requests.get(url, headers=headers, timeout=20)
         resp.raise_for_status()
-        return BeautifulSoup(resp.text, "html.parser")
+        return BeautifulSoup(resp.text, "lxml")
     except Exception as e:
         print(f"❌ Erro ao acessar HLTV: {e}")
         return None
@@ -30,18 +30,17 @@ def fetch_hltv_html(url):
 def extract_matches(soup):
     matches_list = []
 
-    # Tenta os blocos normais
+    # Encontrar blocos de partidas
     matches_divs = soup.find_all("div", class_="upcomingMatch")
-    if not matches_divs:
-        matches_divs = soup.find_all("div", class_="match")  # fallback genérico
-
-    print(f"📦 {len(matches_divs)} partidas encontradas no HTML")
-
-    for match_div in matches_divs:
+    print(f"📦 Encontrados {len(matches_divs)} blocos de partidas no HTML")
+    
+    for idx, match_div in enumerate(matches_divs, start=1):
         try:
+            # Extrair times
             team1_tag = match_div.find(lambda tag: tag.name == "div" and "team1" in tag.get("class", []))
             team2_tag = match_div.find(lambda tag: tag.name == "div" and "team2" in tag.get("class", []))
             if not team1_tag or not team2_tag:
+                print(f"⚠️ Bloco {idx}: times não encontrados")
                 continue
             team1 = team1_tag.get_text(strip=True)
             team2 = team2_tag.get_text(strip=True)
@@ -49,10 +48,9 @@ def extract_matches(soup):
             # Timestamp
             time_tag = match_div.find(lambda tag: tag.name == "div" and "matchTime" in tag.get("class", []))
             if not time_tag or not time_tag.has_attr("data-unix"):
+                print(f"⚠️ Bloco {idx}: horário não encontrado")
                 continue
             match_time = datetime.utcfromtimestamp(int(time_tag["data-unix"])/1000)
-            if match_time < cutoff_time:
-                continue
 
             # Evento
             event_tag = match_div.find(lambda tag: tag.name == "div" and "event" in tag.get("class", []))
@@ -69,28 +67,16 @@ def extract_matches(soup):
                 "event": event_name,
                 "url": url
             })
+            print(f"🔍 Bloco {idx}: {team1} vs {team2} - {event_name} | {match_time} | URL: {url}")
+
         except Exception as e:
-            print(f"⚠️ Erro ao processar bloco de partida: {e}")
+            print(f"⚠️ Erro ao processar bloco {idx}: {e}")
 
     return matches_list
 
 # --- Buscar HTML principal ---
 soup = fetch_hltv_html(HLTV_MATCHES_URL)
 all_matches = extract_matches(soup) if soup else []
-
-# --- Fallback: procurar partidas de times BR em links de eventos não capturados ---
-try:
-    soup_full = fetch_hltv_html(HLTV_MATCHES_URL)
-    if soup_full:
-        links = [a["href"] for a in soup_full.find_all("a", href=True)]
-        for link in links:
-            if "/matches/" in link and not link.startswith("http"):
-                event_soup = fetch_hltv_html("https://www.hltv.org" + link)
-                if event_soup:
-                    fallback_matches = extract_matches(event_soup)
-                    all_matches.extend(fallback_matches)
-except Exception as e:
-    print(f"⚠️ Erro no fallback de eventos: {e}")
 
 # --- Adicionar partidas BR ao calendar ---
 added_count = 0
@@ -105,6 +91,12 @@ for m in all_matches:
 
     # Filtrar apenas times BR
     if not any(br.lower() in team1.lower() or br.lower() in team2.lower() for br in BRAZILIAN_TEAMS):
+        print(f"⏭️ Ignorado: {team1} vs {team2} - nenhum time BR")
+        continue
+
+    # Ignorar partidas antigas
+    if match_time < cutoff_time:
+        print(f"⏭️ Ignorado: {team1} vs {team2} - partida antiga ({match_time})")
         continue
 
     # Evitar duplicatas
