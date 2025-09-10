@@ -1,4 +1,5 @@
-import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
@@ -18,18 +19,23 @@ dates = [today + timedelta(days=i) for i in range(6)]
 
 print(f"🕒 Agora (UTC): {today}")
 
+# Configurar Selenium headless
+options = Options()
+options.add_argument("--headless")
+options.add_argument("--disable-gpu")
+options.add_argument("--no-sandbox")
+driver = webdriver.Chrome(options=options)
+
 for date in dates:
     date_str = date.strftime('%Y-%m-%d')
     url = f"https://www.hltv.org/matches?selectedDate={date_str}"
     print(f"\n🔍 Buscando partidas para {date_str} em {url}...")
 
     try:
-        headers = {"User-Agent": "Mozilla/5.0"}  # evita bloqueio simples
-        resp = requests.get(url, headers=headers, timeout=10)
-        resp.raise_for_status()
-        soup = BeautifulSoup(resp.text, "lxml")
+        driver.get(url)
+        time.sleep(2)  # espera carregar JS
+        soup = BeautifulSoup(driver.page_source, "lxml")
 
-        # Cada bloco de partida
         match_blocks = soup.find_all("a", class_="a-reset")
         print(f"📦 {len(match_blocks)} partidas encontradas na página")
 
@@ -69,10 +75,11 @@ for date in dates:
             except Exception as e:
                 print(f"⚠️ Erro ao processar partida: {e}")
 
-        time.sleep(1)  # pequena pausa para evitar bloqueio
-
     except Exception as e:
         print(f"⚠️ Erro ao acessar {url}: {e}")
+
+# Fechar driver
+driver.quit()
 
 # --- Salvar calendar.ics ---
 try:
