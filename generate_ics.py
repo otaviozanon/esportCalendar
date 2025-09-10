@@ -20,7 +20,7 @@ today = datetime.utcnow()
 dates = [today + timedelta(days=i) for i in range(6)]
 print(f"🕒 Agora (UTC): {today}")
 
-# Configurar Selenium headless com webdriver-manager
+# Configurar Selenium headless
 options = Options()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
@@ -37,35 +37,38 @@ for date in dates:
         time.sleep(2)  # espera carregar JS
         soup = BeautifulSoup(driver.page_source, "lxml")
 
-        match_blocks = soup.find_all("a", class_="a-reset")
+        # Novo seletor de partidas
+        match_blocks = soup.find_all("div", class_="match-wrapper")
         print(f"📦 {len(match_blocks)} partidas encontradas na página")
 
         for match in match_blocks:
             try:
-                teams = match.find_all("div", class_="matchTeamName")
-                if len(teams) < 2:
+                team1_tag = match.find("div", class_="match-team team1").find("div", class_="match-teamname")
+                team2_tag = match.find("div", class_="match-team team2").find("div", class_="match-teamname")
+                if not team1_tag or not team2_tag:
                     continue
-                team1 = teams[0].text.strip()
-                team2 = teams[1].text.strip()
+                team1 = team1_tag.text.strip()
+                team2 = team2_tag.text.strip()
 
                 # Filtrar times BR
                 if not any(br.lower() in team1.lower() or br.lower() in team2.lower() for br in BRAZILIAN_TEAMS):
                     continue
 
-                event_name_tag = match.find("div", class_="matchEventName")
-                event_name = event_name_tag.text.strip() if event_name_tag else "Unknown Event"
+                event_tag = match.find("div", class_="match-event")
+                event_name = event_tag.text.strip() if event_tag else "Unknown Event"
 
-                time_tag = match.find("div", class_="matchTime")
+                time_tag = match.find("div", class_="match-time")
                 time_str = time_tag.text.strip() if time_tag else "00:00"
                 match_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
                 match_time = BR_TZ.localize(match_time)
 
-                match_url = "https://www.hltv.org" + match['href']
+                match_url_tag = match.find("a", class_="match-info")
+                match_url = "https://www.hltv.org" + match_url_tag['href'] if match_url_tag else url
 
                 e = Event()
                 e.name = f"{team1} vs {team2} - {event_name}"
                 e.begin = match_time
-                e.end = e.begin + timedelta(hours=2)  # duração estimada
+                e.end = e.begin + timedelta(hours=2)
                 e.description = f"Partida entre {team1} e {team2} no evento {event_name}"
                 e.url = match_url
 
@@ -79,10 +82,9 @@ for date in dates:
     except Exception as e:
         print(f"⚠️ Erro ao acessar {url}: {e}")
 
-# Fechar driver
 driver.quit()
 
-# --- Salvar calendar.ics ---
+# Salvar calendar.ics
 try:
     with open("calendar.ics", "w", encoding="utf-8") as f:
         f.writelines(cal.serialize_iter())
