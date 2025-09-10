@@ -10,25 +10,24 @@ BR_TZ = pytz.timezone("America/Sao_Paulo")
 
 cal = Calendar()
 now_utc = datetime.now(timezone.utc)
-start_of_year = datetime(now_utc.year, 1, 1, tzinfo=timezone.utc)
+current_year = now_utc.year
 
 print(f"🕒 Agora (UTC): {now_utc}")
-print(f"🗑️ Ignorando eventos com início antes de {start_of_year}")
+print(f"🔍 Buscando apenas eventos de {current_year}...")
 
 def fetch_json(url):
     try:
-        resp = requests.get(url, timeout=20)
+        resp = requests.get(url, timeout=10)  # timeout menor para evitar travar
         resp.raise_for_status()
         return resp.json()
     except Exception as e:
-        print(f"❌ Erro ao acessar {url}: {e}")
+        print(f"⚠️ Ignorado: erro ao acessar {url}: {e}")
         return None
 
-# --- Buscar eventos ---
-print(f"🔍 Buscando eventos...")
-search_data = fetch_json(f"{API_BASE}/events/search/all")
+# --- Buscar eventos do ano atual ---
+search_data = fetch_json(f"{API_BASE}/events/search/{current_year}")
 events = search_data.get("results", []) if search_data else []
-print(f"📦 {len(events)} eventos encontrados")
+print(f"📦 {len(events)} eventos encontrados para {current_year}")
 
 added_count = 0
 
@@ -41,6 +40,7 @@ for event_summary in events:
 
         profile_data = fetch_json(f"{API_BASE}/events/{event_id}/profile")
         if not profile_data:
+            print(f"⏭️ Ignorado: não foi possível obter profile do evento")
             continue
 
         event_profile = profile_data.get("eventProfile", {})
@@ -54,8 +54,8 @@ for event_summary in events:
         except Exception:
             start_date = now_utc  # fallback
 
-        if start_date < start_of_year:
-            print(f"⏭️ Ignorado: evento antes deste ano ({start_date})")
+        if start_date.year != current_year:
+            print(f"⏭️ Ignorado: evento não é deste ano ({start_date})")
             continue
 
         teams = event_profile.get("teams", [])
@@ -75,7 +75,7 @@ for event_summary in events:
             try:
                 match_id = evp.get("id")
                 match_name = evp.get("nickname", f"Partida {match_id}")
-                match_time_str = evp.get("eventStats")  # Pode precisar ajustar se houver datetime real
+                match_time_str = evp.get("eventStats")  # se tiver datetime real
                 match_url = evp.get("eventStats", event_url)  # fallback
 
                 try:
