@@ -39,12 +39,12 @@ jobs:
           sudo apt update
           sudo apt install -y wget unzip google-chrome-stable
 
-      # 🔹 Instalar Chromedriver compatível com o Chrome
+      # 🔹 Instalar Chromedriver (última versão estável)
       - name: Instalar Chromedriver
         run: |
-          CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
-          echo "Chrome version: $CHROME_VERSION"
-          wget -N "https://chromedriver.storage.googleapis.com/${CHROME_VERSION}/chromedriver_linux64.zip"
+          LATEST=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+          echo "Última versão estável do Chromedriver: $LATEST"
+          wget -N "https://chromedriver.storage.googleapis.com/${LATEST}/chromedriver_linux64.zip"
           unzip -o chromedriver_linux64.zip
           sudo mv chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
