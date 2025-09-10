@@ -33,10 +33,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install ics requests pytz beautifulsoup4 lxml
 
-      # 🔹 Executar script de atualização do ICS
+      # 🔹 Executar script de atualização do ICS (mostrar todos os logs)
       - name: Executar script generate_ics.py
         run: |
-          python generate_ics.py | grep -E "✅ Adicionado|📌"
+          python generate_ics.py
 
       # 🔹 Commit automático apenas se houver mudanças
       - name: Commit e publicar calendar.ics
