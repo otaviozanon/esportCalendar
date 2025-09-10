@@ -38,39 +38,24 @@ for idx, match in enumerate(matches, start=1):
         time_str = match.get("date")  # ISO ou timestamp
         url = match.get("url", f"https://www.hltv.org/matches/{match_id}")
 
-        print(f"\n🔹 Processando partida #{idx}: {team1} vs {team2} - {event_name}")
-        print(f"   Data raw: {time_str}")
-        print(f"   URL: {url}")
-
         # Converter data/hora
         match_time = None
         if time_str:
             try:
                 match_time = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
-                print(f"   Convertido ISO: {match_time}")
             except Exception:
                 try:
                     match_time = datetime.fromtimestamp(int(time_str) / 1000, tz=timezone.utc)
-                    print(f"   Convertido timestamp: {match_time}")
                 except Exception:
-                    print(f"⚠️ Não foi possível converter data da partida {match_id}")
-
-        if not match_time:
-            print(f"⏭️ Ignorando partida {match_id}: data inválida")
+                    continue
+        if not match_time or match_time < cutoff_time:
             continue
 
-        if match_time < cutoff_time:
-            print(f"⏭️ Ignorando partida antiga: {team1} vs {team2} ({match_time})")
-            continue
-
-        # Filtrar por times BR mais tolerante
+        # Filtrar apenas partidas com times BR
         teams_lower = [team1.lower(), team2.lower()]
         has_br_team = any(br.lower() in t for br in BRAZILIAN_TEAMS for t in teams_lower)
 
-        print(f"   Times BR presentes? {has_br_team}")
-
         if not has_br_team:
-            print(f"⏭️ Ignorando partida {match_id}: nenhum time brasileiro")
             continue
 
         # Criar evento ICS
@@ -83,7 +68,8 @@ for idx, match in enumerate(matches, start=1):
 
         cal.events.add(e)
         added_count += 1
-        print(f"✅ Adicionado: {e.name} ({e.begin})")
+        # Log apenas partidas BR adicionadas
+        print(f"✅ Adicionado: {e.name} ({e.begin}) | URL: {e.url}")
 
     except Exception as e:
         print(f"⚠️ Erro ao processar partida {match.get('id')}: {e}")
@@ -92,6 +78,6 @@ for idx, match in enumerate(matches, start=1):
 try:
     with open("calendar.ics", "w", encoding="utf-8") as f:
         f.writelines(cal.serialize_iter())
-    print(f"\n📌 {added_count} partidas salvas em calendar.ics")
+    print(f"\n📌 {added_count} partidas BR salvas em calendar.ics")
 except Exception as e:
     print(f"❌ Erro ao salvar calendar.ics: {e}")
