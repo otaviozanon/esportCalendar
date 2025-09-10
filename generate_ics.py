@@ -25,47 +25,59 @@ try:
     print(f"📦 {len(matches)} partidas recebidas")
 except Exception as e:
     print(f"⚠️ Erro ao buscar partidas: {e}")
-    matches = []  # continua sem cair
+    matches = []
 
 added_count = 0
 
-for match in matches:
+for idx, match in enumerate(matches, start=1):
     try:
         match_id = match.get("id")
         team1 = match.get("team1", {}).get("name", "TBD")
         team2 = match.get("team2", {}).get("name", "TBD")
         event_name = match.get("event", {}).get("name", "Unknown Event")
-        time_str = match.get("date")  # pode ser ISO ou timestamp
+        time_str = match.get("date")  # ISO ou timestamp
         url = match.get("url", f"https://www.hltv.org/matches/{match_id}")
+
+        print(f"\n🔹 Processando partida #{idx}: {team1} vs {team2} - {event_name}")
+        print(f"   Data raw: {time_str}")
+        print(f"   URL: {url}")
 
         # Converter data/hora
         match_time = None
         if time_str:
             try:
                 match_time = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+                print(f"   Convertido ISO: {match_time}")
             except Exception:
                 try:
                     match_time = datetime.fromtimestamp(int(time_str) / 1000, tz=timezone.utc)
+                    print(f"   Convertido timestamp: {match_time}")
                 except Exception:
                     print(f"⚠️ Não foi possível converter data da partida {match_id}")
 
         if not match_time:
+            print(f"⏭️ Ignorando partida {match_id}: data inválida")
             continue
 
         if match_time < cutoff_time:
-            print(f"⏭️ Ignorando partida antiga: {team1} vs {team2} em {event_name}")
+            print(f"⏭️ Ignorando partida antiga: {team1} vs {team2} ({match_time})")
             continue
 
-        # Filtrar por times BR
+        # Filtrar por times BR mais tolerante
         teams_lower = [team1.lower(), team2.lower()]
-        if not any(br.lower() in t for br in BRAZILIAN_TEAMS for t in teams_lower):
+        has_br_team = any(br.lower() in t for br in BRAZILIAN_TEAMS for t in teams_lower)
+
+        print(f"   Times BR presentes? {has_br_team}")
+
+        if not has_br_team:
+            print(f"⏭️ Ignorando partida {match_id}: nenhum time brasileiro")
             continue
 
         # Criar evento ICS
         e = Event()
         e.name = f"{team1} vs {team2} - {event_name}"
         e.begin = match_time.astimezone(BR_TZ)
-        e.end = e.begin + timedelta(hours=2)  # chute: partidas duram ~2h
+        e.end = e.begin + timedelta(hours=2)
         e.description = f"Partida entre {team1} e {team2} no evento {event_name}"
         e.url = url
 
