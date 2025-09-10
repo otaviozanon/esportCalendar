@@ -7,14 +7,13 @@ API_BASE = "https://hltv-json-api.fly.dev"
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
                    "Sharks", "RED Canids", "Legacy", "ODDIK"]
 BR_TZ = pytz.timezone("America/Sao_Paulo")
-MAX_AGE_DAYS = 30
 
 cal = Calendar()
 now_utc = datetime.now(timezone.utc)
-cutoff_time = now_utc - timedelta(days=MAX_AGE_DAYS)
+start_of_year = datetime(now_utc.year, 1, 1, tzinfo=timezone.utc)
 
 print(f"🕒 Agora (UTC): {now_utc}")
-print(f"🗑️ Ignorando partidas com início antes de {cutoff_time}")
+print(f"🗑️ Ignorando eventos com início antes de {start_of_year}")
 
 def fetch_json(url):
     try:
@@ -45,6 +44,20 @@ for event_summary in events:
             continue
 
         event_profile = profile_data.get("eventProfile", {})
+        start_date_str = event_profile.get("startDate")
+        if not start_date_str:
+            print(f"⏭️ Ignorado: sem startDate")
+            continue
+
+        try:
+            start_date = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
+        except Exception:
+            start_date = now_utc  # fallback
+
+        if start_date < start_of_year:
+            print(f"⏭️ Ignorado: evento antes deste ano ({start_date})")
+            continue
+
         teams = event_profile.get("teams", [])
         evps = event_profile.get("evps", [])
 
@@ -65,17 +78,11 @@ for event_summary in events:
                 match_time_str = evp.get("eventStats")  # Pode precisar ajustar se houver datetime real
                 match_url = evp.get("eventStats", event_url)  # fallback
 
-                # Tentar converter data/hora se disponível
                 try:
                     match_time = datetime.fromisoformat(match_time_str.replace("Z", "+00:00"))
                 except Exception:
                     match_time = now_utc  # fallback: agora
 
-                if match_time < cutoff_time:
-                    print(f"⏭️ Ignorado: {match_name} - partida antiga ({match_time})")
-                    continue
-
-                # Criar evento ICS
                 e = Event()
                 e.name = f"{match_name} - {event_name}"
                 e.begin = match_time.astimezone(BR_TZ)
