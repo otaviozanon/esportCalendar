@@ -31,23 +31,13 @@ jobs:
       - name: Instalar dependências Python
         run: |
           python -m pip install --upgrade pip
-          pip install ics requests pytz beautifulsoup4 lxml selenium
+          pip install ics requests pytz beautifulsoup4 lxml selenium webdriver-manager
 
       # 🔹 Instalar Google Chrome
       - name: Instalar Google Chrome
         run: |
           sudo apt update
-          sudo apt install -y wget unzip google-chrome-stable
-
-      # 🔹 Instalar Chromedriver (última versão estável)
-      - name: Instalar Chromedriver
-        run: |
-          LATEST=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-          echo "Última versão estável do Chromedriver: $LATEST"
-          wget -N "https://chromedriver.storage.googleapis.com/${LATEST}/chromedriver_linux64.zip"
-          unzip -o chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
-          sudo chmod +x /usr/local/bin/chromedriver
+          sudo apt install -y google-chrome-stable
 
       # 🔹 Executar script de atualização do ICS (mostrar todos os logs)
       - name: Executar script generate_ics.py
