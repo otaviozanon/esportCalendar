@@ -1,5 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
@@ -16,15 +18,14 @@ added_count = 0
 # Datas: hoje até 5 dias à frente
 today = datetime.utcnow()
 dates = [today + timedelta(days=i) for i in range(6)]
-
 print(f"🕒 Agora (UTC): {today}")
 
-# Configurar Selenium headless
+# Configurar Selenium headless com webdriver-manager
 options = Options()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
-driver = webdriver.Chrome(options=options)
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
 for date in dates:
     date_str = date.strftime('%Y-%m-%d')
