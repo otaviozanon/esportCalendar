@@ -1,101 +1,87 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-from ics import Calendar, Event
-from datetime import datetime, timedelta
+import os
+import requests
+from ics import Calendar
+import re
+from datetime import datetime, timezone, timedelta
 import pytz
+import warnings
 
-# -------------------- Configurações --------------------
-BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
-                   "Sharks", "RED Canids", "Legacy", "ODDIK"]
-BR_TZ = pytz.timezone("America/Sao_Paulo")
-cal = Calendar()
-added_count = 0
+# --- Suprimir FutureWarning específico do ics ---
+warnings.filterwarnings(
+    "ignore",
+    category=FutureWarning,
+    message=r"Behaviour of str\(Component\) will change in version 0.9.*"
+)
 
-# Datas: hoje até 5 dias à frente
-today = datetime.utcnow()
-dates = [today + timedelta(days=i) for i in range(6)]
-print(f"🕒 Agora (UTC): {today}")
+# --- Configurações ---
+BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "Sharks", "RED Canids", "Legacy", "ODDIK"]
+BR_TZ = pytz.timezone('America/Sao_Paulo')  # Fuso horário de Curitiba
+MAX_AGE_DAYS = 30  # Jogos com mais de 30 dias serão removidos
 
-# -------------------- Configurar Selenium --------------------
-options = Options()
-options.add_argument("--headless")
-options.add_argument("--disable-gpu")
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--window-size=1920,1080")
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-wait = WebDriverWait(driver, 15)  # espera máxima de 15s por elementos
+def remove_emojis(text: str) -> str:
+    return re.sub(r'[^\x00-\x7F]+', '', text)
 
-# -------------------- Coleta de partidas --------------------
-for date in dates:
-    date_str = date.strftime('%Y-%m-%d')
-    url = f"https://www.hltv.org/matches?selectedDate={date_str}"
-    print(f"\n🔍 Buscando partidas para {date_str} em {url}...")
+now_utc = datetime.now(timezone.utc)
+cutoff_time = now_utc - timedelta(days=MAX_AGE_DAYS)
 
-    try:
-        driver.get(url)
-        
-        # Espera pelo carregamento de qualquer bloco de partida
+print(f"🕒 Agora (UTC): {now_utc}")
+print(f"🗑️ Jogos anteriores a {cutoff_time} serão removidos.")
+
+# --- Baixar ICS oficial ---
+url = "https://calendar.hltv.events/events.ics"
+print(f"🔹 Baixando ICS oficial do HLTV.Events: {url}")
+response = requests.get(url)
+response.raise_for_status()
+source_calendar = Calendar(response.text)
+
+# --- Carregar calendar.ics antigo, se existir ---
+my_calendar = Calendar()
+if os.path.exists("calendar.ics"):
+    with open("calendar.ics", "r", encoding="utf-8") as f:
         try:
-            wait.until(EC.presence_of_element_located((By.CLASS_NAME, "match-zone-wrapper")))
-            print("✅ Blocos de partidas carregados")
-        except:
-            print("⚠️ Nenhum bloco de partidas carregado após espera")
+            # 🔹 Remove linhas inválidas (comentários) antes de parsear
+            cleaned_lines = [line for line in f.readlines() if not line.startswith(";")]
+            
+            # 🔹 Suporta múltiplos calendários
+            calendars = Calendar.parse_multiple("".join(cleaned_lines))
+            for cal in calendars:
+                my_calendar.events.update(cal.events)
 
-        zones = driver.find_elements(By.CLASS_NAME, "match-zone-wrapper")
-        print(f"📦 {len(zones)} blocos de partidas encontrados na página")
+            print("🔹 calendar.ics antigo carregado (mantendo eventos anteriores).")
+        except Exception as e:
+            print(f"⚠️ Não foi possível carregar o calendário antigo: {e}")
 
-        for zone_idx, zone in enumerate(zones, 1):
-            match_blocks = zone.find_elements(By.CLASS_NAME, "match-wrapper")
-            print(f"   🔹 Zona {zone_idx}: {len(match_blocks)} partidas")
+# --- Limpar eventos antigos (>30 dias) ---
+old_count = len(my_calendar.events)
+my_calendar.events = {
+    ev for ev in my_calendar.events
+    if ev.begin and ev.begin > cutoff_time
+}
+print(f"🧹 Removidos {old_count - len(my_calendar.events)} eventos antigos.")
 
-            for match_idx, match in enumerate(match_blocks, 1):
-                try:
-                    team1 = match.find_element(By.CSS_SELECTOR, "div.match-team.team1 > div.match-teamname").text.strip()
-                    team2 = match.find_element(By.CSS_SELECTOR, "div.match-team.team2 > div.match-teamname").text.strip()
+# --- Adicionar novos eventos ---
+added_count = 0
+for event in source_calendar.events:
+    event_name_clean = remove_emojis(event.name).lower()
+    event_time = event.begin
 
-                    if not any(br.lower() in team1.lower() or br.lower() in team2.lower() for br in BRAZILIAN_TEAMS):
-                        print(f"      ⚠️ Partida {match_idx}: Nenhum time BR ({team1} vs {team2})")
-                        continue
+    if event_time.tzinfo is None:
+        event_time = event_time.replace(tzinfo=timezone.utc)
 
-                    event_name = match.find_element(By.CLASS_NAME, "match-event").text.strip()
-                    time_str = match.find_element(By.CLASS_NAME, "match-time").text.strip()
-                    match_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-                    match_time = BR_TZ.localize(match_time)
+    if any(team.lower() in event_name_clean for team in BRAZILIAN_TEAMS):
+        # Evita duplicação pelo UID
+        if not any(ev.uid == event.uid for ev in my_calendar.events):
+            my_calendar.events.add(event)
+            event_time_br = event_time.astimezone(BR_TZ)
+            print(f"✅ Adicionado: {event_name_clean} em {event_time_br}")
+            added_count += 1
 
-                    match_url_tag = match.find_element(By.CSS_SELECTOR, "a.match-info")
-                    match_url = match_url_tag.get_attribute("href")
+print(f"📌 {added_count} novos eventos adicionados.")
 
-                    # Criar evento ICS
-                    e = Event()
-                    e.name = f"{team1} vs {team2} - {event_name}"
-                    e.begin = match_time
-                    e.end = e.begin + timedelta(hours=2)
-                    e.description = f"Partida entre {team1} e {team2} no evento {event_name}"
-                    e.url = match_url
+# --- Salvar calendar.ics atualizado ---
+with open("calendar.ics", "w", encoding="utf-8") as f:
+    for line in my_calendar.serialize_iter():
+        f.write(remove_emojis(line) + "\n")
+    f.write(f"X-GENERATED-TIME:{datetime.now(timezone.utc).isoformat()}\n")
 
-                    cal.events.add(e)
-                    added_count += 1
-                    print(f"      ✅ Adicionado: {e.name} ({e.begin}) | URL: {e.url}")
-
-                except Exception as e:
-                    print(f"      ⚠️ Erro ao processar partida {match_idx} na zona {zone_idx}: {e}")
-
-    except Exception as e:
-        print(f"⚠️ Erro ao acessar {url}: {e}")
-
-# -------------------- Finalizar --------------------
-driver.quit()
-
-# Salvar calendar.ics
-try:
-    with open("calendar.ics", "w", encoding="utf-8") as f:
-        f.writelines(cal.serialize_iter())
-    print(f"\n📌 {added_count} partidas BR salvas em calendar.ics")
-except Exception as e:
-    print(f"❌ Erro ao salvar calendar.ics: {e}")
+print("🔹 calendar.ics atualizado com eventos novos e antigos!")
