@@ -27,22 +27,16 @@ jobs:
         with:
           python-version: 3.11
 
-      # 🔹 Instalar dependências Python
+      # 🔹 Instalar dependências
       - name: Instalar dependências Python
         run: |
           python -m pip install --upgrade pip
-          pip install ics requests pytz beautifulsoup4 lxml selenium webdriver-manager
+          pip install ics requests pytz
 
-      # 🔹 Instalar Google Chrome
-      - name: Instalar Google Chrome
-        run: |
-          sudo apt update
-          sudo apt install -y google-chrome-stable
-
-      # 🔹 Executar script de atualização do ICS (mostrar todos os logs)
+      # 🔹 Executar script de atualização do ICS
       - name: Executar script generate_ics.py
         run: |
-          python generate_ics.py
+          python generate_ics.py | grep -E "✅ Adicionado|📌"
 
       # 🔹 Commit automático apenas se houver mudanças
       - name: Commit e publicar calendar.ics
