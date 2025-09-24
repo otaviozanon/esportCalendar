@@ -16,26 +16,26 @@ TRIGGER:-PT15M
 
 END:VALARM
 
-CATEGORIES:Gaming,CS:GO
+CATEGORIES:CS:GO,Gaming
 
-DTSTAMP:20250903T221705Z
+DTSTAMP:20250924T025626Z
 
-DESCRIPTION: Spirit vs FURIA\n\n
- Event: BLAST Open London 2025\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 0-2\n Winner: FURIA
+DESCRIPTION: FURIA vs Falcons\n\n
+ Event: FISSURE Playground 2\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 2-0\n Winner: FURIA
 
-DTEND:20250830T203538Z
+DTEND:20250920T181202Z
 
 LOCATION:HLTV
 
-DTSTART:20250830T183000Z
+DTSTART:20250920T160000Z
 
 STATUS:CONFIRMED
 
-SUMMARY:[0-2] Spirit vs FURIA - BLAST Open London 2025
+SUMMARY:[2-0] FURIA vs Falcons - FISSURE Playground 2
 
-UID:hltv-2384847@hltv.org
+UID:hltv-2385328@hltv.org
 
-URL:https://www.hltv.org/events/7907/blast-open-london-2025
+URL:https://www.hltv.org/events/8064/fissure-playground-2
 
 END:VEVENT
 
@@ -51,26 +51,26 @@ TRIGGER:-PT15M
 
 END:VALARM
 
-CATEGORIES:Gaming,CS:GO
+CATEGORIES:CS:GO,Gaming
 
-DTSTAMP:20250903T221705Z
+DTSTAMP:20250924T025626Z
 
-DESCRIPTION: MOUZ vs FURIA\n\n
- Event: BLAST Open London 2025\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 0-2\n Winner: FURIA
+DESCRIPTION: The MongolZ vs FURIA\n\n
+ Event: FISSURE Playground 2\n Rating: \n Format: Best of 5\n Maps to win: 3\n\n Final Result: 2-3\n Winner: FURIA
 
-DTEND:20250901T185411Z
+DTEND:20250921T205224Z
 
 LOCATION:HLTV
 
-DTSTART:20250901T164000Z
+DTSTART:20250921T150000Z
 
 STATUS:CONFIRMED
 
-SUMMARY:[0-2] MOUZ vs FURIA - BLAST Open London 2025
+SUMMARY:[2-3] The MongolZ vs FURIA - FISSURE Playground 2
 
-UID:hltv-2384850@hltv.org
+UID:hltv-2385329@hltv.org
 
-URL:https://www.hltv.org/events/7907/blast-open-london-2025
+URL:https://www.hltv.org/events/8064/fissure-playground-2
 
 END:VEVENT
 
@@ -86,28 +86,133 @@ TRIGGER:-PT15M
 
 END:VALARM
 
-CATEGORIES:Gaming,CS:GO
+CATEGORIES:CS:GO,Gaming
 
-DTSTAMP:20250903T221705Z
+DTSTAMP:20250924T025626Z
 
-DESCRIPTION: FURIA vs FaZe/G2 winner\n\n
- Event: BLAST Open London 2025 Finals\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Match starting soon!
+DESCRIPTION: Aurora vs FURIA\n\n
+ Event: FISSURE Playground 2\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 2-0\n Winner: Aurora
 
-DTEND:20250906T200000Z
+DTEND:20250915T204100Z
 
 LOCATION:HLTV
 
-DTSTART:20250906T170000Z
+DTSTART:20250915T185000Z
 
 STATUS:CONFIRMED
 
-SUMMARY:FURIA vs FaZe/G2 winner - BLAST Open London 2025 Finals
+SUMMARY:[2-0] Aurora vs FURIA - FISSURE Playground 2
 
-UID:hltv-2384855@hltv.org
+UID:hltv-2385313@hltv.org
 
-URL:https://www.hltv.org/events/7912/blast-open-london-2025-finals
+URL:https://www.hltv.org/events/8064/fissure-playground-2
+
+END:VEVENT
+
+BEGIN:VEVENT
+
+BEGIN:VALARM
+
+ACTION:DISPLAY
+
+DESCRIPTION:
+
+TRIGGER:-PT15M
+
+END:VALARM
+
+CATEGORIES:CS:GO,Gaming
+
+DTSTAMP:20250924T025626Z
+
+DESCRIPTION: FURIA vs G2\n\n
+ Event: FISSURE Playground 2\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 2-0\n Winner: FURIA
+
+DTEND:20250914T193636Z
+
+LOCATION:HLTV
+
+DTSTART:20250914T171500Z
+
+STATUS:CONFIRMED
+
+SUMMARY:[2-0] FURIA vs G2 - FISSURE Playground 2
+
+UID:hltv-2385304@hltv.org
+
+URL:https://www.hltv.org/events/8064/fissure-playground-2
+
+END:VEVENT
+
+BEGIN:VEVENT
+
+BEGIN:VALARM
+
+ACTION:DISPLAY
+
+DESCRIPTION:
+
+TRIGGER:-PT15M
+
+END:VALARM
+
+CATEGORIES:CS:GO,Gaming
+
+DTSTAMP:20250924T025626Z
+
+DESCRIPTION: FURIA vs Astralis\n\n
+ Event: FISSURE Playground 2\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 2-0\n Winner: FURIA
+
+DTEND:20250919T174956Z
+
+LOCATION:HLTV
+
+DTSTART:20250919T153500Z
+
+STATUS:CONFIRMED
+
+SUMMARY:[2-0] FURIA vs Astralis - FISSURE Playground 2
+
+UID:hltv-2385325@hltv.org
+
+URL:https://www.hltv.org/events/8064/fissure-playground-2
+
+END:VEVENT
+
+BEGIN:VEVENT
+
+BEGIN:VALARM
+
+ACTION:DISPLAY
+
+DESCRIPTION:
+
+TRIGGER:-PT15M
+
+END:VALARM
+
+CATEGORIES:CS:GO,Gaming
+
+DTSTAMP:20250924T025626Z
+
+DESCRIPTION: Falcons vs paiN\n\n
+ Event: FISSURE Playground 2\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 2-0\n Winner: Falcons
+
+DTEND:20250919T204551Z
+
+LOCATION:HLTV
+
+DTSTART:20250919T191000Z
+
+STATUS:CONFIRMED
+
+SUMMARY:[2-0] Falcons vs paiN - FISSURE Playground 2
+
+UID:hltv-2385326@hltv.org
+
+URL:https://www.hltv.org/events/8064/fissure-playground-2
 
 END:VEVENT
 
 END:VCALENDAR
-X-GENERATED-TIME:2025-09-24T01:55:38.101673+00:00
+X-GENERATED-TIME:2025-09-24T03:03:50.777746+00:00
