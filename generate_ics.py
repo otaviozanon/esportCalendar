@@ -2,10 +2,16 @@ import os
 import re
 import pytz
 import warnings
-import requests
-from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 from ics import Calendar, Event
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
+import time
+import random
 
 # --- Suprimir FutureWarning específico do ics ---
 warnings.filterwarnings(
@@ -20,12 +26,40 @@ BR_TZ = pytz.timezone("America/Sao_Paulo")
 MAX_AGE_DAYS = 30
 LIQUIPEDIA_URL = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
 
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
+]
+
 def remove_emojis(text: str) -> str:
     return re.sub(r"[^\x00-\x7F]+", "", text)
 
+def carregar_html_liquipedia(url: str):
+    """Carrega o HTML renderizado da Liquipedia usando Selenium."""
+    print(f"🌐 Acessando {url} via Selenium...")
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument(f"user-agent={random.choice(USER_AGENTS)}")
+    options.add_argument("--window-size=1920,1080")
+
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    try:
+        driver.get(url)
+        time.sleep(5)  # esperar o JS carregar
+        html = driver.page_source
+        print(f"✅ Página carregada ({len(html)} caracteres).")
+        return html
+    finally:
+        driver.quit()
+
+# --- Tempo e corte ---
 now_utc = datetime.now(timezone.utc)
 cutoff_time = now_utc - timedelta(days=MAX_AGE_DAYS)
-
 print(f"🕒 Agora (UTC): {now_utc}")
 print(f"🗑️ Jogos anteriores a {cutoff_time} serão removidos.")
 
@@ -47,13 +81,9 @@ old_count = len(my_calendar.events)
 my_calendar.events = {ev for ev in my_calendar.events if ev.begin and ev.begin > cutoff_time}
 print(f"🧹 Removidos {old_count - len(my_calendar.events)} eventos antigos.")
 
-# --- Scraping da Liquipedia ---
-print(f"🔹 Baixando dados da Liquipedia: {LIQUIPEDIA_URL}")
-headers = {"User-Agent": "Mozilla/5.0"}
-response = requests.get(LIQUIPEDIA_URL, headers=headers)
-response.raise_for_status()
-
-soup = BeautifulSoup(response.text, "html.parser")
+# --- Scraping via Selenium ---
+html = carregar_html_liquipedia(LIQUIPEDIA_URL)
+soup = BeautifulSoup(html, "html.parser")
 matches = soup.select("div.match-card")
 
 added_count = 0
@@ -66,7 +96,6 @@ for match in matches:
     if not teams or not time_elem:
         continue
 
-    # Extrai timestamp
     timestamp = time_elem.get("data-timestamp")
     if not timestamp:
         continue
@@ -75,12 +104,10 @@ for match in matches:
     except Exception:
         continue
 
-    # Filtro de tempo e times
     event_name = f"{teams[0]} vs {teams[1]}"
     if not any(team.lower() in event_name.lower() for team in BRAZILIAN_TEAMS):
         continue
 
-    # Cria evento ICS
     ev = Event()
     ev.name = remove_emojis(event_name)
     ev.begin = event_time_utc
