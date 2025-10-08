@@ -18,7 +18,7 @@ END:VALARM
 
 CATEGORIES:CS:GO,Gaming
 
-DTSTAMP:20251008T032606Z
+DTSTAMP:20251008T134441Z
 
 DESCRIPTION: FURIA vs Aurora\n\n
  Event: ESL Pro League Season 22\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 2-1\n Winner: FURIA
@@ -53,7 +53,7 @@ END:VALARM
 
 CATEGORIES:CS:GO,Gaming
 
-DTSTAMP:20251008T032606Z
+DTSTAMP:20251008T134441Z
 
 DESCRIPTION: FURIA vs G2\n\n
  Event: ESL Pro League Season 22\n Rating: \n Format: Best of 3\n Maps to win: 2\n\n Final Result: 0-2\n Winner: G2
@@ -75,4 +75,4 @@ URL:https://www.hltv.org/events/8040/esl-pro-league-season-22
 END:VEVENT
 
 END:VCALENDAR
-X-GENERATED-TIME:2025-10-08T13:34:27.944733+00:00
+X-GENERATED-TIME:2025-10-08T14:26:42.588800+00:00
