@@ -1,49 +1,40 @@
-name: Atualizar calendário HLTV
+name: Update ICS Calendar
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # 🔹 A cada 30 minutos
-  workflow_dispatch:          # 🔹 Permite execução manual
-
-permissions:
-  contents: write
-  actions: read
+    - cron: '*/45 * * * *'  # 🔹 A cada 45 minutos
+  workflow_dispatch:      # Permite rodar manualmente
 
 jobs:
-  build:
+  update:
     runs-on: ubuntu-latest
 
     steps:
-      # 🔹 Checkout do repositório completo
-      - name: Checkout código
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
 
-      # 🔹 Configurar Python 3.11
-      - name: Configurar Python
-        uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
-      # 🔹 Instalar dependências
-      - name: Instalar dependências Python
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ics requests pytz
+          pip install beautifulsoup4 requests ics pytz
 
-      # 🔹 Executar script de atualização do ICS
-      - name: Executar script generate_ics.py
+      - name: Generate updated calendar
         run: |
           python generate_ics.py | grep -E "✅ Adicionado|📌"
 
-      # 🔹 Commit automático apenas se houver mudanças
-      - name: Commit e publicar calendar.ics
+      - name: Commit and push if calendar.ics changed
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-
-          git add calendar.ics
-          git commit -m "Atualizar ICS HLTV - $(date -u +"%Y-%m-%dT%H:%M:%SZ")" || echo "Sem mudanças para commitar"
-          git push
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          if [[ `git status --porcelain` ]]; then
+            git add calendar.ics
+            git commit -m "🔄 Atualiza calendar.ics automaticamente"
+            git push
+          else
+            echo "Nenhuma alteração detectada no calendar.ics"
+          fi
