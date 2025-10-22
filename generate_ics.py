@@ -54,8 +54,8 @@ try:
                 continue
 
             # --- Extração da TR[0] (Times) ---
-            team_cols = rows[0].find_all('td', recursive=False)
             # Colunas são: [0] Time 1, [1] vs, [2] Time 2
+            team_cols = rows[0].find_all('td', recursive=False)
             
             # Seletores mais robustos para nomes de times (dentro de team-template-text)
             team1_tag = team_cols[0].find('span', class_='team-template-text')
@@ -74,8 +74,14 @@ try:
                 print(f"      ⚠️ Partida {match_idx} ({team1} vs {team2}): Sem timestamp válido (TBD/Adiamento).")
                 continue
 
-            time_utc_str = time_tag['data-timestamp']
-            match_time_utc = datetime.fromisoformat(time_utc_str.replace('Z', '+00:00'))
+            # CORREÇÃO CRÍTICA: Tratar o valor como UNIX timestamp (segundos)
+            try:
+                time_unix_timestamp = int(time_tag['data-timestamp'])
+                # Converte o timestamp UNIX para um objeto datetime ciente do fuso horário UTC
+                match_time_utc = datetime.fromtimestamp(time_unix_timestamp, tz=pytz.utc)
+            except ValueError:
+                print(f"      ❌ Partida {match_idx} ({team1} vs {team2}): Falha ao converter timestamp para inteiro.")
+                continue
             
             # 2. Evento
             event_name = event_tag.text.strip() if event_tag else "Evento Desconhecido"
