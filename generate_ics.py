@@ -104,19 +104,33 @@ try:
 
             # ----------------- Criação do Evento ICS -----------------
             match_time_br = match_time_utc.astimezone(BR_TZ)
+            
+            # Mapeamento do formato (BoX) para descrição completa
+            format_map = {
+                'Bo1': 'Best of 1 (Bo1)',
+                'Bo3': 'Best of 3 (Bo3)',
+                'Bo5': 'Best of 5 (Bo5)',
+                'Partida': 'Partida Simples' # Default fallback
+            }
+            full_match_format = format_map.get(match_format, match_format)
 
             e = Event()
-            # SUMMARY: Time1 vs Time2 - BoX
-            e.name = f"{team1} vs {team2} - {match_format}" 
+            # SUMMARY (Título): Apenas Times (Ex: Falcons vs Natus Vincere)
+            e.name = f"{team1} vs {team2}" 
             e.begin = match_time_utc.astimezone(pytz.utc) 
             e.end = e.begin + timedelta(hours=2)
-            # DESCRIPTION: Nome do Evento
-            e.description = f"{event_name}" 
+            
+            # DESCRIPTION: Padrão Solicitado
+            e.description = (
+                f"Horário de Brasília\n\n"
+                f"🎮 Format: {full_match_format}\n"
+                f"📅 Event: {event_name} ⭐"
+            )
             e.url = match_url
 
             cal.events.add(e)
             added_count += 1
-            print(f"      ✅ Adicionado: {e.name} ({match_time_br.strftime('%d/%m %H:%M')}) | Evento: {event_name}")
+            print(f"      ✅ Adicionado: {e.name} ({match_time_br.strftime('%d/%m %H:%M')}) | Formato: {full_match_format} | Evento: {event_name}")
 
         except Exception as e:
             # Loga o erro específico para ajudar na depuração
