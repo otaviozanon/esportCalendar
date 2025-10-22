@@ -2,19 +2,11 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CBCS Masters Xeque Mate CQ ⭐
-DTEND:20251022T180000Z
-DTSTART:20251022T160000Z
-SUMMARY:ODDIK vs Largados
-UID:cbf204fb-639a-414d-a0c9-4c0a92dd69c8@cbf2.org
-URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
-END:VEVENT
-BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
 DTEND:20251026T100000Z
 DTSTART:20251026T080000Z
-SUMMARY:paiN vs M8
-UID:1ae512a6-f8fa-4ed8-90bb-cd5344fb5b0a@1ae5.org
+SUMMARY:Legacy vs Liquid
+UID:0422af2e-19ce-4c56-8a29-9123534f929d@0422.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
@@ -22,31 +14,39 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Exort Series #18 ⭐
 DTEND:20251022T173000Z
 DTSTART:20251022T153000Z
 SUMMARY:Imperial.A vs QUAZAR
-UID:7ccd997a-ada5-43df-a1b9-9eaed37a4e6e@7ccd.org
+UID:ce3a4bee-030b-43df-95c0-1860ed1ca29c@ce3a.org
 URL:https://liquipedia.net/counterstrike/Exort_Series/18/Contenders_Stage
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
 DTEND:20251026T100000Z
 DTSTART:20251026T080000Z
-SUMMARY:Legacy vs Liquid
-UID:26b75a28-a511-419c-8ac0-e9ebcffd8daa@26b7.org
-URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
-DTEND:20251026T160000Z
-DTSTART:20251026T140000Z
-SUMMARY:BB vs MIBR
-UID:b8cf2fe3-f3ce-4c97-a432-f434770bc8a7@b8cf.org
+SUMMARY:paiN vs M8
+UID:6f46239b-edca-4371-935c-43f8204b5d3b@6f46.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CBCS Masters Xeque Mate CQ ⭐
 DTEND:20251022T180000Z
 DTSTART:20251022T160000Z
-SUMMARY:Keyd vs FdB
-UID:5a8db9de-47b9-422d-9a8a-100bd5743105@5a8d.org
+SUMMARY:ODDIK vs Largados
+UID:7e3066a5-4fa3-41a0-b4a6-be4f8cd1f2b8@7e30.org
 URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CBCS Masters Xeque Mate CQ ⭐
+DTEND:20251022T180000Z
+DTSTART:20251022T160000Z
+SUMMARY:Keyd vs FdB
+UID:ea34e05f-f889-4ac9-8143-251da5521902@ea34.org
+URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
+DTEND:20251026T160000Z
+DTSTART:20251026T140000Z
+SUMMARY:BB vs MIBR
+UID:516a473c-cc99-4976-8372-eddce1e01a0e@516a.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 END:VCALENDAR
