@@ -41,70 +41,82 @@ try:
     # 3. Iterar pelas tabelas individuais de partidas
     for match_idx, match_table in enumerate(match_tables, 1):
         team1, team2, event_name, match_url = 'N/A', 'N/A', 'N/A', URL_LIQUIPEDIA
+        match_format = 'Partida' # Variável para o formato (Bo1, Bo3, etc.)
         
         try:
             # Uma tabela de partida tem 2 linhas (TRs): 
             # TR[0]: Times/vs
             # TR[1]: Filler (Data/Evento/Streams)
-            # CORREÇÃO: Removendo recursive=False para permitir que TRs sejam encontradas dentro do <tbody>
             rows = match_table.find_all('tr') 
             
             if len(rows) < 2:
                 print(f"      ⚠️ Partida {match_idx}: Tabela incompleta (menos de 2 linhas). Pulando.")
                 continue
 
-            # --- Extração da TR[0] (Times) ---
-            # Colunas são: [0] Time 1, [1] vs, [2] Time 2
+            # --- Extração da TR[0] (Times e Formato) ---
+            # Colunas são: [0] Time 1, [1] vs (formato), [2] Time 2
             team_cols = rows[0].find_all('td', recursive=False)
             
-            # Seletores mais robustos para nomes de times (dentro de team-template-text)
+            # Times
             team1_tag = team_cols[0].find('span', class_='team-template-text')
             team2_tag = team_cols[2].find('span', class_='team-template-text')
             
             team1 = team1_tag.text.strip() if team1_tag else team_cols[0].text.strip()
             team2 = team2_tag.text.strip() if team2_tag else team_cols[2].text.strip()
 
+            # Formato (BoX)
+            if len(team_cols) > 1:
+                versus_col = team_cols[1]
+                # Busca pela tag <abbr> dentro da coluna 'versus'
+                format_abbr = versus_col.find('abbr')
+                if format_abbr and format_abbr.text:
+                    match_format = format_abbr.text.strip()
+            
             # --- Extração da TR[1] (Data/Evento) ---
-            # O filler/data está na primeira e única TD da segunda linha (TR[1])
             time_tag = rows[1].find('span', class_='timer-object')
-            event_tag = rows[1].find('a') # O link do evento (que é o nome do evento)
             
             # 1. Data/Hora
             if not time_tag or 'data-timestamp' not in time_tag.attrs:
                 print(f"      ⚠️ Partida {match_idx} ({team1} vs {team2}): Sem timestamp válido (TBD/Adiamento).")
                 continue
 
-            # CORREÇÃO CRÍTICA: Tratar o valor como UNIX timestamp (segundos)
             try:
                 time_unix_timestamp = int(time_tag['data-timestamp'])
-                # Converte o timestamp UNIX para um objeto datetime ciente do fuso horário UTC
                 match_time_utc = datetime.fromtimestamp(time_unix_timestamp, tz=pytz.utc)
             except ValueError:
                 print(f"      ❌ Partida {match_idx} ({team1} vs {team2}): Falha ao converter timestamp para inteiro.")
                 continue
             
-            # 2. Evento
-            event_name = event_tag.text.strip() if event_tag else "Evento Desconhecido"
-            match_url = f"https://liquipedia.net{event_tag['href']}" if event_tag and 'href' in event_tag.attrs else URL_LIQUIPEDIA
+            # 2. Evento (Busca o link de texto do evento dentro da classe 'text-nowrap')
+            event_name_tag = rows[1].find('div', class_='text-nowrap')
+            event_link = event_name_tag.find('a') if event_name_tag else None
+
+            if event_link and event_link.text.strip():
+                event_name = event_link.text.strip()
+                match_url = f"https://liquipedia.net{event_link['href']}" if 'href' in event_link.attrs else URL_LIQUIPEDIA
+            else:
+                event_name = "Evento Desconhecido"
+                match_url = URL_LIQUIPEDIA
             
             # 3. Verifica BR
             if not any(br.lower() in team1.lower() or br.lower() in team2.lower() for br in BRAZILIAN_TEAMS):
-                print(f"      ➡️ Partida {match_idx}: Nenhum time BR ({team1} vs {team2}). Ignorando.")
                 continue
 
             # ----------------- Criação do Evento ICS -----------------
             match_time_br = match_time_utc.astimezone(BR_TZ)
 
             e = Event()
-            e.name = f"{team1} vs {team2} - {event_name}"
+            # SUMMARY: Time1 vs Time2 - BoX
+            e.name = f"{team1} vs {team2} - {match_format}" 
             e.begin = match_time_utc.astimezone(pytz.utc) 
             e.end = e.begin + timedelta(hours=2)
-            e.description = f"Partida entre {team1} e {team2} no evento {event_name} (Horário de Brasília)"
+            # DESCRIPTION: Nome do Evento
+            e.description = f"{event_name}" 
             e.url = match_url
 
             cal.events.add(e)
             added_count += 1
-            print(f"      ✅ Adicionado: {e.name} ({match_time_br.strftime('%d/%m %H:%M')}) | URL: {e.url}")
+            print(f"      ✅ Adicionado: {e.name} ({match_time_br.strftime('%d/%m %H:%M')}) | Evento: {event_name}")
 
         except Exception as e:
             # Loga o erro específico para ajudar na depuração
