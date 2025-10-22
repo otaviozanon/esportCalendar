@@ -2,51 +2,27 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
-DTEND:20251026T160000Z
-DTSTART:20251026T140000Z
-SUMMARY:BB vs MIBR
-UID:e7cf0255-2799-44e7-a80e-ef61ec974c78@e7cf.org
-URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4 ⭐
+DTEND:20251023T230000Z
+DTSTART:20251023T210000Z
+SUMMARY:Yawara vs MIBR.A
+UID:13c402f3-8218-464e-b75b-d384b0cf02c2@13c4.org
+URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CBCS Masters Xeque Mate CQ ⭐
 DTEND:20251023T180000Z
 DTSTART:20251023T160000Z
 SUMMARY:ODDIK vs FdB
-UID:bc7784c8-b0ec-4f6d-9c08-84d2cf013a08@bc77.org
+UID:f1623321-675d-408d-8a70-5581bcdfb9af@f162.org
 URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
-DTEND:20251026T100000Z
-DTSTART:20251026T080000Z
-SUMMARY:Legacy vs Liquid
-UID:bce2609b-4fe4-4930-bc34-b8fa3d38eaae@bce2.org
-URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: EU Pro League Reg S2 ⭐
-DTEND:20251024T100000Z
-DTSTART:20251024T080000Z
-SUMMARY:Imperial.A vs GANK
-UID:46f40ca6-51d9-4bc5-aac7-1f4cf3647d7a@46f4.org
-URL:https://liquipedia.net/counterstrike/European_Pro_League/Regular/Season_2
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4 ⭐
-DTEND:20251023T230000Z
-DTSTART:20251023T210000Z
-SUMMARY:Yawara vs MIBR.A
-UID:ed77b6cb-8c0c-4d77-810a-a4cef0e2fc27@ed77.org
-URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
-DTEND:20251026T100000Z
-DTSTART:20251026T080000Z
-SUMMARY:paiN vs M8
-UID:d108afd4-b561-4f9f-9949-19c6b588bfd7@d108.org
+DTEND:20251026T160000Z
+DTSTART:20251026T140000Z
+SUMMARY:BB vs MIBR
+UID:45311ac6-08dd-4cd1-b9fe-e5a496747e37@4531.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
@@ -54,7 +30,31 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CBCS Masters Xeque Mate CQ
 DTEND:20251023T180000Z
 DTSTART:20251023T160000Z
 SUMMARY:Largados vs Keyd
-UID:80402e31-6d25-4568-996b-2aa088db157c@8040.org
+UID:a6875267-f277-4c98-8800-5ce798b144c1@a687.org
 URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
+DTEND:20251026T100000Z
+DTSTART:20251026T080000Z
+SUMMARY:Legacy vs Liquid
+UID:0e7b1cd7-98c4-44df-817d-3e021b73ea22@0e7b.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: EU Pro League Reg S2 ⭐
+DTEND:20251024T100000Z
+DTSTART:20251024T080000Z
+SUMMARY:Imperial.A vs GANK
+UID:1500b8de-6f27-4d78-b59e-2d094fbbca39@1500.org
+URL:https://liquipedia.net/counterstrike/European_Pro_League/Regular/Season_2
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
+DTEND:20251026T100000Z
+DTSTART:20251026T080000Z
+SUMMARY:paiN vs M8
+UID:5ede5723-6495-43dd-b145-0ffa9b8e3e2d@5ede.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 END:VCALENDAR
