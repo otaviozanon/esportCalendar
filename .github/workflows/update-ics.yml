@@ -39,5 +39,5 @@ jobs:
           git config --global user.email "actions@github.com"
 
           git add calendar.ics
-          git commit -m "Atualizar ICS Liquipedia - $(date -u +"%Y-%m-%dT%H:%M:%SZ")" || echo "Sem mudanças para commitar"
+          git commit -m "Atualizar ICS CS2 - $(date -u +"%Y-%m-%dT%H:%M:%SZ")" || echo "Sem mudanças para commitar"
           git push
