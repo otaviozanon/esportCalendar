@@ -1,52 +1,43 @@
 name: Atualizar Calendário CS2
 
 on:
-schedule:
-- cron: '*/30 * * * *'  # 🔹 A cada 30 minutos
-workflow_dispatch:        # 🔹 Permite execução manual
+  schedule:
+    - cron: "*/30 * * * *"  # 🔹 A cada 30 minutos
+  workflow_dispatch:        # 🔹 Permite execução manual
 
 permissions:
-contents: write
-actions: read
+  contents: write
+  actions: read
 
 jobs:
-build:
-runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-steps:
-  # 🔹 Checkout do repositório completo
-  - name: Checkout código
-    uses: actions/checkout@v4
-    with:
-      ref: main
-      fetch-depth: 0
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
-  # 🔹 Configurar Python 3.11
-  - name: Configurar Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: 3.11
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-  # 🔹 Instalar dependências Python (apenas libs de requisição e parsing)
-  - name: Instalar dependências Python
-    run: |
-      python -m pip install --upgrade pip
-      # Dependências: ics (para o calendário), requests (para HTTP), pytz, beautifulsoup4, lxml
-      pip install ics requests pytz beautifulsoup4 lxml
+      - name: Instalar dependências Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install ics requests pytz beautifulsoup4 lxml
 
-  # O passo de 'Instalar Google Chrome' foi removido!
+      - name: Executar script generate_ics.py
+        run: python generate_ics.py
 
-  # 🔹 Executar script de atualização do ICS
-  - name: Executar script generate_ics.py
-    run: |
-      python generate_ics.py
+      - name: Commit e publicar calendar.ics
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
 
-  # 🔹 Commit automático apenas se houver mudanças
-  - name: Commit e publicar calendar.ics
-    run: |
-      git config --global user.name "github-actions"
-      git config --global user.email "actions@github.com"
-
-      git add calendar.ics
-      git commit -m "Atualizar ICS Liquipedia - $(date -u +"%Y-%m-%dT%H:%M:%SZ")" || echo "Sem mudanças para commitar"
-      git push
+          git add calendar.ics
+          git commit -m "Atualizar ICS Liquipedia - $(date -u +"%Y-%m-%dT%H:%M:%SZ")" || echo "Sem mudanças para commitar"
+          git push
