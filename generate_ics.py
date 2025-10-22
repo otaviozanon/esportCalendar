@@ -46,7 +46,8 @@ try:
             # Uma tabela de partida tem 2 linhas (TRs): 
             # TR[0]: Times/vs
             # TR[1]: Filler (Data/Evento/Streams)
-            rows = match_table.find_all('tr', recursive=False)
+            # CORREÇÃO: Removendo recursive=False para permitir que TRs sejam encontradas dentro do <tbody>
+            rows = match_table.find_all('tr') 
             
             if len(rows) < 2:
                 print(f"      ⚠️ Partida {match_idx}: Tabela incompleta (menos de 2 linhas). Pulando.")
