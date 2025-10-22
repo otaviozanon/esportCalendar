@@ -2,51 +2,51 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
-DESCRIPTION:Partida entre ODDIK e Largados no evento  (Horário de Brasília)
-DTEND:20251022T180000Z
-DTSTART:20251022T160000Z
-SUMMARY:ODDIK vs Largados - 
-UID:00d2e8a3-3e20-431a-a7c7-0f69fcc57a54@00d2.org
-URL:https://liquipedia.net/counterstrike/Special:Stream/twitch/CBCS
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:Partida entre Legacy e Liquid no evento  (Horário de Brasília)
-DTEND:20251026T100000Z
-DTSTART:20251026T080000Z
-SUMMARY:Legacy vs Liquid - 
-UID:7c4307f6-4fab-4a84-b15e-3b305238c930@7c43.org
-URL:https://liquipedia.net/counterstrike/Special:Stream/twitch/PGL
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:Partida entre Imperial.A e QUAZAR no evento  (Horário de Brasília)
-DTEND:20251022T173000Z
-DTSTART:20251022T153000Z
-SUMMARY:Imperial.A vs QUAZAR - 
-UID:8aff0b43-d814-4fdd-a51b-e191b63ab813@8aff.org
-URL:https://liquipedia.net/counterstrike/Special:Stream/kick/Exort_Series_2
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:Partida entre Keyd e FdB no evento  (Horário de Brasília)
-DTEND:20251022T180000Z
-DTSTART:20251022T160000Z
-SUMMARY:Keyd vs FdB - 
-UID:9a17d790-d5be-4d56-ad95-4d70c8b41222@9a17.org
-URL:https://liquipedia.net/counterstrike/Special:Stream/twitch/CBCS
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:Partida entre paiN e M8 no evento  (Horário de Brasília)
-DTEND:20251026T100000Z
-DTSTART:20251026T080000Z
-SUMMARY:paiN vs M8 - 
-UID:626031ad-df1f-4376-9e01-93239131dbd0@6260.org
-URL:https://liquipedia.net/counterstrike/Special:Stream/twitch/PGL_CS2
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:Partida entre BB e MIBR no evento  (Horário de Brasília)
+DESCRIPTION:PGL Masters Bucharest 2025
 DTEND:20251026T160000Z
 DTSTART:20251026T140000Z
-SUMMARY:BB vs MIBR - 
-UID:8dcd76a5-bdff-49be-b1ce-57e81d1a5d37@8dcd.org
-URL:https://liquipedia.net/counterstrike/Special:Stream/twitch/PGL_CS2
+SUMMARY:BB vs MIBR - Bo3
+UID:cb5f6bf3-1959-410b-9be8-e79064c342ca@cb5f.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:CBCS Masters Xeque Mate CQ
+DTEND:20251022T180000Z
+DTSTART:20251022T160000Z
+SUMMARY:Keyd vs FdB - Bo3
+UID:3967b520-75d9-4182-bab5-82c56b14a3ea@3967.org
+URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:CBCS Masters Xeque Mate CQ
+DTEND:20251022T180000Z
+DTSTART:20251022T160000Z
+SUMMARY:ODDIK vs Largados - Bo3
+UID:bca7145b-6754-4ce1-93c2-f04306773e20@bca7.org
+URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:PGL Masters Bucharest 2025
+DTEND:20251026T100000Z
+DTSTART:20251026T080000Z
+SUMMARY:Legacy vs Liquid - Bo3
+UID:fde13038-a85b-473f-bcd0-5ea36fa97ee1@fde1.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:Exort Series #18
+DTEND:20251022T173000Z
+DTSTART:20251022T153000Z
+SUMMARY:Imperial.A vs QUAZAR - Bo3
+UID:80c8a468-e79e-4b12-a8a7-b841b9509d90@80c8.org
+URL:https://liquipedia.net/counterstrike/Exort_Series/18/Contenders_Stage
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:PGL Masters Bucharest 2025
+DTEND:20251026T100000Z
+DTSTART:20251026T080000Z
+SUMMARY:paiN vs M8 - Bo3
+UID:ffded1b5-2880-430a-b921-04a6245f85f2@ffde.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 END:VCALENDAR
