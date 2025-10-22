@@ -122,7 +122,6 @@ try:
             
             # DESCRIPTION: Padrão Solicitado
             e.description = (
-                f"Horário de Brasília\n\n"
                 f"🎮 Format: {full_match_format}\n"
                 f"📅 Event: {event_name} ⭐"
             )
