@@ -4,14 +4,15 @@ import pytz
 import warnings
 from datetime import datetime, timezone, timedelta
 from ics import Calendar, Event
+import time
+import random
 
+# Selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
-import time
-import random
 
 # --- Suprimir FutureWarning específico do ics ---
 warnings.filterwarnings(
@@ -21,7 +22,8 @@ warnings.filterwarnings(
 )
 
 # --- Configurações ---
-BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "Sharks", "RED Canids", "Legacy", "ODDIK"]
+BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "Sharks", 
+                   "RED Canids", "Legacy", "ODDIK"]
 BR_TZ = pytz.timezone("America/Sao_Paulo")
 MAX_AGE_DAYS = 30
 LIQUIPEDIA_URL = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
@@ -37,21 +39,23 @@ def remove_emojis(text: str) -> str:
     return re.sub(r"[^\x00-\x7F]+", "", text)
 
 def carregar_html_liquipedia(url: str):
-    """Carrega o HTML renderizado da Liquipedia usando Selenium (GitHub Actions friendly)."""
+    """Carrega o HTML renderizado da Liquipedia usando Selenium."""
     print(f"🌐 Acessando {url} via Selenium...")
     options = Options()
-    options.add_argument("--headless=new")  # 🔹 mais confiável que só --headless
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument(f"user-agent={random.choice(USER_AGENTS)}")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--remote-debugging-port=9222")  # 🔹 evita erro DevToolsActivePort
+
+    # 🔹 Aponta para o Chromium do Ubuntu Actions
+    options.binary_location = "/usr/bin/chromium-browser"
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     try:
         driver.get(url)
-        time.sleep(7)  # esperar JS renderizar
+        time.sleep(7)  # espera o JS carregar
         html = driver.page_source
         print(f"✅ Página carregada ({len(html)} caracteres).")
         return html
