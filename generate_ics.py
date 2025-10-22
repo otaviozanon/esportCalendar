@@ -1,138 +1,101 @@
-import os
-import re
-import pytz
-import warnings
-from datetime import datetime, timezone, timedelta
-from ics import Calendar, Event
-import time
-import random
-
-# Selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
+from ics import Calendar, Event
+from datetime import datetime, timedelta
+import pytz
 
-# --- Suprimir FutureWarning específico do ics ---
-warnings.filterwarnings(
-    "ignore",
-    category=FutureWarning,
-    message=r"Behaviour of str\(Component\) will change in version 0.9.*"
-)
-
-# --- Configurações ---
-BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo", "Sharks", 
-                   "RED Canids", "Legacy", "ODDIK"]
+# -------------------- Configurações --------------------
+BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
+                   "Sharks", "RED Canids", "Legacy", "ODDIK"]
 BR_TZ = pytz.timezone("America/Sao_Paulo")
-MAX_AGE_DAYS = 30
-LIQUIPEDIA_URL = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
-
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
-]
-
-def remove_emojis(text: str) -> str:
-    return re.sub(r"[^\x00-\x7F]+", "", text)
-
-def carregar_html_liquipedia(url: str):
-    """Carrega o HTML renderizado da Liquipedia usando Selenium."""
-    print(f"🌐 Acessando {url} via Selenium...")
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument(f"user-agent={random.choice(USER_AGENTS)}")
-    options.add_argument("--window-size=1920,1080")
-
-    # 🔹 Aponta para o Chromium do Ubuntu Actions
-    options.binary_location = "/usr/bin/chromium-browser"
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    try:
-        driver.get(url)
-        time.sleep(7)  # espera o JS carregar
-        html = driver.page_source
-        print(f"✅ Página carregada ({len(html)} caracteres).")
-        return html
-    finally:
-        driver.quit()
-
-# --- Tempo e corte ---
-now_utc = datetime.now(timezone.utc)
-cutoff_time = now_utc - timedelta(days=MAX_AGE_DAYS)
-print(f"🕒 Agora (UTC): {now_utc}")
-print(f"🗑️ Jogos anteriores a {cutoff_time} serão removidos.")
-
-# --- Carregar calendário existente ---
-my_calendar = Calendar()
-if os.path.exists("calendar.ics"):
-    with open("calendar.ics", "r", encoding="utf-8") as f:
-        try:
-            cleaned_lines = [line for line in f.readlines() if not line.startswith(";")]
-            calendars = Calendar.parse_multiple("".join(cleaned_lines))
-            for cal in calendars:
-                my_calendar.events.update(cal.events)
-            print("🔹 calendar.ics antigo carregado.")
-        except Exception as e:
-            print(f"⚠️ Erro ao carregar o calendário antigo: {e}")
-
-# --- Limpar eventos antigos ---
-old_count = len(my_calendar.events)
-my_calendar.events = {ev for ev in my_calendar.events if ev.begin and ev.begin > cutoff_time}
-print(f"🧹 Removidos {old_count - len(my_calendar.events)} eventos antigos.")
-
-# --- Scraping via Selenium ---
-html = carregar_html_liquipedia(LIQUIPEDIA_URL)
-soup = BeautifulSoup(html, "html.parser")
-matches = soup.select("div.match-card")
-
+cal = Calendar()
 added_count = 0
 
-for match in matches:
-    teams = [t.get_text(strip=True) for t in match.select(".team")]
-    time_elem = match.select_one(".match-countdown")
-    event_elem = match.select_one(".match-meta .event")
+# Datas: hoje até 5 dias à frente
+today = datetime.utcnow()
+dates = [today + timedelta(days=i) for i in range(6)]
+print(f"🕒 Agora (UTC): {today}")
 
-    if not teams or not time_elem:
-        continue
+# -------------------- Configurar Selenium --------------------
+options = Options()
+options.add_argument("--headless")
+options.add_argument("--disable-gpu")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--window-size=1920,1080")
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+wait = WebDriverWait(driver, 15)  # espera máxima de 15s por elementos
 
-    timestamp = time_elem.get("data-timestamp")
-    if not timestamp:
-        continue
+# -------------------- Coleta de partidas --------------------
+for date in dates:
+    date_str = date.strftime('%Y-%m-%d')
+    url = f"https://www.hltv.org/matches?selectedDate={date_str}"
+    print(f"\n🔍 Buscando partidas para {date_str} em {url}...")
+
     try:
-        event_time_utc = datetime.fromtimestamp(int(timestamp), tz=timezone.utc)
-    except Exception:
-        continue
+        driver.get(url)
+        
+        # Espera pelo carregamento de qualquer bloco de partida
+        try:
+            wait.until(EC.presence_of_element_located((By.CLASS_NAME, "match-zone-wrapper")))
+            print("✅ Blocos de partidas carregados")
+        except:
+            print("⚠️ Nenhum bloco de partidas carregado após espera")
 
-    event_name = f"{teams[0]} vs {teams[1]}"
-    if not any(team.lower() in event_name.lower() for team in BRAZILIAN_TEAMS):
-        continue
+        zones = driver.find_elements(By.CLASS_NAME, "match-zone-wrapper")
+        print(f"📦 {len(zones)} blocos de partidas encontrados na página")
 
-    ev = Event()
-    ev.name = remove_emojis(event_name)
-    ev.begin = event_time_utc
-    ev.uid = f"{event_time_utc.timestamp()}_{teams[0]}_{teams[1]}"
-    ev.description = f"Torneio: {event_elem.get_text(strip=True) if event_elem else 'Desconhecido'}"
-    ev.location = "Liquipedia.net"
-    ev.created = now_utc
+        for zone_idx, zone in enumerate(zones, 1):
+            match_blocks = zone.find_elements(By.CLASS_NAME, "match-wrapper")
+            print(f"   🔹 Zona {zone_idx}: {len(match_blocks)} partidas")
 
-    if not any(e.uid == ev.uid for e in my_calendar.events):
-        my_calendar.events.add(ev)
-        added_count += 1
-        event_time_br = event_time_utc.astimezone(BR_TZ)
-        print(f"✅ Adicionado: {ev.name} em {event_time_br}")
+            for match_idx, match in enumerate(match_blocks, 1):
+                try:
+                    team1 = match.find_element(By.CSS_SELECTOR, "div.match-team.team1 > div.match-teamname").text.strip()
+                    team2 = match.find_element(By.CSS_SELECTOR, "div.match-team.team2 > div.match-teamname").text.strip()
 
-print(f"📌 {added_count} novos eventos adicionados.")
+                    if not any(br.lower() in team1.lower() or br.lower() in team2.lower() for br in BRAZILIAN_TEAMS):
+                        print(f"      ⚠️ Partida {match_idx}: Nenhum time BR ({team1} vs {team2})")
+                        continue
 
-# --- Salvar calendar.ics ---
-with open("calendar.ics", "w", encoding="utf-8") as f:
-    for line in my_calendar.serialize_iter():
-        f.write(remove_emojis(line) + "\n")
-    f.write(f"X-GENERATED-TIME:{datetime.now(timezone.utc).isoformat()}\n")
+                    event_name = match.find_element(By.CLASS_NAME, "match-event").text.strip()
+                    time_str = match.find_element(By.CLASS_NAME, "match-time").text.strip()
+                    match_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+                    match_time = BR_TZ.localize(match_time)
 
-print("🔹 calendar.ics atualizado com jogos da Liquipedia!")
+                    match_url_tag = match.find_element(By.CSS_SELECTOR, "a.match-info")
+                    match_url = match_url_tag.get_attribute("href")
+
+                    # Criar evento ICS
+                    e = Event()
+                    e.name = f"{team1} vs {team2} - {event_name}"
+                    e.begin = match_time
+                    e.end = e.begin + timedelta(hours=2)
+                    e.description = f"Partida entre {team1} e {team2} no evento {event_name}"
+                    e.url = match_url
+
+                    cal.events.add(e)
+                    added_count += 1
+                    print(f"      ✅ Adicionado: {e.name} ({e.begin}) | URL: {e.url}")
+
+                except Exception as e:
+                    print(f"      ⚠️ Erro ao processar partida {match_idx} na zona {zone_idx}: {e}")
+
+    except Exception as e:
+        print(f"⚠️ Erro ao acessar {url}: {e}")
+
+# -------------------- Finalizar --------------------
+driver.quit()
+
+# Salvar calendar.ics
+try:
+    with open("calendar.ics", "w", encoding="utf-8") as f:
+        f.writelines(cal.serialize_iter())
+    print(f"\n📌 {added_count} partidas BR salvas em calendar.ics")
+except Exception as e:
+    print(f"❌ Erro ao salvar calendar.ics: {e}")
