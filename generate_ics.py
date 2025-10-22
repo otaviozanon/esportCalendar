@@ -1,97 +1,111 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
-from ics import Calendar, Event
+import requests
+from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import pytz
+from ics import Calendar, Event
 
 # -------------------- Configurações --------------------
+URL_LIQUIPEDIA = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
                    "Sharks", "RED Canids", "Legacy", "ODDIK"]
 BR_TZ = pytz.timezone("America/Sao_Paulo")
 cal = Calendar()
 added_count = 0
 
-# Datas: hoje até 5 dias à frente
-today = datetime.utcnow()
-dates = [today + timedelta(days=i) for i in range(6)]
-print(f"🕒 Agora (UTC): {today}")
+# -------------------- Coleta de partidas (Liquipedia) --------------------
+print(f"🔍 Buscando partidas em {URL_LIQUIPEDIA}...")
 
-# -------------------- Configurar Selenium --------------------
-options = Options()
-options.add_argument("--headless")
-options.add_argument("--disable-gpu")
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--window-size=1920,1080")
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-wait = WebDriverWait(driver, 15)  # espera máxima de 15s por elementos
+try:
+    # 1. Requisição HTTP
+    response = requests.get(URL_LIQUIPEDIA)
+    response.raise_for_status() # Lança exceção para status codes de erro (4xx ou 5xx)
 
-# -------------------- Coleta de partidas --------------------
-for date in dates:
-    date_str = date.strftime('%Y-%m-%d')
-    url = f"https://www.hltv.org/matches?selectedDate={date_str}"
-    print(f"\n🔍 Buscando partidas para {date_str} em {url}...")
+    # 2. Parsing do HTML
+    soup = BeautifulSoup(response.text, 'lxml')
+    
+    # A Liquipedia usa classes como 'wikitable' para tabelas de partidas
+    # Procure pela tabela principal de "Upcoming Matches"
+    match_table = soup.find('table', class_='wikitable')
+    
+    if not match_table:
+        print("⚠️ Tabela de partidas não encontrada. Verifique a estrutura da página.")
+        exit()
 
-    try:
-        driver.get(url)
-        
-        # Espera pelo carregamento de qualquer bloco de partida
+    # 3. Iterar pelas linhas (TRs) da tabela, pulando o cabeçalho
+    # O seletor 'tr[data-url]' pode ajudar a focar nas linhas de partidas
+    rows = match_table.find_all('tr', recursive=False)[1:] # [1:] para pular o cabeçalho
+    print(f"📦 {len(rows)} linhas de partidas encontradas")
+
+    for row_idx, row in enumerate(rows, 1):
         try:
-            wait.until(EC.presence_of_element_located((By.CLASS_NAME, "match-zone-wrapper")))
-            print("✅ Blocos de partidas carregados")
-        except:
-            print("⚠️ Nenhum bloco de partidas carregado após espera")
+            # Colunas da tabela: Data (0), Time 1 (1), vs (2), Time 2 (3), Evento (4), Stream (5)
+            cols = row.find_all('td', recursive=False)
+            
+            if len(cols) < 5: # Garante que temos as colunas básicas
+                continue
 
-        zones = driver.find_elements(By.CLASS_NAME, "match-zone-wrapper")
-        print(f"📦 {len(zones)} blocos de partidas encontrados na página")
+            # Data/Hora: A primeira coluna (index 0) tem o timestamp em UTC
+            # O link dentro do <td> (seletor 'span.timer-object') contém o timestamp UTC
+            time_tag = cols[0].find('span', class_='timer-object')
+            
+            if not time_tag or 'data-timestamp' not in time_tag.attrs:
+                 # Pode ser um placeholder como 'TBD', 'Aguardando Data', etc.
+                continue
 
-        for zone_idx, zone in enumerate(zones, 1):
-            match_blocks = zone.find_elements(By.CLASS_NAME, "match-wrapper")
-            print(f"   🔹 Zona {zone_idx}: {len(match_blocks)} partidas")
+            # O formato do timestamp é ISO 8601 (YYYY-MM-DDTHH:MM:SSZ)
+            time_utc_str = time_tag['data-timestamp']
+            
+            # Converte para objeto datetime, garantindo que seja UTC
+            match_time_utc = datetime.fromisoformat(time_utc_str.replace('Z', '+00:00'))
+            
+            # Time 1 e Time 2 (index 1 e 3)
+            # Os nomes dos times estão em links (<a>)
+            team1_tag = cols[1].find('a')
+            team2_tag = cols[3].find('a')
+            
+            # Se não encontrar o link (<a>), tenta pegar o texto direto
+            team1 = team1_tag.text.strip() if team1_tag else cols[1].text.strip()
+            team2 = team2_tag.text.strip() if team2_tag else cols[3].text.strip()
 
-            for match_idx, match in enumerate(match_blocks, 1):
-                try:
-                    team1 = match.find_element(By.CSS_SELECTOR, "div.match-team.team1 > div.match-teamname").text.strip()
-                    team2 = match.find_element(By.CSS_SELECTOR, "div.match-team.team2 > div.match-teamname").text.strip()
+            # Evento (index 4)
+            event_name_tag = cols[4].find('a')
+            event_name = event_name_tag.text.strip() if event_name_tag else cols[4].text.strip()
+            
+            # URL da partida (link para o evento geralmente)
+            # Usando a URL do evento como referência
+            match_url = f"https://liquipedia.net{event_name_tag['href']}" if event_name_tag and 'href' in event_name_tag.attrs else URL_LIQUIPEDIA
+            
+            # Verifica se é time brasileiro
+            if not any(br.lower() in team1.lower() or br.lower() in team2.lower() for br in BRAZILIAN_TEAMS):
+                # print(f"      ⚠️ Partida {row_idx}: Nenhum time BR ({team1} vs {team2})")
+                continue
 
-                    if not any(br.lower() in team1.lower() or br.lower() in team2.lower() for br in BRAZILIAN_TEAMS):
-                        print(f"      ⚠️ Partida {match_idx}: Nenhum time BR ({team1} vs {team2})")
-                        continue
+            # Converte para o fuso horário do Brasil para exibição no calendário, 
+            # mantendo a referência UTC no ICS (o que é o ideal).
+            match_time_br = match_time_utc.astimezone(BR_TZ)
 
-                    event_name = match.find_element(By.CLASS_NAME, "match-event").text.strip()
-                    time_str = match.find_element(By.CLASS_NAME, "match-time").text.strip()
-                    match_time = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-                    match_time = BR_TZ.localize(match_time)
+            # Criar evento ICS
+            e = Event()
+            e.name = f"{team1} vs {team2} - {event_name}"
+            # O ICS armazena em UTC, mesmo que o objeto datetime esteja localizado
+            e.begin = match_time_utc.astimezone(pytz.utc) 
+            e.end = e.begin + timedelta(hours=2) # Duração estimada de 2h
+            e.description = f"Partida entre {team1} e {team2} no evento {event_name}"
+            e.url = match_url
 
-                    match_url_tag = match.find_element(By.CSS_SELECTOR, "a.match-info")
-                    match_url = match_url_tag.get_attribute("href")
+            cal.events.add(e)
+            added_count += 1
+            print(f"      ✅ Adicionado: {e.name} ({match_time_br.strftime('%d/%m %H:%M')}) | URL: {e.url}")
 
-                    # Criar evento ICS
-                    e = Event()
-                    e.name = f"{team1} vs {team2} - {event_name}"
-                    e.begin = match_time
-                    e.end = e.begin + timedelta(hours=2)
-                    e.description = f"Partida entre {team1} e {team2} no evento {event_name}"
-                    e.url = match_url
+        except Exception as e:
+            print(f"      ⚠️ Erro ao processar linha {row_idx}: {e}")
 
-                    cal.events.add(e)
-                    added_count += 1
-                    print(f"      ✅ Adicionado: {e.name} ({e.begin}) | URL: {e.url}")
-
-                except Exception as e:
-                    print(f"      ⚠️ Erro ao processar partida {match_idx} na zona {zone_idx}: {e}")
-
-    except Exception as e:
-        print(f"⚠️ Erro ao acessar {url}: {e}")
+except requests.exceptions.RequestException as e:
+    print(f"❌ Erro ao acessar {URL_LIQUIPEDIA}: {e}")
+except Exception as e:
+    print(f"❌ Erro inesperado: {e}")
 
 # -------------------- Finalizar --------------------
-driver.quit()
-
 # Salvar calendar.ics
 try:
     with open("calendar.ics", "w", encoding="utf-8") as f:
