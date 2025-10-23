@@ -5,34 +5,42 @@ on:
     - cron: "*/45 * * * *"  # 🔹 A cada 45 minutos
   workflow_dispatch:        # 🔹 Permite execução manual
 
+# Permissões necessárias para o workflow funcionar:
 permissions:
-  contents: write
-  actions: read
+  contents: write  # Permite escrever no repositório (necessário para fazer commit)
+  actions: read    # Permite ler informações de actions (boas práticas de segurança)
 
+# Define os jobs (tarefas) que serão executados
 jobs:
   build:
+    # Especifica que o job será executado em uma máquina Ubuntu (última versão disponível)
     runs-on: ubuntu-latest
 
     steps:
+      # Passo 1: Faz checkout do código do repositório
       - name: Checkout código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # Usa a action oficial do GitHub para fazer checkout
         with:
-          ref: main
-          fetch-depth: 0
+          ref: main         # Faz checkout do branch 'main'
+          fetch-depth: 0    # Baixa todo o histórico do repositório (útil para git diff, etc.)
 
+      # Passo 2: Configura o ambiente Python na máquina
       - name: Configurar Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5  # Usa a action oficial para configurar Python
         with:
-          python-version: "3.11"
+          python-version: "3.11"  # Especifica a versão do Python a ser usada
 
+      # Passo 3: Instala as dependências Python necessárias para o script
       - name: Instalar dependências Python
         run: |
-          python -m pip install --upgrade pip
-          pip install ics requests pytz beautifulsoup4 lxml
+          python -m pip install --upgrade pip  # Atualiza o pip
+          pip install ics requests pytz beautifulsoup4 lxml  # Instala os pacotes necessários
 
+      # Passo 4: Executa o script que gera o arquivo calendar.ics
       - name: Executar script generate_ics.py
-        run: python generate_ics.py
+        run: python generate_ics.py  # Roda o script Python que gera o arquivo ICS
 
+      # Passo 5: Faz commit e push do arquivo gerado de volta para o repositório
       - name: Commit e publicar calendar.ics
         run: |
           git config --global user.name "github-actions"
