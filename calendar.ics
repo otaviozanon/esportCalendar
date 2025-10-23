@@ -2,27 +2,35 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025 ⭐
-DTEND:20251103T113000Z
-DTSTART:20251103T093000Z
-SUMMARY:paiN vs Spirit
-UID:4c42464c-6df1-44a9-9382-53da82d7af75@4c42.org
-URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CBCS Masters Xeque Mate CQ ⭐
-DTEND:20251023T180000Z
-DTSTART:20251023T160000Z
-SUMMARY:ODDIK vs FdB
-UID:f6f44207-c5fc-450c-929c-2f445eca1b5a@f6f4.org
-URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League S8: EU ⭐
+DTEND:20251024T203000Z
+DTSTART:20251024T183000Z
+SUMMARY:Nemesis Imp. vs Imperial Fe
+UID:39f22e7a-2f43-4196-81d6-d2f11806274a@39f2.org
+URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8/Europe
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4 ⭐
 DTEND:20251024T230000Z
 DTSTART:20251024T210000Z
 SUMMARY:ODDIK vs TBD
-UID:4afe0c7f-a405-4000-a34b-87e1e83105ed@4afe.org
+UID:206a898d-2958-45ff-b2c1-c43accac0a9c@206a.org
+URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Female Pro League Season 1 ⭐
+DTEND:20251024T110000Z
+DTSTART:20251024T090000Z
+SUMMARY:Imperial Fe vs confidence
+UID:009ed8e8-14dc-46f5-8148-2ce0c6ac221b@009e.org
+URL:https://liquipedia.net/counterstrike/Female_Pro_League/Season_1
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4 ⭐
+DTEND:20251024T230000Z
+DTSTART:20251024T210000Z
+SUMMARY:Sharks vs TBD
+UID:e483f38c-22b5-4526-949b-9bee9cb7af26@e483.org
 URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
 END:VEVENT
 BEGIN:VEVENT
@@ -30,103 +38,79 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
 DTEND:20251026T160000Z
 DTSTART:20251026T140000Z
 SUMMARY:BB vs MIBR
-UID:8611d34c-258b-4b71-bb32-7ae1fe3e2207@8611.org
+UID:fe29696b-ec5b-4c50-b239-8a75cad31fc5@fe29.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CBCS Masters Xeque Mate CQ ⭐
-DTEND:20251023T180000Z
-DTSTART:20251023T160000Z
-SUMMARY:Largados vs Keyd
-UID:0f686644-6df8-4601-8059-6de30f2ef5df@0f68.org
-URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4 ⭐
 DTEND:20251023T230000Z
 DTSTART:20251023T210000Z
 SUMMARY:Yawara vs MIBR.A
-UID:54f88ef0-02f7-487e-9237-48b6c4a46ba3@54f8.org
+UID:86cd16a8-1222-46a0-b5d9-1e2b553c402f@86cd.org
 URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League S8: EU ⭐
-DTEND:20251024T203000Z
-DTSTART:20251024T183000Z
-SUMMARY:Nemesis Imp. vs Imperial Fe
-UID:96cda35e-eb1c-4acc-8675-f9b007d266f8@96cd.org
-URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8/Europe
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: EU Pro League Reg S2 ⭐
-DTEND:20251024T100000Z
-DTSTART:20251024T080000Z
-SUMMARY:Imperial.A vs GANK
-UID:98c78de5-5f0c-43dd-99cc-a23b8ca92eaa@98c7.org
-URL:https://liquipedia.net/counterstrike/European_Pro_League/Regular/Season_2
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4 ⭐
-DTEND:20251024T230000Z
-DTSTART:20251024T210000Z
-SUMMARY:Keyd vs TBD
-UID:61dd1f08-0899-4914-8296-ebaa70a0539f@61dd.org
-URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
-DTEND:20251026T100000Z
-DTSTART:20251026T080000Z
-SUMMARY:Legacy vs Liquid
-UID:9dedd9ed-d886-48ca-ac87-f5036b66d5d8@9ded.org
-URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
-DTEND:20251026T100000Z
-DTSTART:20251026T080000Z
-SUMMARY:paiN vs M8
-UID:22c84bb0-c9c1-4a1b-be81-33bb3d5edaf1@22c8.org
-URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025 ⭐
 DTEND:20251103T040000Z
 DTSTART:20251103T020000Z
 SUMMARY:FURIA vs LVG
-UID:3c2b840d-36bb-4fe9-930a-4c97dad03460@3c2b.org
+UID:0a76a162-0365-4564-896d-1d2c212f1154@0a76.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CBCS Masters Xeque Mate CQ ⭐
-DTEND:20251024T180000Z
-DTSTART:20251024T160000Z
-SUMMARY:Sharks vs DR
-UID:521361c5-96e7-4b87-9ed6-cd5dee1d927b@5213.org
-URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
+DTEND:20251026T100000Z
+DTSTART:20251026T080000Z
+SUMMARY:paiN vs M8
+UID:d538d4d6-ff11-4ecd-a1b4-d15f76c2982b@d538.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Female Pro League Season 1 ⭐
-DTEND:20251024T110000Z
-DTSTART:20251024T090000Z
-SUMMARY:Imperial Fe vs confidence
-UID:627d29b9-6093-4ee3-b3e7-e003453b0d17@627d.org
-URL:https://liquipedia.net/counterstrike/Female_Pro_League/Season_1
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4 ⭐
+DTEND:20251024T230000Z
+DTSTART:20251024T210000Z
+SUMMARY:Keyd vs TBD
+UID:64fc13f1-42b1-48d8-9272-b5fc7850579d@64fc.org
+URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: EU Pro League Reg S2 ⭐
+DTEND:20251024T100000Z
+DTSTART:20251024T080000Z
+SUMMARY:Imperial.A vs GANK
+UID:a5596d88-8ed8-4a91-9ee9-c4b4b32472c9@a559.org
+URL:https://liquipedia.net/counterstrike/European_Pro_League/Regular/Season_2
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League S8: SA ⭐
 DTEND:20251024T230000Z
 DTSTART:20251024T210000Z
 SUMMARY:FURIA Fe vs MIBR Fe
-UID:6b2167a3-db1d-463a-bdbe-547aa9c93820@6b21.org
+UID:3a2389b6-3717-4a90-8078-1b2ccb2613e7@3a23.org
 URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8/South_America
 END:VEVENT
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4 ⭐
-DTEND:20251024T230000Z
-DTSTART:20251024T210000Z
-SUMMARY:Sharks vs TBD
-UID:aea928ab-e0fb-4f9c-aa8c-f42ef6e9637f@aea9.org
-URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025 ⭐
+DTEND:20251103T113000Z
+DTSTART:20251103T093000Z
+SUMMARY:paiN vs Spirit
+UID:e920c111-7a5f-4c05-bca8-6174c7aeb321@e920.org
+URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025 ⭐
+DTEND:20251026T100000Z
+DTSTART:20251026T080000Z
+SUMMARY:Legacy vs Liquid
+UID:6848277f-b4fd-4d55-9d25-77f7fb4441d7@6848.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CBCS Masters Xeque Mate CQ ⭐
+DTEND:20251024T180000Z
+DTSTART:20251024T160000Z
+SUMMARY:Sharks vs DR
+UID:ee08bbb2-6969-4a7a-a405-2349d76b35ed@ee08.org
+URL:https://liquipedia.net/counterstrike/Circuito_Brasileiro_de_Counter-Strike/2025/Masters/Xeque_Mate/Qualifier
 END:VEVENT
 END:VCALENDAR
