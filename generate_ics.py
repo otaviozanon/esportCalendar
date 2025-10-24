@@ -10,7 +10,7 @@ BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
                    "RED Canids", "Legacy", "ODDIK"]
 
 # Lista de exclusão para sub-equipes
-BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A", "MIBR Fe"] 
+BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A"] 
 
 URL_LIQUIPEDIA = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
 BR_TZ = pytz.timezone("America/Sao_Paulo") # Fuso horário de Brasília
