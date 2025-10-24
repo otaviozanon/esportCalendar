@@ -3,10 +3,10 @@ VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
-DTEND:20251026T160000Z
-DTSTART:20251026T140000Z
-SUMMARY:BB vs MIBR
-UID:fbd770fc-48fa-41ff-aea0-d9e7e95248e4@fbd7.org
+DTEND:20251026T100000Z
+DTSTART:20251026T080000Z
+SUMMARY:Legacy vs Liquid
+UID:0738327f-96aa-4f1c-9d42-57c86781cb2d@0738.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
@@ -14,39 +14,31 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
 DTEND:20251103T040000Z
 DTSTART:20251103T020000Z
 SUMMARY:FURIA vs LVG
-UID:302d4569-1652-430e-8e98-74846bab3de2@302d.org
+UID:c9f03bdd-571e-417e-828d-0f90e97fd6d7@c9f0.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4
-DTEND:20251024T230000Z
-DTSTART:20251024T210000Z
-SUMMARY:ODDIK vs KRÜ
-UID:5674211a-96a5-4c56-945a-f983c7acf988@5674.org
-URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
-DTEND:20251026T100000Z
-DTSTART:20251026T080000Z
-SUMMARY:Legacy vs Liquid
-UID:7099e9c1-7b40-4e94-b1dd-a4d8dfcd122c@7099.org
-URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League S8: SA
 DTEND:20251024T230000Z
 DTSTART:20251024T210000Z
 SUMMARY:FURIA Fe vs MIBR Fe
-UID:87476730-29d4-44f3-8121-094ea29f124c@8747.org
+UID:e4454a68-f295-469d-b9ed-fecfc3051dca@e445.org
 URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8/South_America
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ECL Season 50: SA Cup #4
+DTEND:20251024T230000Z
+DTSTART:20251024T210000Z
+SUMMARY:ODDIK vs KRÜ
+UID:2055fafc-f72e-4c72-a07d-65bf1e36169c@2055.org
+URL:https://liquipedia.net/counterstrike/ESL/Challenger_League/Season_50/South_America/Cup_4
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
 DTEND:20251103T113000Z
 DTSTART:20251103T093000Z
 SUMMARY:paiN vs Spirit
-UID:5729dfc6-0769-4b9b-9c40-cc3ed85cf06b@5729.org
+UID:a1912dbc-26c5-410b-8ddb-3678e1aeaaad@a191.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
@@ -54,7 +46,15 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
 DTEND:20251026T100000Z
 DTSTART:20251026T080000Z
 SUMMARY:paiN vs M8
-UID:86455500-d29b-4a09-9374-7dbd2553facc@8645.org
+UID:44eeda01-2ff6-4037-aa5d-514656f3cc3e@44ee.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
+DTEND:20251026T160000Z
+DTSTART:20251026T140000Z
+SUMMARY:BB vs MIBR
+UID:d54883eb-98e6-4249-a7ed-ca73bb0e6de9@d548.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 END:VCALENDAR
