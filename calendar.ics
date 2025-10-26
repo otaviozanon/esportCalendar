@@ -2,19 +2,11 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
-DTEND:20251026T145500Z
-DTSTART:20251026T125500Z
-SUMMARY:BB vs MIBR
-UID:48c4cc75-dc57-4a1e-8abd-0f10b6dd226c@48c4.org
-URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
-END:VEVENT
-BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
 DTEND:20251103T113000Z
 DTSTART:20251103T093000Z
 SUMMARY:paiN vs Spirit
-UID:a109f0c7-a614-4f7d-a518-942e86efe705@a109.org
+UID:4c11d84c-6df1-4d41-b9e0-3ab318dbf624@4c11.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
@@ -22,7 +14,15 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
 DTEND:20251026T145500Z
 DTSTART:20251026T125500Z
 SUMMARY:BB vs MIBR
-UID:0a71f429-5444-43d4-a3ff-5d0001dff283@0a71.org
+UID:c0b65e7c-acea-4084-ad7d-69ff82fbd31c@c0b6.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
+DTEND:20251026T145500Z
+DTSTART:20251026T125500Z
+SUMMARY:BB vs MIBR
+UID:5e5ef19d-baca-4065-84f7-7475162398bd@5e5e.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
@@ -30,7 +30,7 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
 DTEND:20251103T040000Z
 DTSTART:20251103T020000Z
 SUMMARY:FURIA vs LVG
-UID:bdf2891c-3531-42b9-a60e-3949a4b1bca4@bdf2.org
+UID:8172f49c-594a-4857-b352-9a8ae39d0b7f@8172.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 END:VCALENDAR
