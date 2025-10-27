@@ -104,10 +104,12 @@ try:
             e.url = match_url
 
             # ✅ Identificador único para evitar duplicatas
-            match_key = (team1.lower(), team2.lower(), e.begin.isoformat())
+            sorted_teams = tuple(sorted([team1.lower().strip(), team2.lower().strip()]))
+            match_key = (sorted_teams, e.begin.isoformat(), event_name.lower().strip())
+            
             if match_key in unique_matches:
                 continue
-
+            
             unique_matches.add(match_key)
 
             cal.events.add(e)
