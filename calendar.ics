@@ -3,34 +3,34 @@ VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
-DTEND:20251103T040000Z
-DTSTART:20251103T020000Z
-SUMMARY:FURIA vs LVG
-UID:6892d484-971b-4a43-ba80-aa0eddf77524@6892.org
+DTEND:20251103T113000Z
+DTSTART:20251103T093000Z
+SUMMARY:paiN vs Spirit
+UID:043cf9fd-d4cd-4ce0-b8ad-89421f72be00@043c.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
-DTEND:20251027T100000Z
-DTSTART:20251027T080000Z
-SUMMARY:GL vs paiN
-UID:0bf294b2-899c-422d-b088-9aed1eda8a29@0bf2.org
-URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
 DTEND:20251027T190000Z
 DTSTART:20251027T170000Z
 SUMMARY:Astralis vs MIBR
-UID:779c2499-9ac9-4cce-b5bc-38fcbab80a91@779c.org
+UID:77d0a5ae-7df9-4031-b47e-370c934a41f2@77d0.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
+DTEND:20251027T100000Z
+DTSTART:20251027T080000Z
+SUMMARY:GL vs paiN
+UID:de1381ae-c666-461a-a865-b5a8d457ce30@de13.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
-DTEND:20251103T113000Z
-DTSTART:20251103T093000Z
-SUMMARY:paiN vs Spirit
-UID:29d01952-8290-4ed5-9801-23f5ba545f9c@29d0.org
+DTEND:20251103T040000Z
+DTSTART:20251103T020000Z
+SUMMARY:FURIA vs LVG
+UID:100bfb03-ed2f-4784-8480-f5b34120d458@100b.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
@@ -38,7 +38,7 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
 DTEND:20251027T100000Z
 DTSTART:20251027T080000Z
 SUMMARY:Legacy vs M8
-UID:f9bf5560-162f-4253-ae21-6436c820014e@f9bf.org
+UID:038c6c77-fd74-4ef8-85ee-dde4948a6ad7@038c.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 END:VCALENDAR
