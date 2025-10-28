@@ -3,10 +3,26 @@ VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
+DTEND:20251103T040000Z
+DTSTART:20251103T020000Z
+SUMMARY:FURIA vs LVG
+UID:89c67765-3b51-4d6f-ac15-14116fd24414@89c6.org
+URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: BLAST Rivals Fall 2025
+DTEND:20251112T093000Z
+DTSTART:20251112T073000Z
+SUMMARY:FURIA vs paiN
+UID:5b9b827c-ac0c-488f-a004-c0e1eb1b0aa3@5b9b.org
+URL:https://liquipedia.net/counterstrike/BLAST/Rivals/2025/Fall
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
 DTEND:20251103T113000Z
 DTSTART:20251103T093000Z
 SUMMARY:paiN vs Spirit
-UID:aae68409-e37b-42f5-b7d3-1d1863d618c4@aae6.org
+UID:1037901b-292c-4ff7-8c4e-d590c08d43a2@1037.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
@@ -14,31 +30,15 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
 DTEND:20251028T190000Z
 DTSTART:20251028T170000Z
 SUMMARY:B8 vs paiN
-UID:0a7dfa1c-103b-4c47-96bc-0ae5a44edec1@0a7d.org
+UID:cdc45d13-584b-4fcd-8239-9454f91db2e0@cdc4.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
-DTEND:20251103T040000Z
-DTSTART:20251103T020000Z
-SUMMARY:FURIA vs LVG
-UID:add59473-5369-4d1c-9a5f-7025cc40bc17@add5.org
-URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
 DTEND:20251028T190000Z
 DTSTART:20251028T170000Z
 SUMMARY:Fnatic vs MIBR
-UID:53fe0714-69d8-454c-bc06-b736bae261cd@53fe.org
+UID:7e779a76-85a9-4081-b2c0-bad4e4cd7098@7e77.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: BLAST Rivals Fall 2025
-DTEND:20251112T093000Z
-DTSTART:20251112T073000Z
-SUMMARY:FURIA vs paiN
-UID:678f609e-457e-43c2-bad0-53380857a2b8@678f.org
-URL:https://liquipedia.net/counterstrike/BLAST/Rivals/2025/Fall
 END:VEVENT
 END:VCALENDAR
