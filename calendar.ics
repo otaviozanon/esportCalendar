@@ -6,7 +6,7 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
 DTEND:20251031T130000Z
 DTSTART:20251031T110000Z
 SUMMARY:paiN vs Legacy
-UID:513dcbd1-0914-447b-aca3-1b961e75c1f9@513d.org
+UID:a9946a24-c64b-4df7-b0d4-5d3fb616b48a@a994.org
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 BEGIN:VEVENT
@@ -14,7 +14,15 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
 DTEND:20251103T113000Z
 DTSTART:20251103T093000Z
 SUMMARY:paiN vs Spirit
-UID:ef32bdab-35e0-42cb-9b91-28df28471232@ef32.org
+UID:daf2c2a3-335d-45a0-91b7-ac0d861ec6fc@daf2.org
+URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
+DTEND:20251103T040000Z
+DTSTART:20251103T020000Z
+SUMMARY:FURIA vs LVG
+UID:273d6c7f-598f-4199-8055-f7105591dc02@273d.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
@@ -22,15 +30,7 @@ DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: BLAST Rivals Fall 2025
 DTEND:20251112T093000Z
 DTSTART:20251112T073000Z
 SUMMARY:FURIA vs paiN
-UID:aab5c6dc-57f2-4eb0-8ecf-2f37e104c8ed@aab5.org
+UID:5a0774e4-b766-426c-86b1-6c6569edeb3f@5a07.org
 URL:https://liquipedia.net/counterstrike/BLAST/Rivals/2025/Fall
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
-DTEND:20251103T040000Z
-DTSTART:20251103T020000Z
-SUMMARY:FURIA vs LVG
-UID:dacad7aa-9708-4d36-b5cc-e1ce8d416c6b@daca.org
-URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 END:VCALENDAR
