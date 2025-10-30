@@ -2,35 +2,35 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: BLAST Rivals Fall 2025
-DTEND:20251112T093000Z
-DTSTART:20251112T073000Z
-SUMMARY:FURIA vs paiN
-UID:25a6f05c-f538-4774-a611-74653581dfa6@25a6.org
-URL:https://liquipedia.net/counterstrike/BLAST/Rivals/2025/Fall
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
-DTEND:20251031T130000Z
-DTSTART:20251031T110000Z
-SUMMARY:paiN vs Legacy
-UID:12fa45c1-4422-44af-bedc-66a922e7758d@12fa.org
-URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
+DTEND:20251103T113000Z
+DTSTART:20251103T093000Z
+SUMMARY:paiN vs Spirit
+UID:5eaf7142-5595-4432-89fb-0cb4e0b4318c@5eaf.org
+URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
 DTEND:20251103T040000Z
 DTSTART:20251103T020000Z
 SUMMARY:FURIA vs LVG
-UID:5652ad5a-cd8b-4be7-8527-d2bceba95164@5652.org
+UID:1fdca74a-c68d-406f-894e-2f422d0fe90b@1fdc.org
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
-DTEND:20251103T113000Z
-DTSTART:20251103T093000Z
-SUMMARY:paiN vs Spirit
-UID:ce2b6c91-6c7c-4aea-adcb-f5d2027771aa@ce2b.org
-URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: PGL Masters Bucharest 2025
+DTEND:20251031T130000Z
+DTSTART:20251031T110000Z
+SUMMARY:paiN vs Legacy
+UID:67285f51-0769-42c7-95ad-e219731e5a04@6728.org
+URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
+END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: BLAST Rivals Fall 2025
+DTEND:20251112T093000Z
+DTSTART:20251112T073000Z
+SUMMARY:FURIA vs paiN
+UID:0a46a38e-9b25-4830-9ec7-f4749e738f1d@0a46.org
+URL:https://liquipedia.net/counterstrike/BLAST/Rivals/2025/Fall
 END:VEVENT
 END:VCALENDAR
