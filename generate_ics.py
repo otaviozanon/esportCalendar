@@ -3,12 +3,13 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import pytz
 from ics import Calendar, Event
+import hashlib
 
 # -------------------- Configurações Globais --------------------
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
                    "RED Canids", "Legacy", "ODDIK"]
 
-BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A"] 
+BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A"]
 
 URL_LIQUIPEDIA = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
 BR_TZ = pytz.timezone("America/Sao_Paulo")
@@ -103,13 +104,16 @@ try:
             )
             e.url = match_url
 
-            # ✅ Identificador único para evitar duplicatas
+            uid_base = f"{team1}_{team2}_{event_name}_{e.begin.isoformat()}".encode("utf-8")
+            stable_uid = hashlib.md5(uid_base).hexdigest()[:8]
+            e.uid = f"{stable_uid}@cs2calendar"
+
             sorted_teams = tuple(sorted([team1.lower().strip(), team2.lower().strip()]))
             match_key = (sorted_teams, e.begin.isoformat(), event_name.lower().strip())
-            
+
             if match_key in unique_matches:
                 continue
-            
+
             unique_matches.add(match_key)
 
             cal.events.add(e)
