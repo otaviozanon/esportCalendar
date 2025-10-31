@@ -2,13 +2,13 @@ name: Atualizar Calendário CS2
 
 on:
   schedule:
-    - cron: "*/45 * * * *"  # 🔹 A cada 45 minutos
-  workflow_dispatch:        # 🔹 Permite execução manual
+    - cron: "*/45 * * * *" # 🔹 A cada 45 minutos
+  workflow_dispatch: # 🔹 Permite execução manual
 
 # Permissões necessárias para o workflow funcionar:
 permissions:
-  contents: write  # Permite escrever no repositório (necessário para fazer commit)
-  actions: read    # Permite ler informações de actions (boas práticas de segurança)
+  contents: write # Permite escrever no repositório (necessário para fazer commit)
+  actions: read # Permite ler informações de actions (boas práticas de segurança)
 
 # Define os jobs (tarefas) que serão executados
 jobs:
@@ -19,33 +19,32 @@ jobs:
     steps:
       # Passo 1: Faz checkout do código do repositório
       - name: Checkout código
-        uses: actions/checkout@v4  # Usa a action oficial do GitHub para fazer checkout
+        uses: actions/checkout@v4 # Usa a action oficial do GitHub para fazer checkout
         with:
-          ref: main         # Faz checkout do branch 'main'
-          fetch-depth: 0    # Baixa todo o histórico do repositório (útil para git diff, etc.)
+          ref: main # Faz checkout do branch 'main'
+          fetch-depth: 0 # Baixa todo o histórico do repositório (útil para git diff, etc.)
 
       # Passo 2: Configura o ambiente Python na máquina
       - name: Configurar Python
-        uses: actions/setup-python@v5  # Usa a action oficial para configurar Python
+        uses: actions/setup-python@v5 # Usa a action oficial para configurar Python
         with:
-          python-version: "3.11"  # Especifica a versão do Python a ser usada
+          python-version: "3.11" # Especifica a versão do Python a ser usada
 
-      # Passo 3: Instala as dependências Python necessárias para o script
+      # Passo 3: Instala as dependências Python necessárias a partir de requirements.txt
       - name: Instalar dependências Python
         run: |
-          python -m pip install --upgrade pip  # Atualiza o pip
-          pip install ics requests pytz beautifulsoup4 lxml  # Instala os pacotes necessários
+          python -m pip install --upgrade pip # Atualiza o pip
+          pip install -r requirements.txt # Instala os pacotes listados no requirements.txt
 
       # Passo 4: Executa o script que gera o arquivo calendar.ics
       - name: Executar script generate_ics.py
-        run: python generate_ics.py  # Roda o script Python que gera o arquivo ICS
+        run: python generate_ics.py # Roda o script Python que gera o arquivo ICS
 
       # Passo 5: Faz commit e push do arquivo gerado de volta para o repositório
       - name: Commit e publicar calendar.ics
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-
           git add calendar.ics
           git commit -m "Atualizar ICS CS2 - $(date -u +"%Y-%m-%dT%H:%M:%SZ")" || echo "Sem mudanças para commitar"
           git push
