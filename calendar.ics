@@ -27,10 +27,10 @@ URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 5 (Bo5)\n📅 Event: PGL Masters Bucharest 2025
-DTEND:20251101T141000Z
-DTSTART:20251101T121000Z
+DTEND:20251101T142500Z
+DTSTART:20251101T122500Z
 SUMMARY:Legacy vs Aurora
-UID:24c53f3d@cs2calendar
+UID:1c0ab45c@cs2calendar
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
 END:VCALENDAR
