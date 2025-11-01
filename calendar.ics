@@ -33,4 +33,12 @@ SUMMARY:Legacy vs Aurora
 UID:1c0ab45c@cs2calendar
 URL:https://liquipedia.net/counterstrike/PGL/2025/Masters
 END:VEVENT
+BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
+DTEND:20251106T140000Z
+DTSTART:20251106T120000Z
+SUMMARY:Imperial vs Alzon
+UID:0ef2df9e@cs2calendar
+URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
+END:VEVENT
 END:VCALENDAR
