@@ -26,6 +26,14 @@ UID:3b64dd36@cs2calendar
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CCT SA Series #6
+DTEND:20251103T210000Z
+DTSTART:20251103T190000Z
+SUMMARY:DR vs paiN.A
+UID:c964273d@cs2calendar
+URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
+END:VEVENT
+BEGIN:VEVENT
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
 DTEND:20251106T140000Z
 DTSTART:20251106T120000Z
