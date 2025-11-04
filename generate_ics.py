@@ -2,13 +2,14 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import pytz
-from ics import Calendar, Event, Alarm
+from ics import Calendar, Event
+from ics.alarm import DisplayAlarm  # ✅ Import correto para ics 0.7.2
 import hashlib
 
 # -------------------- Configurações Globais --------------------
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
                    "RED Canids", "Legacy", "ODDIK"]
-BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A" "PaiN.A"]
+BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A"]
 URL_LIQUIPEDIA = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
 BR_TZ = pytz.timezone("America/Sao_Paulo")
 
@@ -100,7 +101,8 @@ try:
             )
             e.url = match_url
             
-            alarm = Alarm(trigger=timedelta(minutes=0), display_text=f"{team1} vs {team2}")
+            # ✅ ALARME EXATAMENTE NO HORÁRIO DO JOGO (usando DisplayAlarm)
+            alarm = DisplayAlarm(trigger=timedelta(minutes=0), display_text=f"{team1} vs {team2}")
             e.alarms.append(alarm)
             
             uid_base = f"{team1}_{team2}_{event_name}_{e.begin.isoformat()}".encode("utf-8")
@@ -130,6 +132,6 @@ except Exception as e:
 try:
     with open("calendar.ics", "w", encoding="utf-8") as f:
         f.writelines(cal.serialize_iter())
-    print(f"\n📌 {added_count} partidas BR salvas em calendar.ics")
+    print(f"\n📌 {added_count} partidas BR salvas em calendar.ics (com alarmes no horário do jogo)")
 except Exception as e:
     print(f"❌ Erro ao salvar calendar.ics: {e}")
