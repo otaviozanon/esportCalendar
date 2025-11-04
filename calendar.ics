@@ -2,6 +2,11 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:FURIA vs paiN
+TRIGGER:P
+END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: BLAST Rivals Fall 2025
 DTEND:20251112T090000Z
 DTSTART:20251112T070000Z
@@ -10,30 +15,24 @@ UID:35515ecc@cs2calendar
 URL:https://liquipedia.net/counterstrike/BLAST/Rivals/2025/Fall
 END:VEVENT
 BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:TYLOO vs paiN
+TRIGGER:P
+END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
-DTEND:20251103T113000Z
-DTSTART:20251103T093000Z
-SUMMARY:paiN vs Spirit
-UID:16abc62a@cs2calendar
+DTEND:20251104T113000Z
+DTSTART:20251104T093000Z
+SUMMARY:TYLOO vs paiN
+UID:7db49f43@cs2calendar
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
-DTEND:20251103T040000Z
-DTSTART:20251103T020000Z
-SUMMARY:FURIA vs LVG
-UID:3b64dd36@cs2calendar
-URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
-END:VEVENT
-BEGIN:VEVENT
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CCT SA Series #6
-DTEND:20251103T210000Z
-DTSTART:20251103T190000Z
-SUMMARY:DR vs paiN.A
-UID:c964273d@cs2calendar
-URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
-END:VEVENT
-BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:FURIA Fe vs Crashers
+TRIGGER:P
+END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CCT SA Series #6
 DTEND:20251104T210000Z
 DTSTART:20251104T190000Z
@@ -42,11 +41,29 @@ UID:31bbe7c3@cs2calendar
 URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
 END:VEVENT
 BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Imperial vs Alzon
+TRIGGER:P
+END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
 DTEND:20251106T140000Z
 DTSTART:20251106T120000Z
 SUMMARY:Imperial vs Alzon
 UID:0ef2df9e@cs2calendar
 URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:FURIA vs G2
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: IEM Chengdu 2025
+DTEND:20251104T040000Z
+DTSTART:20251104T020000Z
+SUMMARY:FURIA vs G2
+UID:e0c0d290@cs2calendar
+URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
 END:VEVENT
 END:VCALENDAR
