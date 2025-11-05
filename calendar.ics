@@ -17,14 +17,14 @@ END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Imperial vs Alzon
+DESCRIPTION:Fluxo vs Charrados
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
-DTEND:20251106T140000Z
-DTSTART:20251106T120000Z
-SUMMARY:Imperial vs Alzon
-UID:0ef2df9e@cs2calendar
+DTEND:20251106T220000Z
+DTSTART:20251106T200000Z
+SUMMARY:Fluxo vs Charrados
+UID:f8368074@cs2calendar
 URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
 BEGIN:VEVENT
@@ -52,5 +52,18 @@ DTSTART:20251105T220000Z
 SUMMARY:FURIA Fe vs paiN.A
 UID:5bd60d82@cs2calendar
 URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Imperial vs Alzon
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
+DTEND:20251106T140000Z
+DTSTART:20251106T120000Z
+SUMMARY:Imperial vs Alzon
+UID:0ef2df9e@cs2calendar
+URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
 END:VCALENDAR
