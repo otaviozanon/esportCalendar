@@ -34,10 +34,10 @@ DESCRIPTION:Fluxo vs BH
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
-DTEND:20251107T043000Z
-DTSTART:20251107T023000Z
+DTEND:20251107T041500Z
+DTSTART:20251107T021500Z
 SUMMARY:Fluxo vs BH
-UID:07c7af7f@cs2calendar
+UID:8b4c5432@cs2calendar
 URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
 BEGIN:VEVENT
