@@ -17,28 +17,28 @@ END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Imperial vs TBD
+DESCRIPTION:Fluxo vs 9z
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
-DTEND:20251108T220000Z
-DTSTART:20251108T200000Z
-SUMMARY:Imperial vs TBD
-UID:38a03a9e@cs2calendar
+DTEND:20251108T204500Z
+DTSTART:20251108T184500Z
+SUMMARY:Fluxo vs 9z
+UID:4b8666b1@cs2calendar
 URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Largados vs paiN.A
+DESCRIPTION:Imperial vs Sharks
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CCT SA Series #6
-DTEND:20251108T180000Z
-DTSTART:20251108T160000Z
-SUMMARY:Largados vs paiN.A
-UID:ba4978c6@cs2calendar
-URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
+DTEND:20251108T220000Z
+DTSTART:20251108T200000Z
+SUMMARY:Imperial vs Sharks
+UID:447e041b@cs2calendar
+URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -52,18 +52,5 @@ DTSTART:20251109T080000Z
 SUMMARY:FURIA vs Vitality
 UID:ddc0fe8e@cs2calendar
 URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Fluxo vs 9z
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
-DTEND:20251108T200000Z
-DTSTART:20251108T180000Z
-SUMMARY:Fluxo vs 9z
-UID:504008e5@cs2calendar
-URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
 END:VCALENDAR
