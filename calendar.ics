@@ -4,6 +4,32 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
+DESCRIPTION:Fluxo vs Galorys
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
+DTEND:20251109T010000Z
+DTSTART:20251108T230000Z
+SUMMARY:Fluxo vs Galorys
+UID:35d94ee2@cs2calendar
+URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Imperial vs Sharks
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
+DTEND:20251108T232000Z
+DTSTART:20251108T212000Z
+SUMMARY:Imperial vs Sharks
+UID:272b0861@cs2calendar
+URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
 DESCRIPTION:FURIA vs paiN
 TRIGGER:P
 END:VALARM
@@ -13,32 +39,6 @@ DTSTART:20251112T070000Z
 SUMMARY:FURIA vs paiN
 UID:35515ecc@cs2calendar
 URL:https://liquipedia.net/counterstrike/BLAST/Rivals/2025/Fall
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Imperial vs Sharks
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
-DTEND:20251108T230000Z
-DTSTART:20251108T210000Z
-SUMMARY:Imperial vs Sharks
-UID:35e59b47@cs2calendar
-URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Fluxo vs 9z
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
-DTEND:20251108T204500Z
-DTSTART:20251108T184500Z
-SUMMARY:Fluxo vs 9z
-UID:4b8666b1@cs2calendar
-URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
