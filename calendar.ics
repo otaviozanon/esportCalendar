@@ -30,19 +30,6 @@ END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Largados vs paiN.A
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CCT SA Series #6
-DTEND:20251108T180000Z
-DTSTART:20251108T160000Z
-SUMMARY:Largados vs paiN.A
-UID:ba4978c6@cs2calendar
-URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
 DESCRIPTION:Imperial vs Yawara
 TRIGGER:P
 END:VALARM
@@ -52,6 +39,19 @@ DTSTART:20251108T140000Z
 SUMMARY:Imperial vs Yawara
 UID:79fa6256@cs2calendar
 URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Largados vs paiN.A
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CCT SA Series #6
+DTEND:20251108T183000Z
+DTSTART:20251108T163000Z
+SUMMARY:Largados vs paiN.A
+UID:eb76240a@cs2calendar
+URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
