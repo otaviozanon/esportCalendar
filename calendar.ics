@@ -40,17 +40,4 @@ SUMMARY:Sharks vs Fluxo
 UID:74ca4839@cs2calendar
 URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:FURIA vs Vitality
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 5 (Bo5)\n📅 Event: IEM Chengdu 2025
-DTEND:20251109T100000Z
-DTSTART:20251109T080000Z
-SUMMARY:FURIA vs Vitality
-UID:ddc0fe8e@cs2calendar
-URL:https://liquipedia.net/counterstrike/Intel_Extreme_Masters/2025/Chengdu
-END:VEVENT
 END:VCALENDAR
