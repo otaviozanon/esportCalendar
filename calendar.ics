@@ -17,27 +17,27 @@ END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Fluxo vs Galorys
+DESCRIPTION:Imperial vs Galorys
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
-DTEND:20251109T020000Z
-DTSTART:20251109T000000Z
-SUMMARY:Fluxo vs Galorys
-UID:4d9830f0@cs2calendar
+DTEND:20251109T170000Z
+DTSTART:20251109T150000Z
+SUMMARY:Imperial vs Galorys
+UID:fc2ca772@cs2calendar
 URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Imperial vs Sharks
+DESCRIPTION:Sharks vs Fluxo
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Circuit X Retake São Paulo
-DTEND:20251108T232000Z
-DTSTART:20251108T212000Z
-SUMMARY:Imperial vs Sharks
-UID:272b0861@cs2calendar
+DESCRIPTION:🎮 Format: Best of 5 (Bo5)\n📅 Event: Circuit X Retake São Paulo
+DTEND:20251109T200000Z
+DTSTART:20251109T180000Z
+SUMMARY:Sharks vs Fluxo
+UID:74ca4839@cs2calendar
 URL:https://liquipedia.net/counterstrike/Circuit_X/Retake/2025/S%C3%A3o_Paulo
 END:VEVENT
 BEGIN:VEVENT
