@@ -14,4 +14,17 @@ SUMMARY:FURIA vs paiN
 UID:35515ecc@cs2calendar
 URL:https://liquipedia.net/counterstrike/BLAST/Rivals/2025/Fall
 END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Procyon vs FURIA Fe
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CCT SA Series #6
+DTEND:20251111T200000Z
+DTSTART:20251111T180000Z
+SUMMARY:Procyon vs FURIA Fe
+UID:ff082660@cs2calendar
+URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
+END:VEVENT
 END:VCALENDAR
