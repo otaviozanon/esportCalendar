@@ -27,17 +27,4 @@ SUMMARY:ODDIK vs Fuego
 UID:a7067079@cs2calendar
 URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
 END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:FURIA Fe vs MIBR Fe
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Rainhas do Clutch 2025
-DTEND:20251113T220000Z
-DTSTART:20251113T200000Z
-SUMMARY:FURIA Fe vs MIBR Fe
-UID:479c5e3e@cs2calendar
-URL:https://liquipedia.net/counterstrike/FERJEE/Rainhas_do_Clutch/2025
-END:VEVENT
 END:VCALENDAR
