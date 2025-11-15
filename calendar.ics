@@ -4,15 +4,15 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:4M vs MIBR Fe
+DESCRIPTION:ODDIK vs 9z
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Rainhas do Clutch 2025
-DTEND:20251114T200000Z
-DTSTART:20251114T180000Z
-SUMMARY:4M vs MIBR Fe
-UID:7a5e1224@cs2calendar
-URL:https://liquipedia.net/counterstrike/FERJEE/Rainhas_do_Clutch/2025
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CCT SA Series #6
+DTEND:20251115T170000Z
+DTSTART:20251115T150000Z
+SUMMARY:ODDIK vs 9z
+UID:fe6fcc3f@cs2calendar
+URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -43,14 +43,14 @@ END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:ODDIK vs FdB
+DESCRIPTION:4M vs MIBR Fe
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: CCT SA Series #6
-DTEND:20251115T000000Z
-DTSTART:20251114T220000Z
-SUMMARY:ODDIK vs FdB
-UID:ae021e65@cs2calendar
-URL:https://liquipedia.net/counterstrike/CCT/Season_3/South_America/Series_6
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Rainhas do Clutch 2025
+DTEND:20251114T200000Z
+DTSTART:20251114T180000Z
+SUMMARY:4M vs MIBR Fe
+UID:7a5e1224@cs2calendar
+URL:https://liquipedia.net/counterstrike/FERJEE/Rainhas_do_Clutch/2025
 END:VEVENT
 END:VCALENDAR
