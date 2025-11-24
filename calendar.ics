@@ -1,43 +1,4 @@
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:MIBR Fe vs Atrix
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: ESL Impact League Season 8
-DTEND:20251128T144500Z
-DTSTART:20251128T124500Z
-SUMMARY:MIBR Fe vs Atrix
-UID:ee930e6c@cs2calendar
-URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Largados vs FURIA Fe
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Cajunto Copa do Brasil
-DTEND:20251126T010000Z
-DTSTART:20251125T230000Z
-SUMMARY:Largados vs FURIA Fe
-UID:6fdedf70@cs2calendar
-URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Fnatic vs Fluxo
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251125T002500Z
-DTSTART:20251124T222500Z
-SUMMARY:Fnatic vs Fluxo
-UID:0d3b12bf@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
-END:VEVENT
 END:VCALENDAR
