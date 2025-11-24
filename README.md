@@ -5,21 +5,6 @@ A Python script to generate an esport calendar in iCalendar format.
 
 This tool helps you keep track of your favorite esport events by creating a calendar file that you can import into your preferred calendar application.
 
-## 📋 Table of Contents
-
-- [About](#about)
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Project Structure](#project-structure)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [FAQ](#faq)
-- [Support](#support)
-- [Acknowledgments](#acknowledgments)
-
 ## About
 
 The `esportCalendar` project is a Python script designed to automate the creation of iCalendar (.ics) files for esport events. It addresses the challenge of manually tracking various esport tournaments and matches across different platforms. This tool aims to simplify the process by scraping event data from specified sources and generating a calendar file that can be easily imported into popular calendar applications like Google Calendar, Outlook, and Apple Calendar.
