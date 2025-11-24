@@ -124,16 +124,6 @@ git clone https://github.com/yourusername/esportCalendar.git
 # Install dependencies
 pip install -r requirements.txt
 
-# Create a new branch
-git checkout -b feature/your-feature-name
-
-# Make your changes and test
-# (Add testing instructions here if applicable)
-
-# Commit and push
-git commit -m "Description of changes"
-git push origin feature/your-feature-name
-
 ### Code Style
 - Follow existing code conventions
 - Add tests for new features
