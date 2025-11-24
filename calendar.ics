@@ -27,17 +27,4 @@ SUMMARY:Largados vs FURIA Fe
 UID:6fdedf70@cs2calendar
 URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
 END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:GL vs Fluxo
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251124T162000Z
-DTSTART:20251124T142000Z
-SUMMARY:GL vs Fluxo
-UID:6006ab25@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
-END:VEVENT
 END:VCALENDAR
