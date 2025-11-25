@@ -4,14 +4,14 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:FLY vs Fluxo
+DESCRIPTION:Legacy vs RED
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
-DTEND:20251125T190000Z
-DTSTART:20251125T170000Z
-SUMMARY:FLY vs Fluxo
-UID:917b09d8@cs2calendar
+DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
+DTEND:20251125T160000Z
+DTSTART:20251125T140000Z
+SUMMARY:Legacy vs RED
+UID:1cdcd464@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
 END:VEVENT
 BEGIN:VEVENT
@@ -34,23 +34,23 @@ DESCRIPTION:Fnatic vs Imperial
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251125T180000Z
-DTSTART:20251125T160000Z
+DTEND:20251125T170000Z
+DTSTART:20251125T150000Z
 SUMMARY:Fnatic vs Imperial
-UID:b4069cbd@cs2calendar
+UID:c7c1d64a@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Legacy vs RED
+DESCRIPTION:FLY vs Fluxo
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251125T170000Z
-DTSTART:20251125T150000Z
-SUMMARY:Legacy vs RED
-UID:940ed8f3@cs2calendar
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
+DTEND:20251125T180000Z
+DTSTART:20251125T160000Z
+SUMMARY:FLY vs Fluxo
+UID:882f9c9e@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
 END:VEVENT
 BEGIN:VEVENT
