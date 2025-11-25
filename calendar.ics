@@ -4,14 +4,14 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Fnatic vs Imperial
+DESCRIPTION:FLY vs Fluxo
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251125T171000Z
-DTSTART:20251125T151000Z
-SUMMARY:Fnatic vs Imperial
-UID:b1207646@cs2calendar
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
+DTEND:20251125T181500Z
+DTSTART:20251125T161500Z
+SUMMARY:FLY vs Fluxo
+UID:bccc2c35@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
 END:VEVENT
 BEGIN:VEVENT
@@ -26,19 +26,6 @@ DTSTART:20251128T124500Z
 SUMMARY:MIBR Fe vs Atrix
 UID:ee930e6c@cs2calendar
 URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:FLY vs Fluxo
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
-DTEND:20251125T180000Z
-DTSTART:20251125T160000Z
-SUMMARY:FLY vs Fluxo
-UID:882f9c9e@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
