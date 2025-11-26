@@ -4,32 +4,6 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Fluxo vs NIP
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
-DTEND:20251126T160000Z
-DTSTART:20251126T140000Z
-SUMMARY:Fluxo vs NIP
-UID:9e4ce781@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:B8 vs Legacy
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
-DTEND:20251126T160000Z
-DTSTART:20251126T140000Z
-SUMMARY:B8 vs Legacy
-UID:3c64d987@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
 DESCRIPTION:ShindeN vs FURIA Fe
 TRIGGER:P
 END:VALARM
@@ -51,6 +25,19 @@ DTEND:20251126T210000Z
 DTSTART:20251126T190000Z
 SUMMARY:Imperial vs The Huns
 UID:76c0b51e@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:B8 vs Legacy
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
+DTEND:20251126T160000Z
+DTSTART:20251126T140000Z
+SUMMARY:B8 vs Legacy
+UID:3c64d987@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
 END:VEVENT
 BEGIN:VEVENT
