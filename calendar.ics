@@ -21,10 +21,10 @@ DESCRIPTION:Imperial vs The Huns
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
-DTEND:20251126T211500Z
-DTSTART:20251126T191500Z
+DTEND:20251126T212000Z
+DTSTART:20251126T192000Z
 SUMMARY:Imperial vs The Huns
-UID:09e2e8d1@cs2calendar
+UID:28ddec1b@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
 END:VEVENT
 BEGIN:VEVENT
