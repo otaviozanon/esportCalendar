@@ -4,6 +4,32 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
+DESCRIPTION:PV vs Legacy
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
+DTEND:20251127T210000Z
+DTSTART:20251127T190000Z
+SUMMARY:PV vs Legacy
+UID:316ffe99@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Fluxo vs FaZe
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
+DTEND:20251127T160000Z
+DTSTART:20251127T140000Z
+SUMMARY:Fluxo vs FaZe
+UID:63590b33@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
 DESCRIPTION:ShindeN vs FURIA Fe
 TRIGGER:P
 END:VALARM
@@ -13,6 +39,19 @@ DTSTART:20251126T230000Z
 SUMMARY:ShindeN vs FURIA Fe
 UID:3d3c8892@cs2calendar
 URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:NRG vs Imperial
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
+DTEND:20251127T183000Z
+DTSTART:20251127T163000Z
+SUMMARY:NRG vs Imperial
+UID:e3b58f6e@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
