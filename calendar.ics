@@ -4,6 +4,19 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
+DESCRIPTION:NRG vs Imperial
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
+DTEND:20251127T190500Z
+DTSTART:20251127T170500Z
+SUMMARY:NRG vs Imperial
+UID:d376af7c@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
 DESCRIPTION:PV vs Legacy
 TRIGGER:P
 END:VALARM
@@ -26,31 +39,5 @@ DTSTART:20251128T124500Z
 SUMMARY:MIBR Fe vs Atrix
 UID:ee930e6c@cs2calendar
 URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Fluxo vs FaZe
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
-DTEND:20251127T160000Z
-DTSTART:20251127T140000Z
-SUMMARY:Fluxo vs FaZe
-UID:63590b33@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:NRG vs Imperial
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
-DTEND:20251127T184500Z
-DTSTART:20251127T164500Z
-SUMMARY:NRG vs Imperial
-UID:9baf8439@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_1
 END:VEVENT
 END:VCALENDAR
