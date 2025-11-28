@@ -1,30 +1,4 @@
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:MIBR vs Imperial
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251129T170000Z
-DTSTART:20251129T150000Z
-SUMMARY:MIBR vs Imperial
-UID:4e018b02@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Atrix vs MIBR Fe
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League Season 8
-DTEND:20251129T143500Z
-DTSTART:20251129T123500Z
-SUMMARY:Atrix vs MIBR Fe
-UID:35f52665@cs2calendar
-URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
-END:VEVENT
 END:VCALENDAR
