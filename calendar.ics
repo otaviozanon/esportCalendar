@@ -4,28 +4,15 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:RED.A vs MIBR.A
+DESCRIPTION:Fnatic vs Imperial
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Cajunto Copa do Brasil
-DTEND:20251130T010000Z
-DTSTART:20251129T230000Z
-SUMMARY:RED.A vs MIBR.A
-UID:dbc288c1@cs2calendar
-URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Sakura vs MIBR Fe
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League Season 8
-DTEND:20251130T110000Z
-DTSTART:20251130T090000Z
-SUMMARY:Sakura vs MIBR Fe
-UID:62e619c9@cs2calendar
-URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
+DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
+DTEND:20251130T170000Z
+DTSTART:20251130T150000Z
+SUMMARY:Fnatic vs Imperial
+UID:30ca3644@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -39,5 +26,44 @@ DTSTART:20251129T200000Z
 SUMMARY:Procyon vs ODDIK.A
 UID:3bc6b263@cs2calendar
 URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:RED.A vs MIBR.A
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Cajunto Copa do Brasil
+DTEND:20251130T010000Z
+DTSTART:20251129T230000Z
+SUMMARY:RED.A vs MIBR.A
+UID:dbc288c1@cs2calendar
+URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Liquid vs MIBR
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
+DTEND:20251130T180000Z
+DTSTART:20251130T160000Z
+SUMMARY:Liquid vs MIBR
+UID:3cb17f35@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Sakura vs MIBR Fe
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League Season 8
+DTEND:20251130T110000Z
+DTSTART:20251130T090000Z
+SUMMARY:Sakura vs MIBR Fe
+UID:62e619c9@cs2calendar
+URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
 END:VEVENT
 END:VCALENDAR
