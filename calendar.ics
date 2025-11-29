@@ -34,23 +34,10 @@ DESCRIPTION:Sakura vs MIBR Fe
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League Season 8
-DTEND:20251130T140500Z
-DTSTART:20251130T120500Z
+DTEND:20251130T110000Z
+DTSTART:20251130T090000Z
 SUMMARY:Sakura vs MIBR Fe
-UID:04ba9472@cs2calendar
+UID:62e619c9@cs2calendar
 URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:MIBR vs Imperial
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251129T171000Z
-DTSTART:20251129T151000Z
-SUMMARY:MIBR vs Imperial
-UID:facbb2ec@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
 END:VEVENT
 END:VCALENDAR
