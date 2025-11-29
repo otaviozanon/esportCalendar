@@ -4,15 +4,15 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Sakura vs MIBR Fe
+DESCRIPTION:MIBR vs P.UA
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League Season 8
-DTEND:20251130T110000Z
-DTSTART:20251130T090000Z
-SUMMARY:Sakura vs MIBR Fe
-UID:62e619c9@cs2calendar
-URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
+DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
+DTEND:20251129T212000Z
+DTSTART:20251129T192000Z
+SUMMARY:MIBR vs P.UA
+UID:2e29de82@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -30,15 +30,15 @@ END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:NAVI vs Imperial
+DESCRIPTION:Sakura vs MIBR Fe
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251129T200500Z
-DTSTART:20251129T180500Z
-SUMMARY:NAVI vs Imperial
-UID:97f983ee@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League Season 8
+DTEND:20251130T110000Z
+DTSTART:20251130T090000Z
+SUMMARY:Sakura vs MIBR Fe
+UID:62e619c9@cs2calendar
+URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -52,18 +52,5 @@ DTSTART:20251129T200000Z
 SUMMARY:Procyon vs ODDIK.A
 UID:3bc6b263@cs2calendar
 URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:MIBR vs P.UA
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251129T210000Z
-DTSTART:20251129T190000Z
-SUMMARY:MIBR vs P.UA
-UID:4ea666a8@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
 END:VEVENT
 END:VCALENDAR
