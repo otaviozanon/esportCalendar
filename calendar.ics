@@ -4,15 +4,15 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:MIBR vs P.UA
+DESCRIPTION:RED.A vs MIBR.A
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251129T212000Z
-DTSTART:20251129T192000Z
-SUMMARY:MIBR vs P.UA
-UID:2e29de82@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Cajunto Copa do Brasil
+DTEND:20251130T010000Z
+DTSTART:20251129T230000Z
+SUMMARY:RED.A vs MIBR.A
+UID:dbc288c1@cs2calendar
+URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -26,19 +26,6 @@ DTSTART:20251130T090000Z
 SUMMARY:Sakura vs MIBR Fe
 UID:62e619c9@cs2calendar
 URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:RED.A vs MIBR.A
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Cajunto Copa do Brasil
-DTEND:20251130T010000Z
-DTSTART:20251129T230000Z
-SUMMARY:RED.A vs MIBR.A
-UID:dbc288c1@cs2calendar
-URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
