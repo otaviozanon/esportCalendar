@@ -4,14 +4,14 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:MIBR Fe vs TBD
+DESCRIPTION:MIBR Fe vs BIG EQ
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: ESL Impact League Season 8
 DTEND:20251130T173500Z
 DTSTART:20251130T153500Z
-SUMMARY:MIBR Fe vs TBD
-UID:f0a436f5@cs2calendar
+SUMMARY:MIBR Fe vs BIG EQ
+UID:7619ce3b@cs2calendar
 URL:https://liquipedia.net/counterstrike/ESL/Impact_League/Season_8
 END:VEVENT
 BEGIN:VEVENT
