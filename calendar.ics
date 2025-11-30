@@ -1,17 +1,4 @@
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Liquid vs MIBR
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
-DTEND:20251130T202500Z
-DTSTART:20251130T182500Z
-SUMMARY:Liquid vs MIBR
-UID:eee30fec@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
-END:VEVENT
 END:VCALENDAR
