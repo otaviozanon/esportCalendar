@@ -1,4 +1,17 @@
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Imperial vs M80
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
+DTEND:20251201T183000Z
+DTSTART:20251201T163000Z
+SUMMARY:Imperial vs M80
+UID:459904a8@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_2
+END:VEVENT
 END:VCALENDAR
