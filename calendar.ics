@@ -1,4 +1,43 @@
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:MongolZ vs Imperial
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
+DTEND:20251204T140000Z
+DTSTART:20251204T120000Z
+SUMMARY:MongolZ vs Imperial
+UID:4ded7884@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_3
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:FURIA vs NAVI
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
+DTEND:20251204T170000Z
+DTSTART:20251204T150000Z
+SUMMARY:FURIA vs NAVI
+UID:6fabccd0@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_3
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:paiN vs 3DMAX
+TRIGGER:P
+END:VALARM
+DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
+DTEND:20251204T160000Z
+DTSTART:20251204T140000Z
+SUMMARY:paiN vs 3DMAX
+UID:d855fb31@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_3
+END:VEVENT
 END:VCALENDAR
