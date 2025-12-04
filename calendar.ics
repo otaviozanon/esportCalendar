@@ -14,17 +14,4 @@ SUMMARY:FURIA vs Imperial
 UID:739a3dea@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_3
 END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:G2 vs paiN
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251204T194000Z
-DTSTART:20251204T174000Z
-SUMMARY:G2 vs paiN
-UID:753aa0a8@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_3
-END:VEVENT
 END:VCALENDAR
