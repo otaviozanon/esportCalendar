@@ -4,27 +4,27 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:GH vs ODDIK.A
+DESCRIPTION:FURIA vs Imperial
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: Cajunto Copa do Brasil
-DTEND:20251208T010000Z
-DTSTART:20251207T230000Z
-SUMMARY:GH vs ODDIK.A
-UID:db145b6d@cs2calendar
-URL:https://liquipedia.net/counterstrike/Cajunto/Copa_do_Brasil
+DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
+DTEND:20251204T223000Z
+DTSTART:20251204T203000Z
+SUMMARY:FURIA vs Imperial
+UID:739a3dea@cs2calendar
+URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_3
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:FURIA vs NAVI
+DESCRIPTION:G2 vs paiN
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251204T175500Z
-DTSTART:20251204T155500Z
-SUMMARY:FURIA vs NAVI
-UID:7268dda2@cs2calendar
+DTEND:20251204T194000Z
+DTSTART:20251204T174000Z
+SUMMARY:G2 vs paiN
+UID:753aa0a8@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_3
 END:VEVENT
 END:VCALENDAR
