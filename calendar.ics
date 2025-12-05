@@ -8,10 +8,10 @@ DESCRIPTION:Imperial vs Falcons
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 1 (Bo1)\n📅 Event: SL Budapest Major 2025
-DTEND:20251205T170000Z
-DTSTART:20251205T150000Z
+DTEND:20251205T165500Z
+DTSTART:20251205T145500Z
 SUMMARY:Imperial vs Falcons
-UID:1110363e@cs2calendar
+UID:d205368a@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_3
 END:VEVENT
 BEGIN:VEVENT
