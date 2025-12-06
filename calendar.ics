@@ -4,27 +4,14 @@ PRODID:ics.py - http://git.io/lLljaA
 BEGIN:VEVENT
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:FURIA vs TBD
-TRIGGER:P
-END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
-DTEND:20251211T180000Z
-DTSTART:20251211T160000Z
-SUMMARY:FURIA vs TBD
-UID:a872b64c@cs2calendar
-URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Playoffs
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:P.UA vs Imperial
+DESCRIPTION:Imperial vs P.UA
 TRIGGER:P
 END:VALARM
 DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: SL Budapest Major 2025
 DTEND:20251206T183000Z
 DTSTART:20251206T163000Z
-SUMMARY:P.UA vs Imperial
-UID:295e02ff@cs2calendar
+SUMMARY:Imperial vs P.UA
+UID:e43cff39@cs2calendar
 URL:https://liquipedia.net/counterstrike/StarLadder/2025/Major/Stage_3
 END:VEVENT
 BEGIN:VEVENT
