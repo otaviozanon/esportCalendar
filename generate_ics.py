@@ -17,7 +17,7 @@ cal = Calendar()
 added_count = 0
 unique_matches = set()
 
-print(f"🔍 Buscando partidas em {URL_LIQUIPEDIA}...")
+print(f"🔍 Buscando partidas em {URL_LIQUIPEDIA} (sem Selenium, HTML estático)...")
 
 try:
     response = requests.get(URL_LIQUIPEDIA, timeout=10)
@@ -32,55 +32,32 @@ try:
     # --- LOG 2: Um trecho do HTML retornado (apenas os primeiros 1000 caracteres para não poluir demais) ---
     print(f"--- DEBUG: Primeiros 1000 caracteres do HTML retornado:\n{response.text[:1000]}...")
 
-    MATCH_TABLE_CLASS = 'wikitable wikitable-striped infobox_matches_content'
-    match_tables = soup.find_all('table', class_=MATCH_TABLE_CLASS)
+    # --- ATUALIZAÇÃO CRÍTICA: Nova forma de encontrar os blocos de partida ---
+    # Com base no HTML que você forneceu, cada partida é um 'div' com a classe 'match-info'.
+    # Não precisamos mais do 'infobox_matches_content' como um container intermediário,
+    # podemos ir direto aos 'match-info' divs.
+    match_blocks = soup.find_all('div', class_='match-info')
 
-    # --- LOG 3: Verificando se há *alguma* tabela na página, independentemente da classe ---
-    all_tables = soup.find_all('table')
-    print(f"--- DEBUG: Total de elementos <table> encontrados na página: {len(all_tables)}")
-    if all_tables:
-        print(f"--- DEBUG: Exemplo da primeira tabela encontrada (tag e classes): {all_tables[0].name}, classes: {all_tables[0].get('class')}")
+    print(f"✅ Encontrados {len(match_blocks)} blocos de partidas individuais com a classe 'match-info'.")
 
-    print(f"✅ Encontrados {len(match_tables)} blocos de partidas individuais com a classe '{MATCH_TABLE_CLASS}'.")
-
-    if not match_tables:
-        print("⚠️ Nenhum bloco de partida encontrado. Verifique se a classe da tabela mudou.")
-        # --- LOG 4: Se não encontrou, vamos tentar encontrar algo parecido ou o que pode ter substituído ---
-        # Tenta encontrar divs que possam ser containers de partidas, caso a estrutura tenha mudado de table para div
-        potential_match_containers = soup.find_all(lambda tag: tag.name == 'div' and 'match' in tag.get('class', []) or 'infobox' in tag.get('class', []))
-        print(f"--- DEBUG: Encontrados {len(potential_match_containers)} potenciais containers de partida (divs com 'match' ou 'infobox' na classe).")
+    if not match_blocks:
+        print("⚠️ Nenhum bloco de partida encontrado. Verifique se a classe 'match-info' mudou ou se o conteúdo não está mais no HTML inicial.")
+        # --- LOG 3: Se não encontrou, vamos tentar encontrar algo parecido ---
+        potential_match_containers = soup.find_all(lambda tag: tag.name == 'div' and ('match' in tag.get('class', []) or 'info' in tag.get('class', [])))
+        print(f"--- DEBUG: Encontrados {len(potential_match_containers)} potenciais containers de partida (divs com 'match' ou 'info' na classe).")
         if potential_match_containers:
             print(f"--- DEBUG: Exemplo do primeiro potencial container: {potential_match_containers[0].name}, classes: {potential_match_containers[0].get('class')}")
 
         exit()
 
-    for match_idx, match_table in enumerate(match_tables, 1):
+    for match_idx, match_block in enumerate(match_blocks, 1):
         team1, team2, event_name, match_url = 'N/A', 'N/A', 'N/A', URL_LIQUIPEDIA
         match_format = 'Partida'
 
         try:
-            rows = match_table.find_all('tr')
-            if len(rows) < 2:
-                # --- LOG 5: Ignorando linhas insuficientes ---
-                print(f"--- DEBUG: Bloco {match_idx} ignorado: menos de 2 linhas encontradas.")
-                continue
-
-            team_cols = rows[0].find_all('td', recursive=False)
-            team1_tag = team_cols[0].find('span', class_='team-template-text')
-            team2_tag = team_cols[2].find('span', class_='team-template-text')
-
-            team1 = team1_tag.text.strip() if team1_tag else team_cols[0].text.strip()
-            team2 = team2_tag.text.strip() if team2_tag else team_cols[2].text.strip()
-
-            if len(team_cols) > 1:
-                versus_col = team_cols[1]
-                format_abbr = versus_col.find('abbr')
-                if format_abbr and format_abbr.text:
-                    match_format = format_abbr.text.strip()
-
-            time_tag = rows[1].find('span', class_='timer-object')
+            # --- Extraindo o horário ---
+            time_tag = match_block.find('span', class_='timer-object')
             if not time_tag or 'data-timestamp' not in time_tag.attrs:
-                # --- LOG 6: Ignorando sem tag de tempo ou timestamp ---
                 print(f"--- DEBUG: Bloco {match_idx} ignorado: sem tag de tempo ou atributo 'data-timestamp'.")
                 continue
 
@@ -88,11 +65,39 @@ try:
                 time_unix_timestamp = int(time_tag['data-timestamp'])
                 match_time_utc = datetime.fromtimestamp(time_unix_timestamp, tz=pytz.utc)
             except ValueError:
-                # --- LOG 7: Erro de valor no timestamp ---
                 print(f"--- DEBUG: Bloco {match_idx} ignorado: erro ao converter timestamp '{time_tag.get('data-timestamp')}' para inteiro.")
                 continue
 
-            event_name_tag = rows[1].find('div', class_='text-nowrap')
+            # --- Extraindo os times ---
+            # O HTML que você forneceu mostra os times dentro de 'div' com classe 'block-team'
+            # e o nome do time dentro de um 'span' com classe 'name' dentro desse 'block-team'.
+            # O primeiro time está em 'match-info-header-opponent-left'
+            team1_block = match_block.find('div', class_='match-info-header-opponent-left')
+            # O segundo time está em 'match-info-header-opponent' (o da direita)
+            # Precisamos ser cuidadosos para não pegar o 'match-info-header-opponent-left' novamente.
+            # Uma forma é pegar todos os 'match-info-header-opponent' e pegar o segundo.
+            team_opponent_blocks = match_block.find_all('div', class_='match-info-header-opponent')
+
+            team1_name_tag = team1_block.find('span', class_='name').find('a') if team1_block and team1_block.find('span', class_='name') else None
+
+            # O segundo 'match-info-header-opponent' é o time da direita
+            team2_block = team_opponent_blocks[1] if len(team_opponent_blocks) > 1 else None
+            team2_name_tag = team2_block.find('span', class_='name').find('a') if team2_block and team2_block.find('span', class_='name') else None
+
+            team1 = team1_name_tag.text.strip() if team1_name_tag else 'N/A'
+            team2 = team2_name_tag.text.strip() if team2_name_tag else 'N/A'
+
+            # --- Extraindo o formato da partida (Bo3) ---
+            # Está dentro de 'span' com classe 'match-info-header-scoreholder-lower'
+            format_tag = match_block.find('span', class_='match-info-header-scoreholder-lower')
+            if format_tag:
+                # Remove parênteses e espaços extras
+                match_format = format_tag.text.strip().replace('(', '').replace(')', '')
+
+            # --- Extraindo o nome do evento e URL ---
+            # Está dentro de 'div' com classe 'match-info-tournament'
+            event_tournament_div = match_block.find('div', class_='match-info-tournament')
+            event_name_tag = event_tournament_div.find('span', class_='match-info-tournament-name') if event_tournament_div else None
             event_link = event_name_tag.find('a') if event_name_tag else None
 
             if event_link and event_link.text.strip():
@@ -106,7 +111,6 @@ try:
             is_excluded = any(ex.lower() in team1.lower() or ex.lower() in team2.lower() for ex in BRAZILIAN_TEAMS_EXCLUSIONS)
 
             if not is_team_br or is_excluded:
-                # --- LOG 8: Ignorando times não BR ou excluídos ---
                 print(f"--- DEBUG: Bloco {match_idx} ignorado: Times '{team1}' vs '{team2}' não são BR ou estão na lista de exclusão.")
                 continue
 
@@ -141,7 +145,6 @@ try:
             match_key = (sorted_teams, e.begin.isoformat(), event_name.lower().strip())
 
             if match_key in unique_matches:
-                # --- LOG 9: Ignorando partida duplicada ---
                 print(f"--- DEBUG: Bloco {match_idx} ignorado: Partida '{e.name}' em '{event_name}' às '{e.begin.isoformat()}' já adicionada.")
                 continue
 
