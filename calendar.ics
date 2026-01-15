@@ -7,12 +7,11 @@ ACTION:DISPLAY
 DESCRIPTION:paiN vs BB
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: BLAST Bounty Winter Qual
-DTEND:20260116T170000Z
+DESCRIPTION:Formato: Bo3\nEvento: BLAST Bounty Winter Qual\nLink: https://liquipedia.net/counterstrike/BLAST/Bounty/2026/Winter/Qualifier#Results
+DURATION:PT2H
 DTSTART:20260116T150000Z
 SUMMARY:paiN vs BB
 UID:b28863b4@cs2calendar
-URL:https://liquipedia.net/counterstrike/BLAST/Bounty/2026/Winter/Qualifier#Results
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -20,12 +19,23 @@ ACTION:DISPLAY
 DESCRIPTION:MIBR vs Legacy
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: BetBoom RUSH B! Summit 2026
-DTEND:20260116T030000Z
+DESCRIPTION:Formato: Bo3\nEvento: BetBoom RUSH B! Summit 2026\nLink: https://liquipedia.net/counterstrike/BetBoom/RUSH_B!_Summit/2026#Results
+DURATION:PT2H
 DTSTART:20260116T010000Z
 SUMMARY:MIBR vs Legacy
 UID:c565c584@cs2calendar
-URL:https://liquipedia.net/counterstrike/BetBoom/RUSH_B!_Summit/2026#Results
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Legacy vs GH
+TRIGGER:P
+END:VALARM
+DESCRIPTION:Formato: Bo3\nEvento: BetBoom RUSH B! Summit 2026\nLink: https://liquipedia.net/counterstrike/BetBoom/RUSH_B!_Summit/2026#Results
+DURATION:PT2H
+DTSTART:20260115T010000Z
+SUMMARY:Legacy vs GH
+UID:de345231@cs2calendar
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -33,11 +43,10 @@ ACTION:DISPLAY
 DESCRIPTION:FURIA vs 9INE
 TRIGGER:P
 END:VALARM
-DESCRIPTION:🎮 Format: Best of 3 (Bo3)\n📅 Event: BLAST Bounty Winter Qual
-DTEND:20260116T193000Z
+DESCRIPTION:Formato: Bo3\nEvento: BLAST Bounty Winter Qual\nLink: https://liquipedia.net/counterstrike/BLAST/Bounty/2026/Winter/Qualifier#Results
+DURATION:PT2H
 DTSTART:20260116T173000Z
 SUMMARY:FURIA vs 9INE
 UID:4ad3b46f@cs2calendar
-URL:https://liquipedia.net/counterstrike/BLAST/Bounty/2026/Winter/Qualifier#Results
 END:VEVENT
 END:VCALENDAR
