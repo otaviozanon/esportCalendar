@@ -8,7 +8,7 @@ import hashlib
 
 # -------------------- Configurações Globais --------------------
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
-                   "RED Canids", "Legacy", "ODDIK"]
+                   "RED Canids", "Legacy", "ODDIK", "Imperial Esports"]
 BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A"]
 URL_LIQUIPEDIA = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
 BR_TZ = pytz.timezone("America/Sao_Paulo")
