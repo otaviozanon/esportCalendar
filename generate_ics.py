@@ -5,14 +5,12 @@ import pytz
 from ics import Calendar, Event
 from ics.alarm import DisplayAlarm
 import hashlib
-import re # Importa o módulo de expressões regulares
+import re
 
 # -------------------- Configurações Globais --------------------
-# Nomes dos times brasileiros (versões principais, serão normalizadas)
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
-                   "RED Canids", "Legacy", "ODDIK"] # Removido "Imperial Esports" daqui, pois "Imperial" já cobre.
+                   "RED Canids", "Legacy", "ODDIK"]
 
-# Nomes de times a serem explicitamente excluídos (versões que podem aparecer no HTML)
 BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A", "Imperial Academy", "Imperial.Acd"]
 
 URL_LIQUIPEDIA = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
@@ -29,9 +27,9 @@ def normalize_team(name):
         return ""
     name = name.lower().strip()
     name = name.replace("esports", "").replace("e-sports", "").replace("gaming", "").replace("team", "")
-    name = name.replace("academy", "acd").replace(".a", ".acd") # Padroniza academias
-    name = name.replace("women", "fe").replace("female", "fe") # Padroniza times femininos
-    name = re.sub(r'[^a-z0-9]', '', name) # Remove caracteres não alfanuméricos
+    name = name.replace("academy", "acd").replace(".a", ".acd")
+    name = name.replace("women", "fe").replace("female", "fe")
+    name = re.sub(r'[^a-z0-9]', '', name)
     return name
 
 def get_team_name_from_block(team_opponent_div):
@@ -39,24 +37,21 @@ def get_team_name_from_block(team_opponent_div):
     if not team_opponent_div:
         return None
 
-    # Tenta encontrar o span com a classe 'name' primeiro
     name_span = team_opponent_div.find('span', class_='name')
     if name_span:
-        # Verifica se é um link para uma página existente ou um 'new' link (TBD)
         name_link = name_span.find('a')
         if name_link and 'title' in name_link.attrs and 'page does not exist' not in name_link['title'].lower():
             return name_link.get_text(strip=True)
         elif name_span.get_text(strip=True).lower() == 'tbd':
-            return 'TBD' # Retorna 'TBD' explicitamente
+            return 'TBD'
         elif name_span.get_text(strip=True):
-            return name_span.get_text(strip=True) # Caso seja um span.name sem link, mas com texto
+            return name_span.get_text(strip=True)
 
-    # Caso não encontre span.name ou seja TBD, verifica se há um 'i' para TBD genérico
     tbd_icon = team_opponent_div.find('i', class_='far fa-users')
     if tbd_icon:
         return 'TBD'
 
-    return None # Retorna None se não encontrar um nome válido
+    return None
 
 # Pré-normaliza as listas de times para comparações eficientes
 NORMALIZED_BRAZILIAN_TEAMS = [normalize_team(team) for team in BRAZILIAN_TEAMS]
@@ -83,68 +78,69 @@ try:
         match_format = 'Partida'
 
         try:
-            # --- Extração do Horário ---
             time_tag = match_block.find('span', class_='timer-object')
             if not time_tag or 'data-timestamp' not in time_tag.attrs:
-                # print(f"      ❌ Erro: Bloco {match_idx} sem timestamp. Ignorando.")
                 continue
 
-            timestamp = int(time_tag['data-timestamp'])
-            match_time_utc = datetime.fromtimestamp(timestamp, tz=pytz.utc)
+            try:
+                time_unix_timestamp = int(time_tag['data-timestamp'])
+                match_time_utc = datetime.fromtimestamp(time_unix_timestamp, tz=pytz.utc)
+            except ValueError:
+                continue
 
-            # --- Extração dos Nomes dos Times ---
-            team1_opponent_div = match_block.find('div', class_='match-info-header-opponent-left')
-            team2_opponent_div = match_block.find('div', class_='match-info-header-opponent', class_=lambda x: x != 'match-info-header-opponent-left') # Pega o segundo 'match-info-header-opponent'
+            # --- CORREÇÃO AQUI: Extraindo os times de forma mais robusta ---
+            # Encontra todos os blocos de oponentes e extrai os nomes
+            all_opponent_divs = match_block.find_all('div', class_='match-info-header-opponent')
+
+            # Garante que há pelo menos dois blocos de oponentes
+            if len(all_opponent_divs) < 2:
+                continue # Ignora se não houver dois oponentes claros
+
+            team1_opponent_div = all_opponent_divs[0]
+            team2_opponent_div = all_opponent_divs[1] # Pega o segundo bloco de oponente
 
             team1_raw = get_team_name_from_block(team1_opponent_div)
             team2_raw = get_team_name_from_block(team2_opponent_div)
 
-            # Ignora partidas com TBD ou nomes de times inválidos
-            if not team1_raw or not team2_raw or team1_raw == 'TBD' or team2_raw == 'TBD':
-                # print(f"      ❌ Erro: Bloco {match_idx} com times TBD ou inválidos ('{team1_raw}' vs '{team2_raw}'). Ignorando.")
-                continue
+            if team1_raw is None or team2_raw is None or team1_raw == 'TBD' or team2_raw == 'TBD':
+                continue # Ignora se algum time não foi encontrado ou é TBD
 
-            # --- Extração do Formato da Partida ---
-            format_tag = match_block.find('span', class_='match-info-header-scoreholder-lower')
-            if format_tag:
-                match_format = format_tag.get_text(strip=True).replace('(', '').replace(')', '')
+            # Atribui os nomes brutos para uso posterior no evento
+            team1 = team1_raw
+            team2 = team2_raw
 
-            # --- Extração do Nome e URL do Evento ---
-            event_tournament_div = match_block.find('div', class_='match-info-tournament')
-            event_name_tag = event_tournament_div.find('span', class_='match-info-tournament-name') if event_tournament_div else None
-            event_link = event_name_tag.find('a') if event_name_tag else None
+            # Extraindo o formato da partida
+            match_format_tag = match_block.find('span', class_='match-info-header-scoreholder-lower')
+            if match_format_tag:
+                match_format = match_format_tag.get_text(strip=True).replace('(', '').replace(')', '')
 
-            if event_link and event_link.text.strip():
-                event_name = event_link.text.strip()
-                match_url = f"https://liquipedia.net{event_link['href']}" if 'href' in event_link.attrs else URL_LIQUIPEDIA
-            else:
-                event_name = "Evento Desconhecido"
-                match_url = URL_LIQUIPEDIA
+            # Extraindo o nome do evento e URL
+            event_name_tag = match_block.find('span', class_='match-info-tournament-name')
+            if event_name_tag:
+                event_name_link = event_name_tag.find('a')
+                if event_name_link and event_name_link.get_text(strip=True):
+                    event_name = event_name_link.get_text(strip=True)
+                    match_url = f"https://liquipedia.net{event_name_link['href']}" if 'href' in event_name_link.attrs else URL_LIQUIPEDIA
+                elif event_name_tag.get_text(strip=True):
+                    event_name = event_name_tag.get_text(strip=True)
 
-            # --- Lógica de Filtragem de Times BR (AGORA MAIS ROBUSTA) ---
-            normalized_team1 = normalize_team(team1_raw)
-            normalized_team2 = normalize_team(team2_raw)
+            # --- Lógica de Filtragem Aprimorada ---
+            normalized_team1 = normalize_team(team1)
+            normalized_team2 = normalize_team(team2)
 
-            # Verifica se algum dos times é brasileiro (usando nomes normalizados)
             is_br_team_involved = (normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS) or \
                                   (normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS)
 
-            # Verifica se algum dos times está na lista de exclusão (usando nomes normalizados)
             is_excluded_team_involved = (normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS) or \
                                         (normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS)
 
-            # Se não houver time BR envolvido OU se algum time for de exclusão, ignora
             if not is_br_team_involved or is_excluded_team_involved:
                 continue
 
-            # Se chegou aqui, a partida é válida e envolve um time BR principal
-            team1 = team1_raw # Usa o nome original para o evento
-            team2 = team2_raw # Usa o nome original para o evento
-
-            match_time_br = match_time_utc.astimezone(BR_TZ)
-
+            # Criação do evento ICS
             format_map = {
                 'Bo1': 'Best of 1 (Bo1)',
+                'Bo2': 'Best of 2 (Bo2)',
                 'Bo3': 'Best of 3 (Bo3)',
                 'Bo5': 'Best of 5 (Bo5)',
                 'Partida': 'Partida Simples'
@@ -154,7 +150,7 @@ try:
             e = Event()
             e.name = f"{team1} vs {team2}"
             e.begin = match_time_utc.astimezone(pytz.utc)
-            e.end = e.begin + timedelta(hours=2) # Duração padrão de 2 horas
+            e.end = e.begin + timedelta(hours=2)
             e.description = (
                 f"🎮 Format: {full_match_format}\n"
                 f"📅 Event: {event_name}"
@@ -168,7 +164,7 @@ try:
             stable_uid = hashlib.md5(uid_base).hexdigest()[:8]
             e.uid = f"{stable_uid}@cs2calendar"
 
-            sorted_teams = tuple(sorted([normalized_team1, normalized_team2])) # Usa nomes normalizados para a chave de unicidade
+            sorted_teams = tuple(sorted([normalized_team1, normalized_team2]))
             match_key = (sorted_teams, e.begin.isoformat(), normalize_team(event_name))
 
             if match_key in unique_matches:
@@ -194,4 +190,3 @@ try:
     print(f"\n📌 {added_count} partidas BR salvas em calendar.ics (com alarmes no horário do jogo)")
 except Exception as e:
     print(f"❌ Erro ao salvar calendar.ics: {e}")
-
