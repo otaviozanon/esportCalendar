@@ -130,15 +130,25 @@ try:
             if scoreholder_lower_span:
                 match_format = scoreholder_lower_span.get_text(strip=True)
 
-            # Criar evento no calendário
-            event_summary = f"{team1_raw} vs {team2_raw} ({match_format}) - {event_name}"
+            # --- INÍCIO DAS MUDANÇAS SOLICITADAS ---
+            # Novo formato para o nome do evento (summary)
+            event_summary = f"{team1_raw} vs {team2_raw}"
+
+            # Novo formato para a descrição do evento
+            event_description = (
+                f"🏆- {match_format}\n"
+                f"📍{event_name}\n"
+                f"🌐{match_url}"
+            )
+            # --- FIM DAS MUDANÇAS SOLICITADAS ---
+
             event_uid = hashlib.sha1(event_summary.encode('utf-8') + str(timestamp_utc).encode('utf-8')).hexdigest()
 
             e = Event()
             e.name = event_summary
             e.begin = match_time_utc
             e.duration = timedelta(hours=2) # Duração padrão de 2 horas
-            e.description = f"Evento: {event_name}\nLink: {match_url}"
+            e.description = event_description # Usando a nova descrição formatada
             e.uid = event_uid
 
             # Adiciona alarme 15 minutos antes
