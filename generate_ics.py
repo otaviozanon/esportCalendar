@@ -74,10 +74,12 @@ try:
         exit()
 
     for match_idx, match_block in enumerate(match_blocks, 1):
-        team1_raw, team2_raw, event_name, match_url = 'N/A', 'N/A', 'N/A', URL_LIQUIPEDIA
+        team1, team2, event_name, match_url = 'N/A', 'N/A', 'N/A', URL_LIQUIPEDIA
         match_format = 'Partida'
+        match_time_br = None # Inicializa match_time_br para garantir que esteja sempre definida
 
         try:
+            # Extraindo o horário
             time_tag = match_block.find('span', class_='timer-object')
             if not time_tag or 'data-timestamp' not in time_tag.attrs:
                 continue
@@ -85,44 +87,38 @@ try:
             try:
                 time_unix_timestamp = int(time_tag['data-timestamp'])
                 match_time_utc = datetime.fromtimestamp(time_unix_timestamp, tz=pytz.utc)
+                match_time_br = match_time_utc.astimezone(BR_TZ) # Define match_time_br aqui
             except ValueError:
                 continue
 
-            # --- CORREÇÃO AQUI: Extraindo os times de forma mais robusta ---
-            # Encontra todos os blocos de oponentes e extrai os nomes
+            # Extraindo os times
             all_opponent_divs = match_block.find_all('div', class_='match-info-header-opponent')
 
-            # Garante que há pelo menos dois blocos de oponentes
             if len(all_opponent_divs) < 2:
                 continue # Ignora se não houver dois oponentes claros
 
             team1_opponent_div = all_opponent_divs[0]
-            team2_opponent_div = all_opponent_divs[1] # Pega o segundo bloco de oponente
+            team2_opponent_div = all_opponent_divs[1]
 
-            team1_raw = get_team_name_from_block(team1_opponent_div)
-            team2_raw = get_team_name_from_block(team2_opponent_div)
+            team1 = get_team_name_from_block(team1_opponent_div)
+            team2 = get_team_name_from_block(team2_opponent_div)
 
-            if team1_raw is None or team2_raw is None or team1_raw == 'TBD' or team2_raw == 'TBD':
+            if team1 is None or team2 is None or team1 == 'TBD' or team2 == 'TBD':
                 continue # Ignora se algum time não foi encontrado ou é TBD
 
-            # Atribui os nomes brutos para uso posterior no evento
-            team1 = team1_raw
-            team2 = team2_raw
-
             # Extraindo o formato da partida
-            match_format_tag = match_block.find('span', class_='match-info-header-scoreholder-lower')
-            if match_format_tag:
-                match_format = match_format_tag.get_text(strip=True).replace('(', '').replace(')', '')
+            format_tag = match_block.find('span', class_='match-info-header-scoreholder-lower')
+            if format_tag:
+                match_format = format_tag.get_text(strip=True).replace('(', '').replace(')', '')
 
             # Extraindo o nome do evento e URL
             event_name_tag = match_block.find('span', class_='match-info-tournament-name')
-            if event_name_tag:
-                event_name_link = event_name_tag.find('a')
-                if event_name_link and event_name_link.get_text(strip=True):
-                    event_name = event_name_link.get_text(strip=True)
-                    match_url = f"https://liquipedia.net{event_name_link['href']}" if 'href' in event_name_link.attrs else URL_LIQUIPEDIA
-                elif event_name_tag.get_text(strip=True):
-                    event_name = event_name_tag.get_text(strip=True)
+            if event_name_tag and event_name_tag.find('a'):
+                event_name = event_name_tag.get_text(strip=True)
+                match_url = f"https://liquipedia.net{event_name_tag.find('a')['href']}" if 'href' in event_name_tag.find('a').attrs else URL_LIQUIPEDIA
+            else:
+                event_name = "Evento Desconhecido"
+                match_url = URL_LIQUIPEDIA
 
             # --- Lógica de Filtragem Aprimorada ---
             normalized_team1 = normalize_team(team1)
@@ -177,7 +173,8 @@ try:
             print(f"      ✅ Adicionado: {e.name} ({match_time_br.strftime('%d/%m %H:%M')}) | {full_match_format} | Evento: {event_name}")
 
         except Exception as e_inner:
-            print(f"      ❌ Erro ao processar bloco {match_idx}: {e_inner} | Dados parciais: Team1='{team1_raw}', Team2='{team2_raw}', Evento='{event_name}'")
+            # Captura o nome dos times mesmo se match_time_br não estiver definida para o log de erro
+            print(f"      ❌ Erro ao processar bloco {match_idx}: {e_inner} | Dados parciais: Team1='{team1}', Team2='{team2}', Evento='{event_name}'")
 
 except requests.exceptions.RequestException as e:
     print(f"❌ Falha na requisição HTTP - {e}")
