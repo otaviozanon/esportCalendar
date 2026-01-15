@@ -27,8 +27,9 @@ BRAZILIAN_TEAMS_EXCLUSIONS = [
     "RED Canids Academy", "Fluxo Academy"
 ]
 
+# URL da Liquipedia Counter-Strike para partidas
 LIQUIPEDIA_URL = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
-CALENDAR_FILENAME = "calendar.ics" # Mantendo o nome original do arquivo
+CALENDAR_FILENAME = "calendar.ics"
 
 # Configuração de fuso horário
 BR_TZ = pytz.timezone('America/Sao_Paulo') # Fuso horário de Brasília (UTC-3)
@@ -50,9 +51,7 @@ NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS = {normalize_team(team) for team in BRAZIL
 # -------------------- Lógica Principal --------------------
 cal = Calendar()
 added_count = 0
-driver = None # Inicializa o driver como None
-
-print(f"🔍 Iniciando Selenium para buscar partidas em {LIQUIPEDIA_URL}...")
+driver = None # Inicializa driver como None
 
 try:
     # Configurações do Chrome para rodar em modo headless (sem interface gráfica)
@@ -60,137 +59,107 @@ try:
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--window-size=1920,1080") # Garante uma resolução razoável
+    chrome_options.add_argument("--window-size=1920,1080") # Garante que a página seja renderizada em um tamanho razoável
 
-    # Inicializa o WebDriver (certifique-se de que o chromedriver esteja no PATH ou especifique o caminho)
-    # Exemplo com Service para especificar o caminho:
-    # service = Service(executable_path='/caminho/para/chromedriver')
+    # Inicializa o WebDriver (certifique-se de que o chromedriver está no PATH ou especifique o caminho)
+    # Exemplo: service = Service('/caminho/para/chromedriver')
     # driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver = webdriver.Chrome(options=chrome_options) # Se chromedriver estiver no PATH
+    driver = webdriver.Chrome(options=chrome_options) # Assumindo que chromedriver está no PATH
 
     driver.get(LIQUIPEDIA_URL)
 
-    # Espera até que os blocos de partidas estejam presentes na página
-    # Isso garante que o JavaScript tenha carregado o conteúdo principal
-    WebDriverWait(driver, 20).until(
-        EC.presence_of_all_elements_located((By.CLASS_NAME, 'match-info'))
-    )
-    print(f"✅ Página carregada e elementos de partida detectados.")
+    # Espera até que o botão "Upcoming" esteja visível e clicável
+    # O botão "Upcoming" está dentro de um div com a classe "switch-pill-option" e data-switch-value="upcoming"
+    upcoming_button_selector = (By.CSS_SELECTOR, 'div.switch-pill-option[data-switch-value="upcoming"]')
+    WebDriverWait(driver, 20).until(EC.element_to_be_clickable(upcoming_button_selector))
 
-    # Agora que a página está carregada, pegamos o HTML completo
+    # Clica no botão "Upcoming"
+    upcoming_button = driver.find_element(*upcoming_button_selector)
+    if "switch-pill-active" not in upcoming_button.get_attribute("class"):
+        upcoming_button.click()
+        # Espera que o conteúdo da página seja atualizado após o clique
+        # Podemos esperar que os blocos de partida sejam recarregados ou que um spinner desapareça
+        # Para ser mais robusto, esperamos que o número de blocos de partida se estabilize ou mude
+        WebDriverWait(driver, 20).until(
+            lambda d: len(d.find_elements(By.CLASS_NAME, 'match-info')) > 0
+        )
+
+    # Agora que a página está no estado "Upcoming", pegamos o HTML
     html_content = driver.page_source
     soup = BeautifulSoup(html_content, 'html.parser')
 
     match_blocks = soup.find_all('div', class_='match-info')
-    print(f"✅ Encontrados {len(match_blocks)} blocos de partidas individuais com a classe 'match-info'.")
-    print(f"--- DEBUG: Normalized BR Teams (set): {NORMALIZED_BRAZILIAN_TEAMS}")
-    print(f"--- DEBUG: Normalized Exclusions (set): {NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS}")
-
 
     for match_idx, match_block in enumerate(match_blocks, 1):
-        team1_raw = "TBD"
-        team2_raw = "TBD"
-        event_name = "Desconhecido"
-        match_url = LIQUIPEDIA_URL # Fallback para a URL principal
-        match_format = "BoX"
-        match_time_br = None # Inicializa para garantir que exista
-
         try:
-            # Extrair timestamp e converter para BRT
-            timestamp_span = match_block.find('span', class_='timer-object')
-            if not timestamp_span or 'data-timestamp' not in timestamp_span.attrs:
-                # print(f"--- DEBUG: Bloco {match_idx} ignorado: Não foi possível encontrar o timestamp.")
-                continue
+            # Extração dos nomes dos times
+            team_names_elements = match_block.select('.block-team .name a')
+            if len(team_names_elements) < 2:
+                continue # Ignora blocos sem dois times
 
-            timestamp_str = timestamp_span['data-timestamp']
-            match_time_utc = datetime.fromtimestamp(int(timestamp_str), tz=pytz.utc)
-            match_time_br = match_time_utc.astimezone(BR_TZ)
-
-            # Extrair nomes dos times
-            all_opponent_divs = match_block.find_all('div', class_='match-info-header-opponent')
-
-            if len(all_opponent_divs) < 2:
-                # print(f"--- DEBUG: Bloco {match_idx} ignorado: Não foi possível encontrar dois oponentes claros.")
-                continue # Ignora se não houver dois oponentes claros
-
-            team1_opponent_div = all_opponent_divs[0]
-            team2_opponent_div = all_opponent_divs[1]
-
-            team1_name_tag = team1_opponent_div.find('span', class_='name')
-            team2_name_tag = team2_opponent_div.find('span', class_='name')
-
-            if team1_name_tag and team1_name_tag.a:
-                team1_raw = team1_name_tag.a.get_text(strip=True)
-            elif team1_name_tag: # Caso não tenha link, mas tenha o span (ex: TBD)
-                team1_raw = team1_name_tag.get_text(strip=True)
-
-            if team2_name_tag and team2_name_tag.a:
-                team2_raw = team2_name_tag.a.get_text(strip=True)
-            elif team2_name_tag: # Caso não tenha link, mas tenha o span (ex: TBD)
-                team2_raw = team2_name_tag.get_text(strip=True)
+            team1_raw = team_names_elements[0].get_text(strip=True)
+            team2_raw = team_names_elements[1].get_text(strip=True)
 
             # Normaliza os nomes para comparação
             normalized_team1 = normalize_team(team1_raw)
             normalized_team2 = normalize_team(team2_raw)
 
-            # Verifica se algum dos times é "TBD" (To Be Determined)
-            if normalized_team1 == 'tbd' or normalized_team2 == 'tbd':
-                print(f"--- DEBUG: Bloco {match_idx} ignorado: Um ou ambos os times são 'TBD'. Times '{team1_raw}' (norm: '{normalized_team1}') vs '{team2_raw}' (norm: '{normalized_team2}')")
+            # Verifica se algum dos times é brasileiro e não está na lista de exclusão
+            is_br_team_involved = (normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS and normalized_team1 not in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS) or \
+                                  (normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS and normalized_team2 not in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS)
+
+            # Verifica se ambos os times são brasileiros e não estão na lista de exclusão
+            is_both_br_teams = (normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS and normalized_team1 not in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS) and \
+                               (normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS and normalized_team2 not in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS)
+
+            # Se nenhum time BR estiver envolvido (ou ambos forem excluídos), ignora
+            if not is_br_team_involved and not is_both_br_teams:
                 continue
 
-            # Lógica de filtragem: pelo menos um time BR e nenhum time excluído
-            is_br_team_involved = (normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS or
-                                   normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS)
-
-            is_excluded_team_involved = (normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS or
-                                         normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS)
-
-            if not is_br_team_involved or is_excluded_team_involved:
-                print(f"--- DEBUG: Bloco {match_idx} ignorado: Nenhum time BR envolvido ou time excluído. Times '{team1_raw}' (norm: '{normalized_team1}') vs '{team2_raw}' (norm: '{normalized_team2}')")
+            # Extração do timestamp
+            timer_object = match_block.find('span', class_='timer-object')
+            if not timer_object:
                 continue
+            timestamp_str = timer_object.get('data-timestamp')
+            if not timestamp_str:
+                continue
+            match_timestamp = int(timestamp_str)
+            match_time_utc = datetime.fromtimestamp(match_timestamp, tz=pytz.utc)
+            match_time_br = match_time_utc.astimezone(BR_TZ)
 
-            # Extrair nome do evento
-            tournament_name_tag = match_block.find('span', class_='match-info-tournament-name')
-            if tournament_name_tag and tournament_name_tag.a and tournament_name_tag.a.span:
-                event_name = tournament_name_tag.a.span.get_text(strip=True)
+            # Extração do formato (Bo1, Bo3, etc.)
+            match_format_element = match_block.find('span', class_='match-info-header-scoreholder-lower')
+            match_format = match_format_element.get_text(strip=True) if match_format_element else "N/A"
 
-            # Extrair formato da partida (Bo1, Bo3, etc.)
-            match_format_tag = match_block.find('span', class_='match-info-header-scoreholder-lower')
-            if match_format_tag:
-                match_format = match_format_tag.get_text(strip=True).replace('(', '').replace(')', '')
+            # Extração do nome do evento
+            event_name_element = match_block.find('span', class_='match-info-tournament-name')
+            event_name = event_name_element.get_text(strip=True) if event_name_element else "Evento Desconhecido"
 
-            # Extrair URL da partida
-            match_link_tag = match_block.find('div', class_='match-info-links')
-            if match_link_tag and match_link_tag.a:
-                match_url = "https://liquipedia.net" + match_link_tag.a['href']
-            else: # Tenta pegar o link do torneio se não houver link específico da partida
-                if tournament_name_tag and tournament_name_tag.a:
-                    match_url = "https://liquipedia.net" + tournament_name_tag.a['href']
+            # Criação do evento no calendário
+            event_summary = f"{team1_raw} vs {team2_raw}"
+            event_description = f"Formato: {match_format}\nEvento: {event_name}\nLink: {LIQUIPEDIA_URL}"
 
-            # Gerar UID único para o evento
-            event_uid_data = f"{team1_raw}-{team2_raw}-{event_name}-{match_time_utc.isoformat()}"
-            event_uid = hashlib.sha1(event_uid_data.encode('utf-8')).hexdigest() + '@liquipedia.net'
+            # Gerar um UID único e consistente para o evento
+            event_uid_data = f"{event_summary}-{match_time_utc.isoformat()}-{event_name}"
+            event_uid = hashlib.sha1(event_uid_data.encode('utf-8')).hexdigest()
 
-            # Adicionar evento ao calendário
-            e = Event()
-            e.name = f"{team1_raw} vs {team2_raw} | {event_name} ({match_format})"
-            e.begin = match_time_br
-            e.duration = timedelta(hours=2) # Duração padrão de 2 horas
-            e.description = f"Evento: {event_name}\nLink: {match_url}"
-            e.uid = event_uid
-
-            # Adiciona alarme 15 minutos antes
-            alarm = DisplayAlarm(trigger=timedelta(minutes=-15))
-            e.alarms.append(alarm)
-
-            cal.events.add(e)
+            event = Event(
+                name=event_summary,
+                begin=match_time_br,
+                end=match_time_br + timedelta(hours=3), # Duração estimada de 3 horas
+                description=event_description,
+                uid=event_uid
+            )
+            event.alarms.append(DisplayAlarm(trigger=timedelta(minutes=-30))) # Alarme 30 minutos antes
+            cal.add_event(event)
             added_count += 1
-            print(f"      ✅ Adicionado: {team1_raw} vs {team2_raw} ({match_time_br.strftime('%d/%m %H:%M')}) | {match_format} | Evento: {event_name}")
 
         except ValueError as ve:
-            print(f"      ❌ Erro de dados no bloco {match_idx}: {ve}")
+            # Não imprime logs de depuração, apenas erros críticos
+            pass
         except Exception as e_inner:
-            print(f"      ❌ Erro inesperado ao processar bloco {match_idx}: {e_inner} | Dados parciais: Team1='{team1_raw}', Team2='{team2_raw}', Evento='{event_name}'")
+            # Não imprime logs de depuração, apenas erros críticos
+            pass
 
 except TimeoutException:
     print("❌ Tempo limite excedido ao carregar a página ou encontrar elementos com Selenium.")
