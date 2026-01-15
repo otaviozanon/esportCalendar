@@ -7,11 +7,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:Evento: BLAST Bounty Winter Qual\nLink: https://liquipedia.net/counterstrike/BLAST/Bounty/2026/Winter/Qualifier#Results
+DESCRIPTION:🏆- (Bo3)\n📍BLAST Bounty Winter Qual\n🌐https://liquipedia.net/counterstrike/BLAST/Bounty/2026/Winter/Qualifier#Results
 DURATION:PT2H
 DTSTART:20260116T173000Z
-SUMMARY:FURIA vs 9INE ((Bo3)) - BLAST Bounty Winter Qual
-UID:295dd8842b91a056d9e3c28104b32053fb4ee41f
+SUMMARY:FURIA vs 9INE
+UID:085da790f9aa34d9f88ee808446aa6e1f5871aa0
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -19,23 +19,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:Evento: BLAST Bounty Winter Qual\nLink: https://liquipedia.net/counterstrike/BLAST/Bounty/2026/Winter/Qualifier#Results
-DURATION:PT2H
-DTSTART:20260116T150000Z
-SUMMARY:paiN vs BB ((Bo3)) - BLAST Bounty Winter Qual
-UID:7a337eaf6d143a4c726ad3b9f7cd2740ecc23e09
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:Evento: BetBoom RUSH B! Summit 2026\nLink: https://liquipedia.net/counterstrike/BetBoom/RUSH_B!_Summit/2026#Results
+DESCRIPTION:🏆- (Bo3)\n📍BetBoom RUSH B! Summit 2026\n🌐https://liquipedia.net/counterstrike/BetBoom/RUSH_B!_Summit/2026#Results
 DURATION:PT2H
 DTSTART:20260116T010000Z
-SUMMARY:MIBR vs Legacy ((Bo3)) - BetBoom RUSH B! Summit 2026
-UID:2c953edb3268077c0e3887971dbbe15e1cb1dce6
+SUMMARY:MIBR vs Legacy
+UID:01034b4c045fc2a181734e0e922b3b6433cae8d9
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -43,10 +31,22 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:Evento: BetBoom RUSH B! Summit 2026\nLink: https://liquipedia.net/counterstrike/BetBoom/RUSH_B!_Summit/2026#Results
+DESCRIPTION:🏆- (Bo3)\n📍BLAST Bounty Winter Qual\n🌐https://liquipedia.net/counterstrike/BLAST/Bounty/2026/Winter/Qualifier#Results
+DURATION:PT2H
+DTSTART:20260116T150000Z
+SUMMARY:paiN vs BB
+UID:752cbae4f5a3f77ceb37a58b2ad5448bd99b3daf
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+DESCRIPTION:🏆- (Bo3)\n📍BetBoom RUSH B! Summit 2026\n🌐https://liquipedia.net/counterstrike/BetBoom/RUSH_B!_Summit/2026#Results
 DURATION:PT2H
 DTSTART:20260115T010000Z
-SUMMARY:Legacy vs GH ((Bo3)) - BetBoom RUSH B! Summit 2026
-UID:90ec9afe31e5aabff6b9b8731533fea1cea520b9
+SUMMARY:Legacy vs GH
+UID:937ec5c5ffecd7b9ca3ac73452531f92ae5eabc1
 END:VEVENT
 END:VCALENDAR
