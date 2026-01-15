@@ -5,11 +5,16 @@ import pytz
 from ics import Calendar, Event
 from ics.alarm import DisplayAlarm
 import hashlib
+import re # Importa o módulo de expressões regulares
 
 # -------------------- Configurações Globais --------------------
+# Nomes dos times brasileiros (versões principais, serão normalizadas)
 BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
-                   "RED Canids", "Legacy", "ODDIK", "Imperial Esports"]
-BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A"]
+                   "RED Canids", "Legacy", "ODDIK"] # Removido "Imperial Esports" daqui, pois "Imperial" já cobre.
+
+# Nomes de times a serem explicitamente excluídos (versões que podem aparecer no HTML)
+BRAZILIAN_TEAMS_EXCLUSIONS = ["Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A", "Imperial Academy", "Imperial.Acd"]
+
 URL_LIQUIPEDIA = "https://liquipedia.net/counterstrike/Liquipedia:Matches"
 BR_TZ = pytz.timezone("America/Sao_Paulo")
 
@@ -17,16 +22,54 @@ cal = Calendar()
 added_count = 0
 unique_matches = set()
 
+# --- Funções de Normalização e Extração ---
+def normalize_team(name):
+    """Normaliza o nome de um time para facilitar a comparação."""
+    if not name:
+        return ""
+    name = name.lower().strip()
+    name = name.replace("esports", "").replace("e-sports", "").replace("gaming", "").replace("team", "")
+    name = name.replace("academy", "acd").replace(".a", ".acd") # Padroniza academias
+    name = name.replace("women", "fe").replace("female", "fe") # Padroniza times femininos
+    name = re.sub(r'[^a-z0-9]', '', name) # Remove caracteres não alfanuméricos
+    return name
+
+def get_team_name_from_block(team_opponent_div):
+    """Extrai o nome do time de um bloco de oponente, lidando com TBD e links."""
+    if not team_opponent_div:
+        return None
+
+    # Tenta encontrar o span com a classe 'name' primeiro
+    name_span = team_opponent_div.find('span', class_='name')
+    if name_span:
+        # Verifica se é um link para uma página existente ou um 'new' link (TBD)
+        name_link = name_span.find('a')
+        if name_link and 'title' in name_link.attrs and 'page does not exist' not in name_link['title'].lower():
+            return name_link.get_text(strip=True)
+        elif name_span.get_text(strip=True).lower() == 'tbd':
+            return 'TBD' # Retorna 'TBD' explicitamente
+        elif name_span.get_text(strip=True):
+            return name_span.get_text(strip=True) # Caso seja um span.name sem link, mas com texto
+
+    # Caso não encontre span.name ou seja TBD, verifica se há um 'i' para TBD genérico
+    tbd_icon = team_opponent_div.find('i', class_='far fa-users')
+    if tbd_icon:
+        return 'TBD'
+
+    return None # Retorna None se não encontrar um nome válido
+
+# Pré-normaliza as listas de times para comparações eficientes
+NORMALIZED_BRAZILIAN_TEAMS = [normalize_team(team) for team in BRAZILIAN_TEAMS]
+NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS = [normalize_team(team) for team in BRAZILIAN_TEAMS_EXCLUSIONS]
+
 print(f"🔍 Buscando partidas em {URL_LIQUIPEDIA}...")
 
 try:
     response = requests.get(URL_LIQUIPEDIA, timeout=10)
-
-    response.raise_for_status() # Isso vai levantar um erro para status 4xx/5xx
+    response.raise_for_status()
 
     soup = BeautifulSoup(response.text, 'lxml')
 
-    # Encontra todos os blocos de partida, que agora são 'div's com a classe 'match-info'
     match_blocks = soup.find_all('div', class_='match-info')
 
     print(f"✅ Encontrados {len(match_blocks)} blocos de partidas individuais com a classe 'match-info'.")
@@ -36,41 +79,37 @@ try:
         exit()
 
     for match_idx, match_block in enumerate(match_blocks, 1):
-        team1, team2, event_name, match_url = 'N/A', 'N/A', 'N/A', URL_LIQUIPEDIA
+        team1_raw, team2_raw, event_name, match_url = 'N/A', 'N/A', 'N/A', URL_LIQUIPEDIA
         match_format = 'Partida'
 
         try:
-            # Extraindo o horário
+            # --- Extração do Horário ---
             time_tag = match_block.find('span', class_='timer-object')
             if not time_tag or 'data-timestamp' not in time_tag.attrs:
-                # Não imprime log para cada ignorado, apenas continua
+                # print(f"      ❌ Erro: Bloco {match_idx} sem timestamp. Ignorando.")
                 continue
 
-            try:
-                time_unix_timestamp = int(time_tag['data-timestamp'])
-                match_time_utc = datetime.fromtimestamp(time_unix_timestamp, tz=pytz.utc)
-            except ValueError:
-                # Não imprime log para cada erro de conversão, apenas continua
+            timestamp = int(time_tag['data-timestamp'])
+            match_time_utc = datetime.fromtimestamp(timestamp, tz=pytz.utc)
+
+            # --- Extração dos Nomes dos Times ---
+            team1_opponent_div = match_block.find('div', class_='match-info-header-opponent-left')
+            team2_opponent_div = match_block.find('div', class_='match-info-header-opponent', class_=lambda x: x != 'match-info-header-opponent-left') # Pega o segundo 'match-info-header-opponent'
+
+            team1_raw = get_team_name_from_block(team1_opponent_div)
+            team2_raw = get_team_name_from_block(team2_opponent_div)
+
+            # Ignora partidas com TBD ou nomes de times inválidos
+            if not team1_raw or not team2_raw or team1_raw == 'TBD' or team2_raw == 'TBD':
+                # print(f"      ❌ Erro: Bloco {match_idx} com times TBD ou inválidos ('{team1_raw}' vs '{team2_raw}'). Ignorando.")
                 continue
 
-            # Extraindo os times
-            team1_block = match_block.find('div', class_='match-info-header-opponent-left')
-            team_opponent_blocks = match_block.find_all('div', class_='match-info-header-opponent')
-
-            team1_name_tag = team1_block.find('span', class_='name').find('a') if team1_block and team1_block.find('span', class_='name') else None
-
-            team2_block = team_opponent_blocks[1] if len(team_opponent_blocks) > 1 else None
-            team2_name_tag = team2_block.find('span', class_='name').find('a') if team2_block and team2_block.find('span', class_='name') else None
-
-            team1 = team1_name_tag.text.strip() if team1_name_tag else 'N/A'
-            team2 = team2_name_tag.text.strip() if team2_name_tag else 'N/A'
-
-            # Extraindo o formato da partida (Bo3)
+            # --- Extração do Formato da Partida ---
             format_tag = match_block.find('span', class_='match-info-header-scoreholder-lower')
             if format_tag:
-                match_format = format_tag.text.strip().replace('(', '').replace(')', '')
+                match_format = format_tag.get_text(strip=True).replace('(', '').replace(')', '')
 
-            # Extraindo o nome do evento e URL
+            # --- Extração do Nome e URL do Evento ---
             event_tournament_div = match_block.find('div', class_='match-info-tournament')
             event_name_tag = event_tournament_div.find('span', class_='match-info-tournament-name') if event_tournament_div else None
             event_link = event_name_tag.find('a') if event_name_tag else None
@@ -82,12 +121,25 @@ try:
                 event_name = "Evento Desconhecido"
                 match_url = URL_LIQUIPEDIA
 
-            is_team_br = any(br.lower() in team1.lower() or br.lower() in team2.lower() for br in BRAZILIAN_TEAMS)
-            is_excluded = any(ex.lower() in team1.lower() or ex.lower() in team2.lower() for ex in BRAZILIAN_TEAMS_EXCLUSIONS)
+            # --- Lógica de Filtragem de Times BR (AGORA MAIS ROBUSTA) ---
+            normalized_team1 = normalize_team(team1_raw)
+            normalized_team2 = normalize_team(team2_raw)
 
-            if not is_team_br or is_excluded:
-                # Não imprime log para cada time não BR ou excluído, apenas continua
+            # Verifica se algum dos times é brasileiro (usando nomes normalizados)
+            is_br_team_involved = (normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS) or \
+                                  (normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS)
+
+            # Verifica se algum dos times está na lista de exclusão (usando nomes normalizados)
+            is_excluded_team_involved = (normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS) or \
+                                        (normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS)
+
+            # Se não houver time BR envolvido OU se algum time for de exclusão, ignora
+            if not is_br_team_involved or is_excluded_team_involved:
                 continue
+
+            # Se chegou aqui, a partida é válida e envolve um time BR principal
+            team1 = team1_raw # Usa o nome original para o evento
+            team2 = team2_raw # Usa o nome original para o evento
 
             match_time_br = match_time_utc.astimezone(BR_TZ)
 
@@ -102,7 +154,7 @@ try:
             e = Event()
             e.name = f"{team1} vs {team2}"
             e.begin = match_time_utc.astimezone(pytz.utc)
-            e.end = e.begin + timedelta(hours=2)
+            e.end = e.begin + timedelta(hours=2) # Duração padrão de 2 horas
             e.description = (
                 f"🎮 Format: {full_match_format}\n"
                 f"📅 Event: {event_name}"
@@ -116,11 +168,10 @@ try:
             stable_uid = hashlib.md5(uid_base).hexdigest()[:8]
             e.uid = f"{stable_uid}@cs2calendar"
 
-            sorted_teams = tuple(sorted([team1.lower().strip(), team2.lower().strip()]))
-            match_key = (sorted_teams, e.begin.isoformat(), event_name.lower().strip())
+            sorted_teams = tuple(sorted([normalized_team1, normalized_team2])) # Usa nomes normalizados para a chave de unicidade
+            match_key = (sorted_teams, e.begin.isoformat(), normalize_team(event_name))
 
             if match_key in unique_matches:
-                # Não imprime log para partidas duplicadas, apenas continua
                 continue
 
             unique_matches.add(match_key)
@@ -130,7 +181,7 @@ try:
             print(f"      ✅ Adicionado: {e.name} ({match_time_br.strftime('%d/%m %H:%M')}) | {full_match_format} | Evento: {event_name}")
 
         except Exception as e_inner:
-            print(f"      ❌ Erro ao processar bloco {match_idx}: {e_inner} | Dados parciais: Team1='{team1}', Team2='{team2}', Evento='{event_name}'")
+            print(f"      ❌ Erro ao processar bloco {match_idx}: {e_inner} | Dados parciais: Team1='{team1_raw}', Team2='{team2_raw}', Evento='{event_name}'")
 
 except requests.exceptions.RequestException as e:
     print(f"❌ Falha na requisição HTTP - {e}")
