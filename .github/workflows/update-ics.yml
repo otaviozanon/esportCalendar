@@ -1,56 +1,51 @@
-name: Atualizar Calendário CS2
+name: Generate CSGO Calendar
 
 on:
   schedule:
-    - cron: "*/45 * * * *" # 🔹 A cada 45 minutos
-  workflow_dispatch: # 🔹 Permite execução manual
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
 
-# Permissões necessárias para o workflow funcionar:
-permissions:
-  contents: write # Permite escrever no repositório (necessário para fazer commit)
-  actions: read # Permite ler informações de actions (boas práticas de segurança)
-
-# Define os jobs (tarefas) que serão executados
 jobs:
   build:
-    # Especifica que o job será executado em uma máquina Ubuntu (última versão disponível)
     runs-on: ubuntu-latest
 
     steps:
-      # Passo 1: Faz checkout do código do repositório
-      - name: Checkout código
-        uses: actions/checkout@v4 # Usa a action oficial do GitHub para fazer checkout
-        with:
-          ref: main # Faz checkout do branch 'main'
-          fetch-depth: 0 # Baixa todo o histórico do repositório (útil para git diff, etc.)
+      - name: Checar código
+        uses: actions/checkout@v4
 
-      # Passo 2: Configura o ambiente Python na máquina
+      # Instalar Google Chrome no GitHub Actions
+      - name: Instalar Google Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+
+      # Configurar Python
       - name: Configurar Python
-        uses: actions/setup-python@v5 # Usa a action oficial para configurar Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11" # Especifica a versão do Python a ser usada
+          python-version: "3.11"
 
-      # Passo 3: Instala as dependências Python necessárias a partir de requirements.txt
+      # Instalar dependências Python
       - name: Instalar dependências Python
         run: |
-          python -m pip install --upgrade pip # Atualiza o pip
-          pip install -r requirements.txt # Instala os pacotes listados no requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      # Passo 4: Executa o script que gera o arquivo calendar.ics
-      - name: Executar script generate_ics.py
-        run: python generate_ics.py # Roda o script Python que gera o arquivo ICS
+      # Executar script ICS
+      - name: Executar generate_ics.py
+        run: python generate_ics.py
 
-      # Passo 5: Faz commit e push do arquivo gerado de volta para o repositório (apenas se houver mudanças)
+      # Fazer commit do calendar.ics
       - name: Commit e publicar calendar.ics
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add calendar.ics
-          # Verifica se há mudanças reais no arquivo
           if git diff --cached --quiet; then
-            echo "✅ Nenhuma mudança detectada no calendar.ics - commit ignorado"
+            echo "Nenhuma mudança no ICS"
           else
-            git commit -m "Atualizar ICS CS2 - $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            git commit -m "Atualização automática do calendário"
             git push
-            echo "✅ Mudanças detectadas e commitadas com sucesso"
           fi
