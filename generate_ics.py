@@ -6,9 +6,7 @@ from ics import Calendar, Event
 from ics.alarm import DisplayAlarm
 import hashlib
 import json
-import re
 
-# Importar Selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -17,172 +15,142 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
 
-# Importar webdriver_manager
 from webdriver_manager.chrome import ChromeDriverManager
 
 # -------------------- Configurações Globais --------------------
-BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
-                   "RED Canids", "Legacy", "ODDIK", "Imperial Esports"]
+BRAZILIAN_TEAMS = [
+    "FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
+    "RED Canids", "Legacy", "ODDIK", "Imperial Esports"
+]
 
 BRAZILIAN_TEAMS_EXCLUSIONS = [
     "Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A",
     "Imperial Academy", "Imperial.Acd", "Imperial Female",
-    "Furia Academy", "Furia.A", "Pain Academy", "Mibr Academy", "Legacy Academy", "ODDIK Academy",
-    "RED Canids Academy", "Fluxo Academy"
+    "Furia Academy", "Furia.A", "Pain Academy", "Mibr Academy",
+    "Legacy Academy", "ODDIK Academy", "RED Canids Academy", "Fluxo Academy"
 ]
 
 CALENDAR_FILENAME = "calendar.ics"
-BR_TZ = pytz.timezone('America/Sao_Paulo')
+BR_TZ = pytz.timezone("America/Sao_Paulo")
 
-# Pré-normaliza as listas de times para otimizar as comparações
 def normalize_team(name):
-    if not name:
-        return ""
-    return name.lower().strip()
+    return name.lower().strip() if name else ""
 
-NORMALIZED_BRAZILIAN_TEAMS = {normalize_team(team) for team in BRAZILIAN_TEAMS}
-NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS = {normalize_team(team) for team in BRAZILIAN_TEAMS_EXCLUSIONS}
+NORMALIZED_BRAZILIAN_TEAMS = {normalize_team(t) for t in BRAZILIAN_TEAMS}
+NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS = {normalize_team(t) for t in BRAZILIAN_TEAMS_EXCLUSIONS}
 
 # -------------------- Lógica Principal --------------------
 cal = Calendar()
 added_count = 0
-driver = None # Inicializa driver como None para o bloco finally
 
-print("🔍 Iniciando o processo de busca de partidas...")
+today = datetime.now(BR_TZ)
+date_str = today.strftime("%d-%m-%Y")
+TIPSGG_URL = f"https://tips.gg/csgo/matches/{date_str}/"
+
+driver = None
 
 try:
-    # Configurações do Selenium
     chrome_options = Options()
-    chrome_options.add_argument("--headless") # Executa em modo headless (sem interface gráfica)
-    chrome_options.add_argument("--no-sandbox") # Necessário para ambientes Linux como GitHub Actions
-    chrome_options.add_argument("--disable-dev-shm-usage") # Otimização para ambientes Docker/CI
-    chrome_options.add_argument("--window-size=1920,1080") # Define um tamanho de janela
-    chrome_options.add_argument("--log-level=3") # Reduz a verbosidade dos logs do Chrome
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--log-level=3")
 
-    # Inicializa o ChromeDriver usando webdriver_manager
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.get(TIPSGG_URL)
 
-    # Constrói a URL para o dia atual
-    today = datetime.now(BR_TZ)
-    date_str = today.strftime('%d-%m-%Y')
-    current_url = f"https://tips.gg/csgo/matches/{date_str}/"
-
-    driver.get(current_url)
-
-    # Espera até que os elementos JSON-LD estejam presentes na página
     WebDriverWait(driver, 30).until(
-        EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'script[type="application/ld+json"]'))
+        EC.presence_of_element_located((By.CSS_SELECTOR, 'script[type="application/ld+json"]'))
     )
 
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    scripts = soup.find_all("script", type="application/ld+json")
 
-    # Encontra todos os blocos de script JSON-LD
-    json_ld_scripts = soup.find_all('script', type='application/ld+json')
-
-    for script_idx, script in enumerate(json_ld_scripts, 1):
+    for script in scripts:
         try:
-            data = json.loads(script.string)
+            event_data = json.loads(script.string)
 
-            # Verifica se é um SportsEvent e se tem os campos necessários
-            if data.get('@type') != 'SportsEvent' or not all(k in data for k in ['name', 'startDate', 'competitor', 'organizer', 'description', 'url']):
-                continue # Ignora se não for um SportsEvent válido ou faltam campos essenciais
+            if event_data.get("@type") != "SportsEvent":
+                continue
 
-            # Extrair informações
-            event_name_full = data.get('name', 'Nome do Evento Desconhecido')
-            start_date_str = data.get('startDate')
-            competitors = data.get('competitor', [])
-            organizer_name = data.get('organizer', {}).get('name', 'Torneio Desconhecido')
-            description_raw = data.get('description', '')
-            match_url_raw = data.get('url', '')
+            competitors = event_data.get("competitor", [])
+            if len(competitors) < 2:
+                continue
 
-            # Converte a data/hora para UTC e depois para o fuso horário de Brasília para comparação
-            # O formato do tips.gg é ISO 8601 com offset, e datetime.fromisoformat lida com isso
-            match_time_utc = datetime.fromisoformat(start_date_str).astimezone(pytz.utc)
+            team1 = competitors[0].get("name")
+            team2 = competitors[1].get("name")
 
-            # Ignorar partidas que já ocorreram
+            if not team1 or not team2 or team1 == "TBD" or team2 == "TBD":
+                continue
+
+            start_date_str = event_data.get("startDate")
+            if not start_date_str:
+                continue
+
+            match_time_utc = datetime.fromisoformat(
+                start_date_str.replace("Z", "+00:00")
+            )
+
             if match_time_utc < datetime.now(pytz.utc):
                 continue
 
-            team1_raw = competitors[0].get('name', 'TBD') if len(competitors) > 0 else 'TBD'
-            team2_raw = competitors[1].get('name', 'TBD') if len(competitors) > 1 else 'TBD'
+            t1 = normalize_team(team1)
+            t2 = normalize_team(team2)
 
-            # Ignorar partidas com TBD
-            if team1_raw == "TBD" or team2_raw == "TBD":
-                continue
-
-            # Normaliza os nomes para a lógica de filtragem
-            normalized_team1 = normalize_team(team1_raw)
-            normalized_team2 = normalize_team(team2_raw)
-
-            # Lógica de filtragem: verifica se algum time BR principal está envolvido E não é uma exclusão
-            is_br_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS
-            is_br_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS
-
-            is_excluded_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
-            is_excluded_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
-
-            is_br_team_involved = (is_br_team1 and not is_excluded_team1) or \
-                                  (is_br_team2 and not is_excluded_team2)
-
-            if not is_br_team_involved:
-                continue
-
-            # Extrair formato da partida (Bo1, Bo3, etc.) e fase do torneio (Group D, Playoffs)
-            match_format_match = re.search(r'(BO\d+ Match)', description_raw, re.IGNORECASE)
-            match_format = match_format_match.group(1) if match_format_match else "BoX"
-
-            match_phase_match = re.search(r'(Group [A-D]|Playoffs|Regular Season|Grand Final|Semi-Final|Quarter-Final)', description_raw, re.IGNORECASE)
-            match_phase = match_phase_match.group(1) if match_phase_match else "Fase Desconhecida"
-
-            description = f"{match_format} - {match_phase}"
-            match_url = f"https://tips.gg{match_url_raw}" if match_url_raw.startswith('/') else match_url_raw
-
-            # Criar evento
-            event_summary = f"{team1_raw} vs {team2_raw}"
-            event_description = (
-                f"🏆 {description}\n"
-                f"📍 {organizer_name}\n"
-                f"🌐 {match_url}"
+            is_br = (
+                (t1 in NORMALIZED_BRAZILIAN_TEAMS and t1 not in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS)
+                or
+                (t2 in NORMALIZED_BRAZILIAN_TEAMS and t2 not in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS)
             )
 
-            event_uid = hashlib.sha1(event_summary.encode('utf-8') + str(start_date_str).encode('utf-8')).hexdigest()
+            if not is_br:
+                continue
+
+            match_url = event_data.get("url", "")
+            if match_url and not match_url.startswith("http"):
+                match_url = f"https://tips.gg{match_url}"
+
+            description = event_data.get("description", "")
+            organizer = event_data.get("organizer", {}).get("name", "")
+
+            uid = hashlib.sha1(
+                f"{team1}{team2}{start_date_str}".encode("utf-8")
+            ).hexdigest()
 
             e = Event()
-            e.name = event_summary
+            e.name = f"{team1} vs {team2}"
             e.begin = match_time_utc
             e.duration = timedelta(hours=2)
-            e.description = event_description
-            e.uid = event_uid
+            e.uid = uid
+            e.description = f"{description}\n{organizer}\n{match_url}"
 
-            # Adiciona alarme 15 minutos antes
-            alarm = DisplayAlarm(trigger=timedelta(minutes=-15))
-            e.alarms.append(alarm)
+            e.alarms.append(DisplayAlarm(trigger=timedelta(minutes=-15)))
 
             cal.events.add(e)
             added_count += 1
 
-        except json.JSONDecodeError:
-            pass # Não exibir logs no console
-        except Exception:
-            pass # Não exibir logs no console
+        except json.JSONDecodeError as e:
+            print(f"❌ Erro ao decodificar JSON: {e}")
+        except Exception as e:
+            print(f"❌ Erro ao processar partida: {e}")
 
-except requests.exceptions.RequestException as e:
-    print(f"❌ Falha na requisição HTTP - {e}")
 except TimeoutException:
-    print("❌ Tempo limite excedido ao carregar a página ou aguardar elementos.")
+    print("❌ Timeout ao carregar a página.")
 except WebDriverException as e:
     print(f"❌ Erro do WebDriver: {e}")
 except Exception as e:
-    print(f"❌ Erro geral durante a execução do Selenium: {e}")
+    print(f"❌ Erro geral: {e}")
 finally:
     if driver:
         driver.quit()
 
-print(f"\n💾 Salvando arquivo: {CALENDAR_FILENAME}")
+# -------------------- Salvamento --------------------
+print(f"💾 Salvando arquivo: {CALENDAR_FILENAME}")
 try:
     with open(CALENDAR_FILENAME, "w", encoding="utf-8") as f:
         f.writelines(cal.serialize_iter())
     print(f"📌 Total de partidas adicionadas: {added_count}")
 except Exception as e:
-    print(f"❌ Erro ao salvar {CALENDAR_FILENAME}: {e}")
+    print(f"❌ Erro ao salvar o arquivo: {e}")
