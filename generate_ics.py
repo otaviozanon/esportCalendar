@@ -33,7 +33,8 @@ BRAZILIAN_TEAMS_EXCLUSIONS = [
     "RED Canids Academy", "Fluxo Academy"
 ]
 
-TIPSGG_URL = "https://tips.gg/csgo/matches/"
+# URL base do Tips.gg para CS2 (agora sem a data final)
+TIPSGG_BASE_URL = "https://tips.gg/csgo/matches/"
 CALENDAR_FILENAME = "calendar.ics"
 BR_TZ = pytz.timezone('America/Sao_Paulo') # Fuso horário de Brasília
 
@@ -56,137 +57,146 @@ cal = Calendar()
 added_count = 0
 driver = None # Inicializa driver como None para o bloco finally
 
-print(f"🔍 Abrindo navegador para {TIPSGG_URL} com Selenium...")
+print(f"🔍 Iniciando busca de partidas no Tips.gg para os próximos 5 dias...")
 
 try:
-    # Configurações do Chrome para rodar em modo headless no GitHub Actions
+    # Configurações do Chrome para Selenium
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless") # Executa o Chrome em modo invisível
     chrome_options.add_argument("--no-sandbox") # Necessário para ambientes Linux como GitHub Actions
-    chrome_options.add_argument("--disable-dev-shm-usage") # Necessário para ambientes Linux
+    chrome_options.add_argument("--disable-dev-shm-usage") # Otimização para ambientes com memória limitada
+    chrome_options.add_argument("--window-size=1920,1080") # Define um tamanho de janela para evitar layouts responsivos
+    chrome_options.add_argument("--log-level=3") # Reduz a verbosidade dos logs do Chrome
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    chrome_options.add_argument("--window-size=1920,1080") # Garante uma resolução padrão
 
     print("⚙️ Baixando e configurando ChromeDriver com webdriver_manager...")
     service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     print("⚙️ ChromeDriver configurado com sucesso.")
 
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.get(TIPSGG_URL)
-    print(f"⚙️ Página {TIPSGG_URL} carregada com sucesso pelo Selenium.")
+    # Loop para os próximos 5 dias
+    for i in range(5):
+        target_date = datetime.now(BR_TZ) + timedelta(days=i)
+        date_str = target_date.strftime('%d-%m-%Y') # Formato DD-MM-YYYY
+        current_url = f"{TIPSGG_BASE_URL}{date_str}/"
 
-    # Espera até que os scripts JSON-LD estejam presentes
-    print("⚙️ Aguardando elementos JSON-LD na página...")
-    WebDriverWait(driver, 20).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, 'script[type="application/ld+json"]'))
-    )
-    print("✅ Elementos JSON-LD encontrados na página.")
+        print(f"\n--- Buscando partidas para {target_date.strftime('%d/%m/%Y')} em {current_url} ---")
+        driver.get(current_url)
+        print(f"⚙️ Página {current_url} carregada com sucesso pelo Selenium.")
 
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-    # Encontra todos os blocos de script JSON-LD
-    json_ld_scripts = soup.find_all('script', type='application/ld+json')
-    print(f"📦 Encontrados {len(json_ld_scripts)} blocos JSON-LD na página.")
-
-    current_time_br = datetime.now(BR_TZ) # Pega o horário atual em BRT para comparar com os jogos
-
-    for script_idx, script in enumerate(json_ld_scripts, 1):
+        # Espera até que os scripts JSON-LD estejam presentes
+        print("⚙️ Aguardando elementos JSON-LD na página...")
         try:
-            data = json.loads(script.string)
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'script[type="application/ld+json"]'))
+            )
+            print("✅ Elementos JSON-LD encontrados na página.")
+        except TimeoutException:
+            print(f"⚠️ Tempo limite excedido ao aguardar JSON-LD em {current_url}. Pode não haver partidas ou a página demorou demais.")
+            continue # Pula para a próxima data
 
-            # Verifica se é um SportsEvent e se tem os campos necessários
-            if data.get('@type') == 'SportsEvent' and data.get('name') and data.get('startDate') and data.get('competitor'):
-                event_name_full = data['name']
-                start_date_str = data['startDate']
-                competitors = data['competitor']
-                match_url_raw = data.get('url')
-                organizer_name = data.get('organizer', {}).get('name', 'Desconhecido')
-                description_raw = data.get('description', '') # A descrição pode conter o formato (BO1, BO3)
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        json_ld_scripts = soup.find_all('script', type='application/ld+json')
+        print(f"📦 Encontrados {len(json_ld_scripts)} blocos JSON-LD na página para {date_str}.")
 
-                # Extrair formato da partida (BO1, BO3, etc.) da descrição
-                match_format_match = re.search(r'(BO\d+)', description_raw, re.IGNORECASE)
-                match_format = match_format_match.group(1).upper() if match_format_match else "BoX"
+        for script_idx, script in enumerate(json_ld_scripts, 1):
+            try:
+                data = json.loads(script.string)
 
-                # Extrair nomes dos times
-                team1_raw = competitors[0]['name'] if len(competitors) > 0 else "TBD"
-                team2_raw = competitors[1]['name'] if len(competitors) > 1 else "TBD"
+                # Verifica se é um SportsEvent e se tem os campos essenciais
+                if data.get('@type') == 'SportsEvent' and \
+                   data.get('name') and \
+                   data.get('startDate') and \
+                   data.get('competitor') and \
+                   len(data['competitor']) >= 2 and \
+                   data.get('organizer') and \
+                   data['organizer'].get('name') and \
+                   data.get('url'):
 
-                # Converte a data/hora para o fuso horário de Brasília
-                # O formato de startDate é ISO 8601, ex: "2026-01-23T12:00:00-0300"
-                match_time_utc = datetime.fromisoformat(start_date_str).astimezone(pytz.utc)
-                match_time_br = match_time_utc.astimezone(BR_TZ)
+                    team1_raw = data['competitor'][0]['name']
+                    team2_raw = data['competitor'][1]['name']
+                    organizer_name = data['organizer']['name']
+                    match_url_raw = data['url'] # tips.gg retorna URL relativa, precisa do domínio
+                    event_description_raw = data.get('description', '') # Pode conter o formato BoX
 
-                # --- Lógica de Filtragem ---
-                print(f"\n--- Processando Partida {script_idx}: {team1_raw} vs {team2_raw} ({match_time_br.strftime('%d/%m %H:%M')}) ---")
+                    # Extrair formato da partida (Bo1, Bo3, etc.) da descrição
+                    match_format_match = re.search(r'(BO\d+)', event_description_raw, re.IGNORECASE)
+                    match_format = match_format_match.group(1).upper() if match_format_match else "BoX"
 
-                # 1. Ignorar partidas com TBD
-                if team1_raw == "TBD" or team2_raw == "TBD":
-                    print(f"🚫 Ignorando: Times TBD ({team1_raw} vs {team2_raw})")
-                    continue
+                    # Parsear a data e hora
+                    # O tips.gg fornece startDate com timezone offset (ex: 2026-01-23T12:00:00-0300)
+                    # datetime.fromisoformat() lida com isso automaticamente
+                    match_time_utc = datetime.fromisoformat(data['startDate'])
+                    match_time_br = match_time_utc.astimezone(BR_TZ) # Converte para o fuso horário de Brasília para exibição
 
-                # 2. Ignorar partidas que já aconteceram (apenas futuras)
-                if match_time_br < current_time_br:
-                    print(f"🚫 Ignorando: Partida já ocorreu ({match_time_br.strftime('%d/%m %H:%M')})")
-                    continue
+                    print(f"\n--- Processando Partida {script_idx} ({date_str}): {team1_raw} vs {team2_raw} ({match_time_br.strftime('%d/%m %H:%M')} BRT) ---")
 
-                # Normaliza os nomes para a lógica de filtragem
-                normalized_team1 = normalize_team(team1_raw)
-                normalized_team2 = normalize_team(team2_raw)
+                    # Ignorar partidas com TBD (se houver, embora o tips.gg seja mais limpo)
+                    if team1_raw == "TBD" or team2_raw == "TBD":
+                        print(f"🚫 Ignorando: Times TBD ({team1_raw} vs {team2_raw})")
+                        continue
 
-                # Lógica de filtragem: verifica se algum time BR principal está envolvido E não é uma exclusão
-                is_br_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS
-                is_br_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS
+                    # Filtrar partidas que já ocorreram (usando o fuso horário UTC para comparação)
+                    if match_time_utc < datetime.now(pytz.utc):
+                        print(f"🚫 Ignorando: Partida já ocorreu ({match_time_br.strftime('%d/%m %H:%M')})")
+                        continue
 
-                is_excluded_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
-                is_excluded_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
+                    # Normaliza os nomes para a lógica de filtragem
+                    normalized_team1 = normalize_team(team1_raw)
+                    normalized_team2 = normalize_team(team2_raw)
 
-                is_br_team_involved = (is_br_team1 and not is_excluded_team1) or \
-                                      (is_br_team2 and not is_excluded_team2)
+                    # Lógica de filtragem: verifica se algum time BR principal está envolvido E não é uma exclusão
+                    is_br_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS
+                    is_br_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS
 
-                print(f"  Time 1: '{team1_raw}' (Normalizado: '{normalized_team1}') - É BR: {is_br_team1}, Excluído: {is_excluded_team1}")
-                print(f"  Time 2: '{team2_raw}' (Normalizado: '{normalized_team2}') - É BR: {is_br_team2}, Excluído: {is_excluded_team2}")
+                    is_excluded_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
+                    is_excluded_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
 
-                if not is_br_team_involved:
-                    print("🚫 Ignorando: Nenhum time BR principal (não excluído) envolvido.")
-                    continue # Ignora se nenhum time BR principal (não excluído) estiver envolvido
+                    is_br_team_involved = (is_br_team1 and not is_excluded_team1) or \
+                                          (is_br_team2 and not is_excluded_team2)
 
-                print("✅ Partida atende aos critérios de time BR.")
+                    print(f"  Time 1: '{team1_raw}' (Normalizado: '{normalized_team1}') - É BR: {is_br_team1}, Excluído: {is_excluded_team1}")
+                    print(f"  Time 2: '{team2_raw}' (Normalizado: '{normalized_team2}') - É BR: {is_br_team2}, Excluído: {is_excluded_team2}")
 
-                # Construir o resumo e a descrição do evento
-                event_summary = f"{team1_raw} vs {team2_raw}"
-                event_description = (
-                    f"🏆 {match_format}\n"
-                    f"📍 {organizer_name}\n"
-                    f"🌐 https://tips.gg{match_url_raw}" # tips.gg retorna URL relativa, precisa do domínio
-                )
+                    if not is_br_team_involved:
+                        print("🚫 Ignorando: Nenhum time BR principal (não excluído) envolvido.")
+                        continue # Ignora se nenhum time BR principal (não excluído) estiver envolvido
 
-                # Gerar UID único para o evento
-                event_uid = hashlib.sha1(event_summary.encode('utf-8') + str(match_time_utc.timestamp()).encode('utf-8')).hexdigest()
+                    # Se chegou até aqui, a partida é relevante e futura
+                    event_summary = f"{team1_raw} vs {team2_raw}"
+                    event_description = (
+                        f"🏆 {match_format}\n"
+                        f"📍 {organizer_name}\n"
+                        f"🌐 https://tips.gg{match_url_raw}" # tips.gg retorna URL relativa, precisa do domínio
+                    )
 
-                e = Event()
-                e.name = event_summary
-                e.begin = match_time_utc # O calendário lida bem com datetimes timezone-aware
-                e.duration = timedelta(hours=2) # Duração padrão de 2 horas
-                e.description = event_description
-                e.uid = event_uid
+                    # Gerar UID único para o evento
+                    event_uid = hashlib.sha1(event_summary.encode('utf-8') + str(match_time_utc.timestamp()).encode('utf-8')).hexdigest()
 
-                # Adiciona alarme 15 minutos antes
-                alarm = DisplayAlarm(trigger=timedelta(minutes=-15))
-                e.alarms.append(alarm)
+                    e = Event()
+                    e.name = event_summary
+                    e.begin = match_time_utc # O calendário lida bem com datetimes timezone-aware
+                    e.duration = timedelta(hours=2) # Duração padrão de 2 horas
+                    e.description = event_description
+                    e.uid = event_uid
 
-                cal.events.add(e)
-                added_count += 1
-                print(f"🎉 Adicionado ao calendário: '{event_summary}'")
+                    # Adiciona alarme 15 minutos antes
+                    alarm = DisplayAlarm(trigger=timedelta(minutes=-15))
+                    e.alarms.append(alarm)
 
-            else:
-                print(f"⚠️ Script {script_idx}: JSON-LD não é um SportsEvent válido ou faltam campos essenciais.")
+                    cal.events.add(e)
+                    added_count += 1
+                    print(f"🎉 Adicionado ao calendário: '{event_summary}'")
 
-        except json.JSONDecodeError as je:
-            print(f"❌ Erro ao decodificar JSON no script {script_idx}: {je}")
-        except ValueError as ve:
-            print(f"❌ Erro de dados no script {script_idx}: {ve}")
-        except Exception as e_inner:
-            print(f"❌ Erro inesperado ao processar script {script_idx}: {e_inner}")
+                else:
+                    print(f"⚠️ Script {script_idx}: JSON-LD não é um SportsEvent válido ou faltam campos essenciais.")
+
+            except json.JSONDecodeError as je:
+                print(f"❌ Erro ao decodificar JSON no script {script_idx}: {je}")
+            except ValueError as ve:
+                print(f"❌ Erro de dados no script {script_idx}: {ve}")
+            except Exception as e_inner:
+                print(f"❌ Erro inesperado ao processar script {script_idx}: {e_inner}")
 
 except requests.exceptions.RequestException as e:
     print(f"❌ Falha na requisição HTTP - {e}")
