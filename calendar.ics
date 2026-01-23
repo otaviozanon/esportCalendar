@@ -32,11 +32,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group A. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/fluxo-vs-yawara-esports/12-00/\nX-RANALLI-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Group D. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/bestia-academy-vs-red-canids/09-00/
 DURATION:PT2H
-DTSTART:20260123T120000Z
-SUMMARY:Fluxo vs Yawara Esports
-UID:3e957763036f535f8d77edae7da1432c4d11a21c
+DTSTART:20260123T210000Z
+SUMMARY:BESTIA Academy vs RED Canids
+UID:3595913ea47a61ff5fd008fc41842989a0b3d25c
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -44,11 +44,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group D. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/bestia-academy-vs-red-canids/09-00/
+DESCRIPTION:🏆 BO3 Match. Group A. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/fluxo-vs-yawara-esports/12-00/\nX-RANALLI-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260123T210000Z
-SUMMARY:BESTIA Academy vs RED Canids
-UID:3595913ea47a61ff5fd008fc41842989a0b3d25c
+DTSTART:20260123T120000Z
+SUMMARY:Fluxo vs Yawara Esports
+UID:3e957763036f535f8d77edae7da1432c4d11a21c
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
