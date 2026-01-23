@@ -2,7 +2,7 @@ name: Atualizar Calendário CS2
 
 on:
   schedule:
-    - cron: "*/45 * * * *" # 🔹 A cada 45 minutos
+    - cron: "*/10 * * * *" # 🔹 A cada 45 minutos
   workflow_dispatch: # 🔹 Permite execução manual
 
 # Permissões necessárias para o workflow funcionar:
