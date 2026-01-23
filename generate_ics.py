@@ -1,11 +1,11 @@
-import requests
+import http.client # <--- MUDANÇA AQUI: Usando http.client
 import json
 from datetime import datetime, timedelta
 import pytz
 from ics import Calendar, Event
 from ics.alarm import DisplayAlarm
 import hashlib
-import os # Mantido caso precise para debug local, mas não para o controle de requisições
+# import os # Não é mais necessário para o controle de requisições
 
 # -------------------- Configurações Globais --------------------
 BRAZILIAN_TEAMS = ["FURIA", "paiN Gaming", "MIBR", "Imperial Esports", "Fluxo",
@@ -22,7 +22,9 @@ BR_TZ = pytz.timezone('America/Sao_Paulo')
 
 RAPIDAPI_HOST = "csgo-matches-and-tournaments.p.rapidapi.com"
 RAPIDAPI_KEY = "11309a30bemsh349cbd9a170c61ep159a03jsnbd9e27efbe00"
-RAPIDAPI_URL = f"https://{RAPIDAPI_HOST}/matches"
+RAPIDAPI_ENDPOINT = "/upcoming_matches" # <--- MUDANÇA AQUI: Endpoint separado
+# RAPIDAPI_URL não é mais usado diretamente com http.client, mas mantido para prints
+RAPIDAPI_URL_FOR_PRINT = f"https://{RAPIDAPI_HOST}{RAPIDAPI_ENDPOINT}"
 
 # -------------------- Funções Auxiliares --------------------
 def normalize_team(name):
@@ -38,7 +40,7 @@ cal = Calendar()
 added_count = 0
 
 print("--- Iniciando script de geração de calendário ---")
-print(f"🔍 Buscando partidas na API RapidAPI em: {RAPIDAPI_URL}")
+print(f"🔍 Buscando partidas na API RapidAPI em: {RAPIDAPI_URL_FOR_PRINT}")
 
 headers = {
     'x-rapidapi-key': RAPIDAPI_KEY,
@@ -46,10 +48,22 @@ headers = {
     'Content-Type': "application/json"
 }
 
+conn = None # Inicializa conn fora do try para garantir que esteja acessível no finally
 try:
-    response = requests.get(RAPIDAPI_URL, headers=headers, timeout=10)
-    response.raise_for_status()
-    full_response_data = response.json()
+    conn = http.client.HTTPSConnection(RAPIDAPI_HOST) # <--- MUDANÇA AQUI
+    conn.request("GET", RAPIDAPI_ENDPOINT, headers=headers) # <--- MUDANÇA AQUI
+
+    res = conn.getresponse() # <--- MUDANÇA AQUI
+    data = res.read() # <--- MUDANÇA AQUI
+    response_text = data.decode("utf-8") # Decodifica a resposta para string
+
+    # Verifica o status da resposta HTTP
+    if res.status >= 400:
+        print(f"❌ Erro HTTP da API: Status {res.status} - {res.reason}")
+        print(f"Resposta da API: {response_text}")
+        raise Exception(f"Erro da API: {response_text}") # Levanta uma exceção para cair no catch
+
+    full_response_data = json.loads(response_text) # <--- MUDANÇA AQUI: Carrega o JSON da string
 
     matches_data = full_response_data.get('data', [])
     print(f"✅ API retornou {len(matches_data)} partidas no total.")
@@ -64,12 +78,12 @@ try:
         team1_raw = "TBD"
         team2_raw = "TBD"
         event_name = "Desconhecido"
-        match_url = RAPIDAPI_URL
+        match_url = RAPIDAPI_URL_FOR_PRINT # Mantém a URL da API como fallback para o link do evento
         match_format = "BoX"
         match_time_utc = None
 
         print(f"\n--- Processando partida {match_idx} ---")
-        print(f"Detalhes brutos da partida: {json.dumps(match, indent=2)}") # Imprime o JSON completo da partida
+        # print(f"Detalhes brutos da partida: {json.dumps(match, indent=2)}") # Descomente se precisar ver o JSON completo de cada partida novamente
 
         try:
             played_at_str = match.get('played_at')
@@ -121,8 +135,9 @@ try:
             is_br_team_involved = (is_br_team1 and not is_excluded_team1) or \
                                   (is_br_team2 and not is_excluded_team2)
 
-            print(f"🇧🇷 Times BR configurados: {NORMALIZED_BRAZILIAN_TEAMS}")
-            print(f"🚫 Exclusões configuradas: {NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS}")
+            # Prints para depuração dos times
+            # print(f"🇧🇷 Times BR configurados: {NORMALIZED_BRAZILIAN_TEAMS}")
+            # print(f"🚫 Exclusões configuradas: {NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS}")
             print(f"Time 1 ('{team1_raw}' normalizado '{normalized_team1}'): É BR? {is_br_team1}. É excluído? {is_excluded_team1}.")
             print(f"Time 2 ('{team2_raw}' normalizado '{normalized_team2}'): É BR? {is_br_team2}. É excluído? {is_excluded_team2}.")
             print(f"Algum time BR principal envolvido e não excluído? {is_br_team_involved}")
@@ -133,8 +148,6 @@ try:
 
             event_info = match.get('event', {})
             event_name = event_info.get('title', 'Desconhecido')
-
-            match_url = RAPIDAPI_URL
 
             match_kind_info = match.get('match_kind', {})
             match_format = match_kind_info.get('title', 'BoX').upper()
@@ -163,15 +176,16 @@ try:
 
         except Exception as e_inner:
             print(f"❌ Erro inesperado ao processar partida {match_idx}: {e_inner}")
-            # Continua para a próxima partida mesmo com erro em uma
             pass
 
-except requests.exceptions.RequestException as e:
-    print(f"❌ Falha na requisição HTTP para a API RapidAPI - {e}")
-except json.JSONDecodeError as e:
-    print(f"❌ Erro ao decodificar JSON da resposta da API: {e}")
 except Exception as e:
-    print(f"❌ Erro inesperado ao acessar a API - {e}")
+    print(f"❌ Erro ao acessar a API ou processar dados: {e}")
+    # Se o erro for da API, a resposta já foi impressa acima.
+    # Se for outro erro, e.g., JSONDecodeError, o detalhe estará em 'e'.
+
+finally:
+    if conn:
+        conn.close() # Garante que a conexão seja fechada
 
 try:
     with open(CALENDAR_FILENAME, "w", encoding="utf-8") as f:
