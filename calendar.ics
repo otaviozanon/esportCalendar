@@ -20,47 +20,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group A. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/fluxo-vs-yawara-esports/12-00/
-DURATION:PT2H
-DTSTART:20260123T120000Z
-SUMMARY:Fluxo vs Yawara Esports
-UID:c54dab70f81cf42e97631f2c8f9832911ee112da
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
 DESCRIPTION:🏆 BO3 Match. Group A. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/fluxo-vs-yawara-esports/12-00/\nX-RANALLI-SOURCE:TIPSGG
 DURATION:PT2H
 DTSTART:20260123T120000Z
 SUMMARY:Fluxo vs Yawara Esports
 UID:3e957763036f535f8d77edae7da1432c4d11a21c
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group D. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/bestia-academy-vs-red-canids/09-00/
-DURATION:PT2H
-DTSTART:20260123T210000Z
-SUMMARY:BESTIA Academy vs RED Canids
-UID:3595913ea47a61ff5fd008fc41842989a0b3d25c
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. American Closed Qualifier. Americas. CS2 (CS:GO) Premier.\n📍 IEM Rio 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/red-canids-vs-bestia/11-00/
-DURATION:PT2H
-DTSTART:20260123T230000Z
-SUMMARY:RED Canids vs BESTIA
-UID:7c9daed6f40fd0ba258a3553b05a748b6ea39a0c
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -92,18 +56,6 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #7\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/mibr-vs-crashers/10-00/
-DURATION:PT2H
-DTSTART:20260123T220000Z
-SUMMARY:MIBR vs Crashers
-UID:9a66503780802e5cbf2808ff98360cc0defbf90b
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
 DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #7\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/mibr-vs-crashers/10-00/\nX-RANALLI-SOURCE:TIPSGG
 DURATION:PT2H
 DTSTART:20260123T220000Z
@@ -121,17 +73,5 @@ DURATION:PT2H
 DTSTART:20260123T230000Z
 SUMMARY:RED Canids vs BESTIA
 UID:0196af9fd68cd48f63e1fe3970010086cbdcc864
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #7\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/oddik-vs-game-hunters/01-00/
-DURATION:PT2H
-DTSTART:20260123T130000Z
-SUMMARY:ODDIK vs Game Hunters
-UID:69e53f714c3ebbbf1f5d99ee38044ca217c894c7
 END:VEVENT
 END:VCALENDAR
