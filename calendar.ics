@@ -1,4 +1,64 @@
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+DESCRIPTION:🏆 BO3 Match. Group D. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/bestia-academy-vs-red-canids/09-00/
+DURATION:PT2H
+DTSTART:20260123T210000Z
+SUMMARY:BESTIA Academy vs RED Canids
+UID:eca096b552d5a6092404a6698f4f463324def547
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+DESCRIPTION:🏆 BO3 Match. Group A. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/fluxo-vs-yawara-esports/12-00/
+DURATION:PT2H
+DTSTART:20260123T120000Z
+SUMMARY:Fluxo vs Yawara Esports
+UID:d71c3f63fa6c1f6eaf6d7fd91e06fc9f5c565735
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #7\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/oddik-vs-game-hunters/01-00/
+DURATION:PT2H
+DTSTART:20260123T130000Z
+SUMMARY:ODDIK vs Game Hunters
+UID:e53fc6402ba3364965b351723c3aeed810669673
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+DESCRIPTION:🏆 BO3 Match. American Closed Qualifier. Americas. CS2 (CS:GO) Premier.\n📍 IEM Rio 2026\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/red-canids-vs-bestia/11-00/
+DURATION:PT2H
+DTSTART:20260123T230000Z
+SUMMARY:RED Canids vs BESTIA
+UID:223a371c9080506494c16b6ce132b62da755c327
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #7\n🌐 https://tips.gg/matches/counter-strike/23-01-2026/mibr-vs-crashers/10-00/
+DURATION:PT2H
+DTSTART:20260123T220000Z
+SUMMARY:MIBR vs Crashers
+UID:dd0ec5a8dced71dc6fd9bfc4546732fbb8ee21dd
+END:VEVENT
 END:VCALENDAR
