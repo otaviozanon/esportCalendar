@@ -26,9 +26,19 @@ TIPSGG_URL = "https://tips.gg/csgo/matches/"
 CALENDAR_FILENAME = "calendar.ics"
 BR_TZ = pytz.timezone('America/Sao_Paulo') # Fuso horário de Brasília
 
-# Adicionamos um User-Agent para simular uma requisição de navegador
+# Adicionamos um conjunto mais completo de HEADERS para simular um navegador
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Cache-Control': 'max-age=0'
 }
 
 # -------------------- Funções Auxiliares --------------------
@@ -52,45 +62,53 @@ added_count = 0
 print(f"🔍 Baixando página: {TIPSGG_URL}")
 
 try:
-    # Passamos os HEADERS na requisição
+    # Passamos os HEADERS mais completos na requisição
     response = requests.get(TIPSGG_URL, headers=HEADERS, timeout=10)
     response.raise_for_status() # Levanta um erro para códigos de status HTTP ruins (4xx ou 5xx)
-    print(f"📡 HTTP Status: {response.status_code}")
+    print(f"✅ Página baixada com sucesso! HTTP Status: {response.status_code}")
 
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # Encontrar todos os blocos de script JSON-LD
+    # Encontrar todos os blocos de script com type="application/ld+json"
     script_blocks = soup.find_all('script', type='application/ld+json')
-    print(f"📦 Encontrados {len(script_blocks)} scripts JSON-LD")
+    print(f"📄 Encontrados {len(script_blocks)} blocos <script type='application/ld+json'>.")
 
-    current_time_br = datetime.now(BR_TZ) # Hora atual em BRT para filtrar partidas futuras
+    current_time_br = datetime.now(BR_TZ)
+    print(f"⏰ Horário atual em BRT: {current_time_br}")
 
-    for script_idx, script in enumerate(script_blocks, 1):
+    for script_idx, script_block in enumerate(script_blocks, 1):
+        # print(f"\n--- Processando script {script_idx} ---")
         try:
-            json_data = json.loads(script.string)
-            # print(f"📄 Conteúdo JSON-LD do script {script_idx}: {json.dumps(json_data, indent=2)}") # Log do JSON completo
+            json_data = json.loads(script_block.string)
+            # print("JSON-LD bruto:", json.dumps(json_data, indent=2)) # Log do JSON bruto
 
-            # Verifica se é um SportsEvent e se tem as informações necessárias
-            if json_data.get('@type') == 'SportsEvent' and 'name' in json_data and 'startDate' in json_data:
-                event_name_raw = json_data['name']
-                start_raw = json_data['startDate']
-                description_raw = json_data.get('description', '')
-                organizer_name = json_data.get('organizer', {}).get('name', 'Desconhecido')
-                match_url_raw = "https://tips.gg" + json_data.get('url', TIPSGG_URL) # URL completa
+            # Verificar se é um SportsEvent e se tem os dados necessários
+            if json_data.get("@type") == "SportsEvent" and json_data.get("name") and json_data.get("startDate"):
+                # Extrair dados
+                event_name_raw = json_data.get("name", "Nome do Evento Desconhecido")
+                start_raw = json_data.get("startDate")
+                description_raw = json_data.get("description", "")
+                match_url_raw = "https://tips.gg" + json_data.get("url", TIPSGG_URL) # Adiciona o domínio base
+                organizer_name = json_data.get("organizer", {}).get("name", "Torneio Desconhecido")
 
-                # Extrair times
-                competitors = json_data.get('competitor', [])
-                team1_raw = competitors[0]['name'] if len(competitors) > 0 else "TBD"
-                team2_raw = competitors[1]['name'] if len(competitors) > 1 else "TBD"
+                competitors = json_data.get("competitor", [])
+                team1_raw = competitors[0].get("name", "TBD") if len(competitors) > 0 else "TBD"
+                team2_raw = competitors[1].get("name", "TBD") if len(competitors) > 1 else "TBD"
 
+                # print(f"  Equipes: {team1_raw} vs {team2_raw}")
+                # print(f"  Torneio: {organizer_name}")
+                # print(f"  Início (raw): {start_raw}")
+
+                # Ignorar partidas com TBD
                 if team1_raw == "TBD" or team2_raw == "TBD":
-                    # print(f"⏩ Ignorando partida {script_idx} (TBD): {event_name_raw}")
+                    # print("  🚫 Ignorando: Time TBD.")
                     continue
 
                 # Normaliza os nomes para a lógica de filtragem
                 normalized_team1 = normalize_team(team1_raw)
                 normalized_team2 = normalize_team(team2_raw)
 
+                # Lógica de filtragem: verifica se algum time BR principal está envolvido E não é uma exclusão
                 is_br_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS
                 is_br_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS
 
@@ -100,33 +118,22 @@ try:
                 is_br_team_involved = (is_br_team1 and not is_excluded_team1) or \
                                       (is_br_team2 and not is_excluded_team2)
 
-                # print(f"👥 Times: {team1_raw} ({normalized_team1}) vs {team2_raw} ({normalized_team2})")
-                # print(f"🇧🇷 Time BR envolvido (filtragem): {is_br_team_involved}")
-
                 if not is_br_team_involved:
-                    # print(f"⏩ Ignorando partida {script_idx}: Nenhum time BR principal (não excluído) envolvido.")
+                    # print(f"  🚫 Ignorando: Nenhuma equipe BR principal (não excluída) envolvida. ({team1_raw}, {team2_raw})")
                     continue
 
-                # Converter data e hora para o fuso horário de Brasília
-                # O formato de data do tips.gg é ISO 8601 com offset de fuso horário, e o datetime.fromisoformat lida bem com isso.
-                match_time_utc_or_offset = datetime.fromisoformat(start_raw)
+                # Converter data/hora para o fuso horário de Brasília
+                # O formato do startDate é ISO 8601 com offset de fuso horário (-0300)
+                # datetime.fromisoformat() pode lidar com isso diretamente
+                match_time_utc_aware = datetime.fromisoformat(start_raw)
+                match_time_br = match_time_utc_aware.astimezone(BR_TZ)
 
-                # Se o objeto datetime já tem informações de fuso horário (como -03:00), ele é timezone-aware.
-                # Se não tiver (e for UTC), precisamos torná-lo timezone-aware antes de converter.
-                if match_time_utc_or_offset.tzinfo is None:
-                    match_time_utc = pytz.utc.localize(match_time_utc_or_offset)
-                else:
-                    match_time_utc = match_time_utc_or_offset.astimezone(pytz.utc) # Garante que está em UTC para consistência
+                # print(f"  Horário da partida (BRT): {match_time_br}")
 
-                match_time_br = match_time_utc.astimezone(BR_TZ)
-
-                # print(f"⏰ Horário UTC: {match_time_utc}")
-                # print(f"⏰ Horário BRT: {match_time_br}")
-                # print(f"⏰ Horário Atual BRT: {current_time_br}")
-
-                # Filtrar partidas futuras
-                if match_time_br < current_time_br:
-                    # print(f"⏩ Ignorando partida {script_idx}: Partida já ocorreu ou está em andamento. ({match_time_br} < {current_time_br})")
+                # Filtrar partidas que já ocorreram ou estão em andamento
+                # Consideramos que uma partida dura 2 horas para esta checagem
+                if match_time_br + timedelta(hours=2) < current_time_br:
+                    # print(f"  🚫 Ignorando: Partida já ocorreu ou está em andamento. ({match_time_br} < {current_time_br})")
                     continue
 
                 # Extrair formato da partida (Bo1, Bo3, etc.) da descrição
@@ -185,4 +192,3 @@ try:
     print(f"📌 Total de partidas adicionadas: {added_count}")
 except Exception as e:
     print(f"❌ Erro ao salvar {CALENDAR_FILENAME}: {e}")
-
