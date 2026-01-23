@@ -8,139 +8,181 @@ import hashlib
 import json
 import re
 
-# Times principais
-BRAZILIAN_TEAMS = [
-    "FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
-    "RED Canids", "Legacy", "ODDIK", "Imperial Esports"
-]
+# -------------------- Configurações Globais --------------------
+# Lista de times brasileiros principais (nomes como aparecem no HTML, mas serão normalizados para comparação)
+BRAZILIAN_TEAMS = ["FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
+                   "RED Canids", "Legacy", "ODDIK", "Imperial Esports"]
 
+# Lista de exclusões (nomes como aparecem no HTML, mas serão normalizados para comparação)
 BRAZILIAN_TEAMS_EXCLUSIONS = [
     "Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A",
     "Imperial Academy", "Imperial.Acd", "Imperial Female",
     "Furia Academy", "Furia.A", "Pain Academy", "Mibr Academy",
-    "Legacy Academy", "ODDIK Academy", "RED Canids Academy", 
+    "Legacy Academy", "ODDIK Academy", "RED Canids Academy",
     "Fluxo Academy"
 ]
 
 TIPSGG_URL = "https://tips.gg/csgo/matches/"
 CALENDAR_FILENAME = "calendar.ics"
-BR_TZ = pytz.timezone("America/Sao_Paulo")
+BR_TZ = pytz.timezone('America/Sao_Paulo') # Fuso horário de Brasília
 
+# Adicionamos um User-Agent para simular uma requisição de navegador
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+}
+
+# -------------------- Funções Auxiliares --------------------
 def normalize_team(name):
-    return name.lower().strip() if name else ""
+    """
+    Normaliza o nome do time para comparação, convertendo para minúsculas e removendo espaços extras.
+    Mantém caracteres especiais e espaços internos para comparações literais.
+    """
+    if not name:
+        return ""
+    return name.lower().strip()
 
-NORMALIZED_BRAZILIAN_TEAMS = {normalize_team(t) for t in BRAZILIAN_TEAMS}
-NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS = {normalize_team(t) for t in BRAZILIAN_TEAMS_EXCLUSIONS}
+# Pré-normaliza as listas de times para otimizar as comparações
+NORMALIZED_BRAZILIAN_TEAMS = {normalize_team(team) for team in BRAZILIAN_TEAMS}
+NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS = {normalize_team(team) for team in BRAZILIAN_TEAMS_EXCLUSIONS}
 
+# -------------------- Lógica Principal --------------------
 cal = Calendar()
 added_count = 0
 
-print("🔍 Baixando página:", TIPSGG_URL)
+print(f"🔍 Baixando página: {TIPSGG_URL}")
 
 try:
-    response = requests.get(TIPSGG_URL, timeout=10)
-    print("📡 HTTP Status:", response.status_code)
+    # Passamos os HEADERS na requisição
+    response = requests.get(TIPSGG_URL, headers=HEADERS, timeout=10)
+    response.raise_for_status() # Levanta um erro para códigos de status HTTP ruins (4xx ou 5xx)
+    print(f"📡 HTTP Status: {response.status_code}")
 
-    soup = BeautifulSoup(response.text, "html.parser")
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-    scripts = soup.find_all("script", {"type": "application/ld+json"})
-    print(f"📦 Encontrados {len(scripts)} scripts JSON-LD")
+    # Encontrar todos os blocos de script JSON-LD
+    script_blocks = soup.find_all('script', type='application/ld+json')
+    print(f"📦 Encontrados {len(script_blocks)} scripts JSON-LD")
 
-    now_br = datetime.now(BR_TZ)
+    current_time_br = datetime.now(BR_TZ) # Hora atual em BRT para filtrar partidas futuras
 
-    for script_idx, script_tag in enumerate(scripts, start=1):
+    for script_idx, script in enumerate(script_blocks, 1):
         try:
-            raw_json = script_tag.string.strip()
-            print(f"\n────────── JSON-LD #{script_idx} ──────────")
-            print(raw_json)
+            json_data = json.loads(script.string)
+            # print(f"📄 Conteúdo JSON-LD do script {script_idx}: {json.dumps(json_data, indent=2)}") # Log do JSON completo
 
-            data = json.loads(raw_json)
+            # Verifica se é um SportsEvent e se tem as informações necessárias
+            if json_data.get('@type') == 'SportsEvent' and 'name' in json_data and 'startDate' in json_data:
+                event_name_raw = json_data['name']
+                start_raw = json_data['startDate']
+                description_raw = json_data.get('description', '')
+                organizer_name = json_data.get('organizer', {}).get('name', 'Desconhecido')
+                match_url_raw = "https://tips.gg" + json_data.get('url', TIPSGG_URL) # URL completa
 
-            if data.get("@type") != "SportsEvent":
-                print("⏭️ Ignorando – não é SportsEvent")
-                continue
+                # Extrair times
+                competitors = json_data.get('competitor', [])
+                team1_raw = competitors[0]['name'] if len(competitors) > 0 else "TBD"
+                team2_raw = competitors[1]['name'] if len(competitors) > 1 else "TBD"
 
-            # Times
-            competitors = data.get("competitor", [])
-            if len(competitors) < 2:
-                print("❌ JSON sem 2 competidores!")
-                continue
+                if team1_raw == "TBD" or team2_raw == "TBD":
+                    # print(f"⏩ Ignorando partida {script_idx} (TBD): {event_name_raw}")
+                    continue
 
-            team1_raw = competitors[0].get("name", "")
-            team2_raw = competitors[1].get("name", "")
-            print("👥 Times:", team1_raw, "vs", team2_raw)
+                # Normaliza os nomes para a lógica de filtragem
+                normalized_team1 = normalize_team(team1_raw)
+                normalized_team2 = normalize_team(team2_raw)
 
-            nt1 = normalize_team(team1_raw)
-            nt2 = normalize_team(team2_raw)
+                is_br_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS
+                is_br_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS
 
-            is_br = (
-                (nt1 in NORMALIZED_BRAZILIAN_TEAMS and nt1 not in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS) or
-                (nt2 in NORMALIZED_BRAZILIAN_TEAMS and nt2 not in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS)
-            )
+                is_excluded_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
+                is_excluded_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
 
-            print("🇧🇷 É time BR?", is_br)
+                is_br_team_involved = (is_br_team1 and not is_excluded_team1) or \
+                                      (is_br_team2 and not is_excluded_team2)
 
-            if not is_br:
-                print("⏭️ Ignorando – não envolve time BR principal")
-                continue
+                # print(f"👥 Times: {team1_raw} ({normalized_team1}) vs {team2_raw} ({normalized_team2})")
+                # print(f"🇧🇷 Time BR envolvido (filtragem): {is_br_team_involved}")
 
-            # Horário
-            start_raw = data.get("startDate")
-            print("⏰ startDate bruto:", start_raw)
+                if not is_br_team_involved:
+                    # print(f"⏩ Ignorando partida {script_idx}: Nenhum time BR principal (não excluído) envolvido.")
+                    continue
 
-            match_time_br = datetime.fromisoformat(start_raw).astimezone(BR_TZ)
-            print("⏰ Convertido para BRT:", match_time_br)
+                # Converter data e hora para o fuso horário de Brasília
+                # O formato de data do tips.gg é ISO 8601 com offset de fuso horário, e o datetime.fromisoformat lida bem com isso.
+                match_time_utc_or_offset = datetime.fromisoformat(start_raw)
 
-            if match_time_br < now_br:
-                print("⏭️ Ignorando – partida já passou")
-                continue
+                # Se o objeto datetime já tem informações de fuso horário (como -03:00), ele é timezone-aware.
+                # Se não tiver (e for UTC), precisamos torná-lo timezone-aware antes de converter.
+                if match_time_utc_or_offset.tzinfo is None:
+                    match_time_utc = pytz.utc.localize(match_time_utc_or_offset)
+                else:
+                    match_time_utc = match_time_utc_or_offset.astimezone(pytz.utc) # Garante que está em UTC para consistência
 
-            # Formato (BO1 / BO3)
-            event_description_raw = data.get("description", "")
-            mf = re.search(r"(BO\d+)", event_description_raw, re.IGNORECASE)
-            match_format = mf.group(1).upper() if mf else "BoX"
+                match_time_br = match_time_utc.astimezone(BR_TZ)
 
-            print("🎛 Formato:", match_format)
+                # print(f"⏰ Horário UTC: {match_time_utc}")
+                # print(f"⏰ Horário BRT: {match_time_br}")
+                # print(f"⏰ Horário Atual BRT: {current_time_br}")
 
-            organizer = data.get("organizer", {})
-            organizer_name = organizer.get("name", "Desconhecido")
+                # Filtrar partidas futuras
+                if match_time_br < current_time_br:
+                    # print(f"⏩ Ignorando partida {script_idx}: Partida já ocorreu ou está em andamento. ({match_time_br} < {current_time_br})")
+                    continue
 
-            match_url = "https://tips.gg" + data.get("url", "")
+                # Extrair formato da partida (Bo1, Bo3, etc.) da descrição
+                match_format_match = re.search(r'(BO\d+)\sMatch', description_raw)
+                match_format = match_format_match.group(1) if match_format_match else "BoX"
 
-            event_summary = f"{team1_raw} vs {team2_raw}"
-            event_description = (
-                f"🏆- {match_format}\n"
-                f"📍{organizer_name}\n"
-                f"🌐{match_url}"
-            )
+                # Novo formato para o nome do evento (summary)
+                event_summary = f"{team1_raw} vs {team2_raw}"
 
-            event_uid = hashlib.sha1(
-                (event_summary + start_raw).encode("utf-8")
-            ).hexdigest()
+                # Novo formato para a descrição do evento
+                event_description = (
+                    f"🏆- {match_format}\n"
+                    f"📍{organizer_name}\n"
+                    f"🌐{match_url_raw}"
+                )
 
-            print("🆔 UID:", event_uid)
+                # Gerar UID único para o evento
+                event_uid = hashlib.sha1(
+                    (event_summary + start_raw).encode("utf-8")
+                ).hexdigest()
 
-            e = Event()
-            e.name = event_summary
-            e.begin = match_time_br
-            e.duration = timedelta(hours=2)
-            e.description = event_description
-            e.uid = event_uid
-            e.alarms.append(DisplayAlarm(trigger=timedelta(minutes=-15)))
+                # print("🆔 UID:", event_uid)
 
-            cal.events.add(e)
-            added_count += 1
+                e = Event()
+                e.name = event_summary
+                e.begin = match_time_br # O objeto `ics` lida bem com datetimes timezone-aware
+                e.duration = timedelta(hours=2) # Duração padrão de 2 horas
+                e.description = event_description
+                e.uid = event_uid
 
-            print("✅ Adicionado ao calendário!")
+                # Adiciona alarme 15 minutos antes
+                alarm = DisplayAlarm(trigger=timedelta(minutes=-15))
+                e.alarms.append(alarm)
 
-        except Exception as err:
-            print("❌ Erro ao processar JSON-LD:", err)
+                cal.events.add(e)
+                added_count += 1
 
-except Exception as err:
-    print("❌ Erro geral:", err)
+                # print("✅ Adicionado ao calendário!")
 
-print("\n💾 Salvando arquivo:", CALENDAR_FILENAME)
-with open(CALENDAR_FILENAME, "w", encoding="utf-8") as f:
-    f.writelines(cal.serialize_iter())
+        except json.JSONDecodeError as je:
+            print(f"❌ Erro ao decodificar JSON no script {script_idx}: {je}")
+        except ValueError as ve:
+            print(f"❌ Erro de dados no script {script_idx}: {ve}")
+        except Exception as e_inner:
+            print(f"❌ Erro inesperado ao processar script {script_idx}: {e_inner}")
 
-print(f"📌 Total de partidas adicionadas: {added_count}")
+except requests.exceptions.RequestException as e:
+    print(f"❌ Falha na requisição HTTP - {e}")
+except Exception as e:
+    print(f"❌ Erro inesperado - {e}")
+
+print(f"\n💾 Salvando arquivo: {CALENDAR_FILENAME}")
+try:
+    with open(CALENDAR_FILENAME, "w", encoding="utf-8") as f:
+        f.writelines(cal.serialize_iter())
+    print(f"📌 Total de partidas adicionadas: {added_count}")
+except Exception as e:
+    print(f"❌ Erro ao salvar {CALENDAR_FILENAME}: {e}")
+
