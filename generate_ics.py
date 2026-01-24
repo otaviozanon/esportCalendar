@@ -2,6 +2,7 @@ import os
 import json
 import hashlib
 from datetime import datetime, timedelta, date
+from typing import Optional, Tuple, List, Dict
 
 import pytz
 from bs4 import BeautifulSoup
@@ -35,7 +36,7 @@ BRAZILIAN_TEAMS_EXCLUSIONS = [
 CALENDAR_FILENAME = "calendar.ics"
 BR_TZ = pytz.timezone("America/Sao_Paulo")
 
-# Limite de futuro: hoje..hoje+4 (5 dias)
+# Janela fixa: hoje..hoje+4 (5 dias)
 FUTURE_LIMIT_DAYS = 4
 
 # Limpeza: remove eventos do script com mais de 7 dias atrás
@@ -86,32 +87,26 @@ def save_calendar(cal: Calendar, path: str):
         f.writelines(cal.serialize_iter())
 
 
-def get_existing_uids(cal: Calendar) -> set:
-    return {getattr(ev, "uid", None) for ev in cal.events if getattr(ev, "uid", None)}
-
-
 def normalize_event_datetime_utc(dt: datetime) -> datetime:
     """
     Normaliza datetime para UTC, sem microsegundos e com segundo=0.
-    Isso evita UID diferente por variação de segundos/microsegundos do JSON-LD.
     """
     if dt.tzinfo is None:
         dt = pytz.utc.localize(dt)
-    dt = dt.astimezone(pytz.utc).replace(microsecond=0, second=0)
-    return dt
+    return dt.astimezone(pytz.utc).replace(microsecond=0, second=0)
 
 
 def is_ours(ev: Event) -> bool:
     """
     Evento gerado pelo script:
     - tem SOURCE_MARKER, OU
-    - tem link do tips.gg no description (casos antigos que você gerou sem marcador)
+    - tem link do tips.gg no description (casos antigos sem marcador)
     """
     desc = (getattr(ev, "description", "") or "")
     return (SOURCE_MARKER in desc) or (TIPS_URL_HINT in desc)
 
 
-def event_start_date_local(ev: Event) -> date | None:
+def event_start_date_local(ev: Event) -> Optional[date]:
     """
     Converte o begin do evento para data local.
     """
@@ -122,21 +117,6 @@ def event_start_date_local(ev: Event) -> date | None:
         return dt.astimezone(BR_TZ).date()
     except Exception:
         return None
-
-
-def max_date_in_calendar(cal: Calendar) -> date | None:
-    """
-    Pega a maior data dos eventos DO SCRIPT no calendário.
-    Agora considera também eventos antigos do tips.gg sem marker.
-    """
-    dates = []
-    for ev in cal.events:
-        if not is_ours(ev):
-            continue
-        d = event_start_date_local(ev)
-        if d:
-            dates.append(d)
-    return max(dates) if dates else None
 
 
 def prune_older_than(cal: Calendar, cutoff_date: date) -> int:
@@ -158,7 +138,7 @@ def prune_older_than(cal: Calendar, cutoff_date: date) -> int:
     return len(to_remove)
 
 
-# -------------------- Deduplicação lógica --------------------
+# -------------------- Descrição/URL do evento --------------------
 def extract_match_url_from_description(desc: str) -> str:
     if not desc:
         return ""
@@ -181,9 +161,30 @@ def extract_tournament_from_description(desc: str) -> str:
     return ""
 
 
+def extract_match_url_from_event(ev: Event) -> str:
+    desc = (getattr(ev, "description", "") or "")
+    return extract_match_url_from_description(desc).strip().lower()
+
+
+def index_events_by_url(cal: Calendar) -> Dict[str, Event]:
+    """
+    Indexa eventos do script por URL do match. Isso é a chave para atualizar.
+    """
+    by_url: Dict[str, Event] = {}
+    for ev in cal.events:
+        if not is_ours(ev):
+            continue
+        url = extract_match_url_from_event(ev)
+        if url:
+            by_url[url] = ev
+    return by_url
+
+
+# -------------------- Deduplicação (cinto de segurança) --------------------
 def event_key(ev: Event) -> tuple:
     """
-    Chave lógica do evento: (nome, horário UTC normalizado, campeonato, url)
+    Chave lógica antiga (mantida só pra limpeza extra):
+    (nome, horário UTC normalizado, campeonato, url)
     """
     name = (getattr(ev, "name", "") or "").strip().lower()
 
@@ -196,7 +197,7 @@ def event_key(ev: Event) -> tuple:
 
     desc = (getattr(ev, "description", "") or "")
     tournament = extract_tournament_from_description(desc).lower()
-    url = extract_match_url_from_description(desc).lower()
+    url = extract_match_url_from_event(ev).lower()
 
     return (name, begin_iso, tournament, url)
 
@@ -208,8 +209,8 @@ def dedupe_calendar_events(cal: Calendar) -> int:
       - se existir versão com SOURCE_MARKER, ela vence
       - senão, mantém o primeiro
     """
-    best_by_key: dict[tuple, Event] = {}
-    to_remove: list[Event] = []
+    best_by_key: Dict[tuple, Event] = {}
+    to_remove: List[Event] = []
 
     for ev in list(cal.events):
         if not is_ours(ev):
@@ -229,11 +230,9 @@ def dedupe_calendar_events(cal: Calendar) -> int:
         new_has_marker = SOURCE_MARKER in new_desc
 
         if new_has_marker and not cur_has_marker:
-            # novo é melhor: remove o antigo
             to_remove.append(current_best)
             best_by_key[k] = ev
         else:
-            # novo é pior ou igual: remove o novo
             to_remove.append(ev)
 
     for ev in to_remove:
@@ -261,43 +260,27 @@ def setup_driver() -> webdriver.Chrome:
     return driver
 
 
-def build_stable_uid(
-    event_summary: str,
-    match_time_utc: datetime,
-    tournament_desc: str,
-    organizer_name: str,
-    match_url: str,
-) -> str:
+def build_uid_from_url(match_url: str) -> str:
     """
-    UID determinístico e estável:
-    - nome do jogo
-    - horário UTC normalizado (sem microsegundos, segundo=0)
-    - campeonato/organizer/url
+    UID determinístico pela URL do match.
+    Isso faz o mesmo jogo ser o mesmo evento, mesmo se horário/time mudarem.
     """
-    dt_norm = normalize_event_datetime_utc(match_time_utc)
-
-    uid_payload = "|".join([
-        (event_summary or "").strip().lower(),
-        dt_norm.isoformat(),
-        (tournament_desc or "").strip().lower(),
-        (organizer_name or "").strip().lower(),
-        (match_url or "").strip().lower(),
-    ])
-
-    return hashlib.sha1(uid_payload.encode("utf-8")).hexdigest()
+    return hashlib.sha1((match_url or "").strip().lower().encode("utf-8")).hexdigest()
 
 
 def scrape_one_day(
     driver: webdriver.Chrome,
     target_day: date,
-    existing_uids: set
-) -> tuple[list[Event], dict]:
+    cal: Calendar,
+    by_url: Dict[str, Event],
+) -> Tuple[List[Event], dict]:
     stats = {
         "date": target_day.strftime("%d/%m/%Y"),
         "url": build_url_for_day(target_day),
         "scripts_total": 0,
         "sports_events": 0,
         "added": 0,
+        "updated": 0,
         "skipped_tbd": 0,
         "skipped_past": 0,
         "skipped_no_competitors": 0,
@@ -331,7 +314,7 @@ def scrape_one_day(
     stats["scripts_total"] = len(scripts)
 
     now_utc = datetime.now(pytz.utc)
-    new_events: list[Event] = []
+    new_events: List[Event] = []
 
     for script in scripts:
         raw = (script.string or "").strip()
@@ -398,17 +381,6 @@ def scrape_one_day(
 
         event_summary = f"{team1_raw} vs {team2_raw}"
 
-        event_uid = build_stable_uid(
-            event_summary=event_summary,
-            match_time_utc=match_time_utc,
-            tournament_desc=description,
-            organizer_name=organizer_name,
-            match_url=match_url,
-        )
-
-        if event_uid in existing_uids:
-            continue
-
         event_description = (
             f"🏆 {description}\n"
             f"📍 {organizer_name}\n"
@@ -416,97 +388,122 @@ def scrape_one_day(
             f"{SOURCE_MARKER}"
         )
 
+        begin_norm = normalize_event_datetime_utc(match_time_utc)
+        match_url_norm = (match_url or "").strip().lower()
+
+        if not match_url_norm:
+            # Sem URL não dá pra atualizar direito, então ignora para não bagunçar calendário
+            continue
+
+        existing_ev = by_url.get(match_url_norm)
+
+        if existing_ev:
+            # -------- UPDATE: corrige adversário e/ou horário --------
+            changed = False
+
+            if (getattr(existing_ev, "name", "") or "") != event_summary:
+                existing_ev.name = event_summary
+                changed = True
+
+            try:
+                old_begin = normalize_event_datetime_utc(existing_ev.begin.datetime)
+            except Exception:
+                old_begin = None
+
+            if old_begin != begin_norm:
+                existing_ev.begin = begin_norm
+                changed = True
+
+            if (getattr(existing_ev, "description", "") or "") != event_description:
+                existing_ev.description = event_description
+                changed = True
+
+            # opcional: padroniza duração e alarmes
+            existing_ev.duration = timedelta(hours=2)
+            if not getattr(existing_ev, "alarms", None):
+                existing_ev.alarms = []
+            if not existing_ev.alarms:
+                existing_ev.alarms.append(DisplayAlarm(trigger=timedelta(minutes=-15)))
+
+            # garante UID estável pela URL (se era evento antigo)
+            new_uid = build_uid_from_url(match_url_norm)
+            if getattr(existing_ev, "uid", "") != new_uid:
+                existing_ev.uid = new_uid
+                changed = True
+
+            if changed:
+                stats["updated"] += 1
+
+            continue
+
+        # -------- INSERT: evento novo --------
         e = Event()
         e.name = event_summary
-        e.begin = normalize_event_datetime_utc(match_time_utc)
+        e.begin = begin_norm
         e.duration = timedelta(hours=2)
         e.description = event_description
-        e.uid = event_uid
+        e.uid = build_uid_from_url(match_url_norm)
 
         alarm = DisplayAlarm(trigger=timedelta(minutes=-15))
         e.alarms.append(alarm)
 
         new_events.append(e)
-        existing_uids.add(event_uid)
+        by_url[match_url_norm] = e
         stats["added"] += 1
 
     return new_events, stats
 
 
 # -------------------- Execução --------------------
-log("🔄 Iniciando execução incremental...")
+log("🔄 Iniciando execução (janela fixa + upsert por URL)...")
 
 cal = load_calendar(CALENDAR_FILENAME)
 
-# 0) Dedup inicial (limpa o arquivo sujo)
+# Dedup inicial (se o arquivo estiver sujo)
 deduped_initial = dedupe_calendar_events(cal)
 if deduped_initial:
     log(f"🧼 Deduplicação inicial: removidos {deduped_initial} eventos duplicados (tips.gg).")
 
-existing_uids = get_existing_uids(cal)
-
+# Limpeza: remove eventos antigos do script
 today = datetime.now(BR_TZ).date()
-future_limit = today + timedelta(days=FUTURE_LIMIT_DAYS)
-
-# 1) Limpeza: remove eventos antigos
 cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
 removed = prune_older_than(cal, cutoff)
 log(f"🧹 Limpeza: removidos {removed} eventos do script com data < {cutoff.strftime('%d/%m/%Y')}")
 
-# 2) Decide qual dia buscar agora (1 dia por execução)
-last_day = max_date_in_calendar(cal)
-if last_day is None:
-    target_day = today
-    log("📌 Calendário vazio (do script). Vou buscar HOJE.")
-else:
-    target_day = last_day + timedelta(days=1)
-    log(
-        f"📌 Último dia no calendário (script): {last_day.strftime('%d/%m/%Y')} "
-        f"-> próximo alvo: {target_day.strftime('%d/%m/%Y')}"
-    )
+# Index por URL (para atualizar)
+by_url = index_events_by_url(cal)
 
-# 3) Respeita limite de 5 dias (hoje..hoje+4)
-if target_day > future_limit:
-    log(f"⏭️ Nada a fazer: alvo {target_day.strftime('%d/%m/%Y')} passa do limite {future_limit.strftime('%d/%m/%Y')}.")
-    log(f"💾 Salvando {CALENDAR_FILENAME} (sem mudanças de scrape)...")
-    save_calendar(cal, CALENDAR_FILENAME)
-    log("✅ Salvo.")
-    raise SystemExit(0)
-
-# 4) Scrape do dia alvo e incrementa
 driver = None
 total_added = 0
+total_updated = 0
 
 try:
-    url = build_url_for_day(target_day)
-    log(f"🌐 Abrindo Selenium e raspando: {target_day.strftime('%d/%m/%Y')} -> {url}")
-
     driver = setup_driver()
-    new_events, stats = scrape_one_day(driver, target_day, existing_uids)
 
-    for ev in new_events:
-        cal.events.add(ev)
+    for offset in range(0, FUTURE_LIMIT_DAYS + 1):
+        day = today + timedelta(days=offset)
+        url = build_url_for_day(day)
+        log(f"🌐 Raspando: {day.strftime('%d/%m/%Y')} -> {url}")
 
-    # 4.9) Deduplicação final (garantia)
+        new_events, stats = scrape_one_day(driver, day, cal, by_url)
+
+        for ev in new_events:
+            cal.events.add(ev)
+
+        total_added += stats.get("added", 0)
+        total_updated += stats.get("updated", 0)
+
+        log(f"🧾 RESUMO {stats['date']}: scripts={stats['scripts_total']} sports={stats['sports_events']} "
+            f"added={stats['added']} updated={stats['updated']} "
+            f"skipped(tbd={stats['skipped_tbd']}, past={stats['skipped_past']}, not_br={stats['skipped_not_br']}, bad_date={stats['skipped_bad_date']}) "
+            f"timeouts(load={stats['timeouts_load']}, jsonld={stats['timeouts_jsonld']}), json_err={stats['json_decode_errors']}")
+
+    # Dedup final (segurança)
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final:
         log(f"🧼 Deduplicação final: removidos {deduped_final} eventos duplicados (tips.gg).")
 
-    # Recalcula UIDs após dedupe
-    existing_uids = get_existing_uids(cal)
-
-    total_added = stats["added"]
-
-    log(f"🧾 RESUMO DO DIA {stats['date']}")
-    log(f"  scripts={stats['scripts_total']} sports={stats['sports_events']} added={stats['added']}")
-    log(
-        f"  skipped: tbd={stats['skipped_tbd']} past={stats['skipped_past']} "
-        f"not_br={stats['skipped_not_br']} bad_date={stats['skipped_bad_date']}"
-    )
-    log(
-        f"  timeouts: load={stats['timeouts_load']} jsonld={stats['timeouts_jsonld']} "
-        f"json_err={stats['json_decode_errors']}"
-    )
+    log(f"✅ Janela revisada (hoje..hoje+{FUTURE_LIMIT_DAYS}): added={total_added} updated={total_updated}")
 
 except WebDriverException as e:
     log(f"❌ WebDriverException: {e}")
@@ -520,10 +517,10 @@ finally:
             pass
         log("⚙️ Selenium fechado.")
 
-# 5) Salva
+# Salva
 log(f"💾 Salvando arquivo: {CALENDAR_FILENAME}")
 try:
     save_calendar(cal, CALENDAR_FILENAME)
-    log(f"✅ Salvo. Total adicionados nesta execução: {total_added}")
+    log(f"✅ Salvo. Total: added={total_added} updated={total_updated}")
 except Exception as e:
     log(f"❌ Erro ao salvar {CALENDAR_FILENAME}: {e}")
