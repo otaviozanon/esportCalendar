@@ -3,6 +3,7 @@ import json
 import hashlib
 from datetime import datetime, timedelta, date
 from typing import Optional, Tuple, List, Dict
+from urllib.parse import urlparse
 
 import pytz
 from bs4 import BeautifulSoup
@@ -21,6 +22,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 
 # -------------------- Configurações Globais --------------------
+DEBUG = True  # <<< LIGA/DESLIGA LOGS
+
 BRAZILIAN_TEAMS = [
     "FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
     "RED Canids", "Legacy", "ODDIK", "Imperial Esports"
@@ -52,13 +55,6 @@ SOURCE_MARKER = "X-RANALLI-SOURCE:TIPSGG"
 # Âncora para identificar eventos antigos gerados sem marcador (mas do tips.gg)
 TIPS_URL_HINT = "https://tips.gg/matches/"
 
-# -------------------- Debug / Logs --------------------
-DEBUG = True
-DEBUG_LOG_MATCH_URLS = True          # lista URLs do dia (limitado)
-DEBUG_LOG_JSONLD_KEYS = False        # liga só se quiser ver keys do SportsEvent
-DEBUG_MATCH_URLS_LIMIT = 25          # evita spam
-DEBUG_DAY_EVENTS_LIMIT = 20          # evita spam no resumo do dia
-
 
 # -------------------- Helpers --------------------
 def log(msg: str):
@@ -66,18 +62,9 @@ def log(msg: str):
     print(f"[{now}] {msg}")
 
 
-def fmt_dt(dt: datetime, tz: pytz.timezone) -> str:
-    """Formata datetime em uma timezone específica."""
-    return dt.astimezone(tz).strftime("%d/%m/%Y %H:%M:%S %Z")
-
-
-def log_time_check(start_date_str: str, match_time_utc: datetime):
-    """Loga conversões UTC -> BR pra validar hora."""
-    log(
-        f"🕒 startDate raw='{start_date_str}' | "
-        f"UTC={fmt_dt(match_time_utc, pytz.utc)} | "
-        f"BR={fmt_dt(match_time_utc, BR_TZ)}"
-    )
+def dlog(msg: str):
+    if DEBUG:
+        log("🧪 " + msg)
 
 
 def normalize_team(name: str) -> str:
@@ -157,16 +144,6 @@ def extract_match_url_from_description(desc: str) -> str:
     return ""
 
 
-def extract_tournament_from_description(desc: str) -> str:
-    if not desc:
-        return ""
-    for line in desc.splitlines():
-        line = line.strip()
-        if line.startswith("🏆"):
-            return line.replace("🏆", "").strip()
-    return ""
-
-
 def extract_match_url_from_event(ev: Event) -> str:
     desc = (getattr(ev, "description", "") or "")
     return extract_match_url_from_description(desc).strip().lower()
@@ -185,6 +162,37 @@ def index_events_by_url(cal: Calendar) -> Dict[str, Event]:
 
 def build_uid_from_url(match_url: str) -> str:
     return hashlib.sha1((match_url or "").strip().lower().encode("utf-8")).hexdigest()
+
+
+def normalize_abs_url(u: str) -> str:
+    u = (u or "").strip()
+    if not u:
+        return ""
+    if u.startswith("/"):
+        u = "https://tips.gg" + u
+    return u.rstrip("/").lower()
+
+
+def extract_url_time_fallback(match_url: str) -> Optional[datetime]:
+    """
+    Fallback: tenta extrair data e hora do próprio match_url:
+      .../24-01-2026/.../11-30/
+    Interpreta em BR_TZ.
+    """
+    try:
+        parts = [p for p in urlparse(match_url).path.split("/") if p]
+        # Esperado: ['matches','counter-strike','24-01-2026','slug','11-30']
+        if len(parts) < 5:
+            return None
+        d_str = parts[2]      # 24-01-2026
+        hm_str = parts[4]     # 11-30
+        dd, mm, yyyy = d_str.split("-")
+        hh, mi = hm_str.split("-")
+        local_naive = datetime(int(yyyy), int(mm), int(dd), int(hh), int(mi), 0)
+        local_dt = BR_TZ.localize(local_naive)
+        return local_dt.astimezone(pytz.utc)
+    except Exception:
+        return None
 
 
 # -------------------- Selenium --------------------
@@ -229,7 +237,6 @@ def wait_for_dom(driver: webdriver.Chrome, css: str, timeout_s: int) -> bool:
 def collect_match_urls_from_day_html(page_source: str) -> List[str]:
     """
     Coleta URLs reais dos cards do dia pelo HTML (não pelo JSON-LD).
-    Isso evita pegar match “velho” quando o JSON-LD fica desatualizado.
     """
     soup = BeautifulSoup(page_source, "html.parser")
     urls = set()
@@ -241,71 +248,79 @@ def collect_match_urls_from_day_html(page_source: str) -> List[str]:
         if href.startswith("/"):
             href = "https://tips.gg" + href
         if href.startswith("https://tips.gg/matches/"):
-            # remove sufixos tipo /streams /predictions
             href = href.split("/streams/")[0].split("/predictions/")[0]
             urls.add(href.rstrip("/"))
 
     return sorted(urls)
 
 
-def parse_sportsevent_from_jsonld(raw_json: str) -> Optional[dict]:
+def parse_all_sportsevents_from_jsonld(raw_json: str) -> List[dict]:
     """
-    A página pode ter:
-      - um dict
-      - uma lista
-      - um @graph
-    Retorna o primeiro SportsEvent que achar.
+    Retorna TODOS os SportsEvent encontrados dentro de:
+      - dict
+      - lista
+      - @graph
     """
     try:
         data = json.loads(raw_json)
     except Exception:
-        return None
+        return []
 
-    candidates = []
+    items = []
     if isinstance(data, dict):
         if data.get("@type") == "SportsEvent":
-            candidates.append(data)
+            items.append(data)
         if "@graph" in data and isinstance(data["@graph"], list):
-            candidates.extend([x for x in data["@graph"] if isinstance(x, dict)])
+            items.extend([x for x in data["@graph"] if isinstance(x, dict)])
     elif isinstance(data, list):
-        candidates.extend([x for x in data if isinstance(x, dict)])
+        items.extend([x for x in data if isinstance(x, dict)])
 
-    for item in candidates:
-        if item.get("@type") == "SportsEvent":
-            return item
-    return None
+    return [it for it in items if it.get("@type") == "SportsEvent"]
 
 
 def scrape_match_page_sportsevent(driver: webdriver.Chrome, match_url: str) -> Optional[dict]:
     """
     Abre a página do match e extrai o SportsEvent do JSON-LD dela.
+    Correção: escolhe o SportsEvent cujo campo "url" corresponde ao match_url.
     """
     safe_get(driver, match_url)
-    ok = wait_for_dom(driver, 'script[type="application/ld+json"]', JSONLD_WAIT_SECONDS)
-
-    if DEBUG:
-        log(f"🌐 Abrindo match: {match_url} | jsonld_dom={'OK' if ok else 'TIMEOUT'}")
+    wait_for_dom(driver, 'script[type="application/ld+json"]', JSONLD_WAIT_SECONDS)
 
     soup = BeautifulSoup(driver.page_source, "html.parser")
     scripts = soup.find_all("script", type="application/ld+json")
 
-    if DEBUG and not scripts:
-        log(f"⚠️ Sem scripts ld+json encontrados em: {match_url}")
+    match_url_norm = normalize_abs_url(match_url)
+    found_events: List[dict] = []
 
-    for idx, s in enumerate(scripts, 1):
+    for s in scripts:
         raw = (s.string or "").strip()
         if not raw:
             continue
-        se = parse_sportsevent_from_jsonld(raw)
-        if se:
-            if DEBUG:
-                keys = list(se.keys())
-                log(f"✅ SportsEvent encontrado (script #{idx}) | keys={keys if DEBUG_LOG_JSONLD_KEYS else 'oculto'}")
-            return se
+        found_events.extend(parse_all_sportsevents_from_jsonld(raw))
 
-    if DEBUG:
-        log(f"❌ SportsEvent não encontrado no JSON-LD: {match_url}")
+    if not found_events:
+        dlog(f"Sem SportsEvent no JSON-LD para: {match_url_norm}")
+        return None
 
+    # tenta achar pelo campo url
+    for ev in found_events:
+        ev_url_norm = normalize_abs_url(ev.get("url", ""))
+        if ev_url_norm and ev_url_norm == match_url_norm:
+            return ev
+
+    # fallback: se só tem 1 SportsEvent, usa ele mas grita nos logs
+    if len(found_events) == 1:
+        only = found_events[0]
+        dlog(
+            "SportsEvent único, mas URL não bate. "
+            f"match_url={match_url_norm} jsonld_url={normalize_abs_url(only.get('url',''))}"
+        )
+        return only
+
+    dlog(
+        "Vários SportsEvent e nenhum bateu com a URL. "
+        f"match_url={match_url_norm} candidatos={[normalize_abs_url(e.get('url','')) for e in found_events[:5]]}"
+    )
     return None
 
 
@@ -317,11 +332,6 @@ def find_fallback_event_to_replace(
     team_anchor: str,
     begin_norm_utc: datetime,
 ) -> Optional[Event]:
-    """
-    Fallback quando a URL mudou:
-    tenta achar um evento do script no mesmo dia, mesmo campeonato/organizer,
-    contendo o time âncora (ex: FURIA) e com horário próximo.
-    """
     team_anchor = (team_anchor or "").strip().lower()
     tournament_desc = (tournament_desc or "").strip().lower()
     organizer_name = (organizer_name or "").strip().lower()
@@ -337,9 +347,9 @@ def find_fallback_event_to_replace(
             continue
 
         desc = (getattr(ev, "description", "") or "").lower()
-        if tournament_desc and (f"🏆 {tournament_desc}".lower() not in desc):
+        if tournament_desc and (f"🏆 {tournament_desc}" not in desc):
             continue
-        if organizer_name and (f"📍 {organizer_name}".lower() not in desc):
+        if organizer_name and (f"📍 {organizer_name}" not in desc):
             continue
         if team_anchor and (team_anchor not in (getattr(ev, "name", "") or "").lower()):
             continue
@@ -350,7 +360,6 @@ def find_fallback_event_to_replace(
             continue
 
         delta = abs(int((old_begin - begin_norm_utc).total_seconds()))
-        # tolerância: até 8 horas
         if delta > 8 * 3600:
             continue
 
@@ -371,18 +380,9 @@ def upsert_event_by_url_or_fallback(
     organizer_name: str,
     team_anchor_for_fallback: str,
 ) -> Tuple[bool, bool]:
-    """
-    Retorna (added, updated)
-    """
     match_url_norm = (match_url or "").strip().lower()
     if not match_url_norm:
         return (False, False)
-
-    if DEBUG:
-        log(
-            f"🧩 Upsert: url={match_url_norm} | summary='{event_summary}' | "
-            f"begin_utc={fmt_dt(begin_norm, pytz.utc)} | begin_br={fmt_dt(begin_norm, BR_TZ)}"
-        )
 
     event_description = (
         f"🏆 {tournament_desc}\n"
@@ -393,7 +393,6 @@ def upsert_event_by_url_or_fallback(
 
     existing_ev = by_url.get(match_url_norm)
 
-    # 1) update direto por URL
     if existing_ev:
         changed = False
 
@@ -425,12 +424,8 @@ def upsert_event_by_url_or_fallback(
             existing_ev.uid = new_uid
             changed = True
 
-        if DEBUG:
-            log(f"✏️ Update por URL: changed={changed} | uid={getattr(existing_ev, 'uid', '')}")
-
         return (False, changed)
 
-    # 2) fallback (URL mudou): substitui evento “antigo equivalente”
     day_local = begin_norm.astimezone(BR_TZ).date()
     fallback_ev = find_fallback_event_to_replace(
         cal=cal,
@@ -442,12 +437,10 @@ def upsert_event_by_url_or_fallback(
     )
 
     if fallback_ev:
-        # remove índice antigo
         old_url = extract_match_url_from_event(fallback_ev)
         if old_url and old_url in by_url and by_url[old_url] is fallback_ev:
             del by_url[old_url]
 
-        # atualiza o evento existente
         fallback_ev.name = event_summary
         fallback_ev.begin = begin_norm
         fallback_ev.duration = timedelta(hours=2)
@@ -459,13 +452,8 @@ def upsert_event_by_url_or_fallback(
             fallback_ev.alarms.append(DisplayAlarm(trigger=timedelta(minutes=-15)))
 
         by_url[match_url_norm] = fallback_ev
-
-        if DEBUG:
-            log(f"🔁 Fallback substituiu evento: old_url='{old_url}' -> new_url='{match_url_norm}'")
-
         return (False, True)
 
-    # 3) insert novo
     e = Event()
     e.name = event_summary
     e.begin = begin_norm
@@ -476,10 +464,6 @@ def upsert_event_by_url_or_fallback(
 
     cal.events.add(e)
     by_url[match_url_norm] = e
-
-    if DEBUG:
-        log(f"➕ Insert novo evento: uid={e.uid}")
-
     return (True, False)
 
 
@@ -492,13 +476,17 @@ def is_brazilian_team_involved(team1: str, team2: str) -> bool:
     return is_br1 or is_br2
 
 
+def parse_startdate_utc(start_date_str: str) -> Optional[datetime]:
+    try:
+        match_time = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
+        if match_time.tzinfo is None:
+            match_time = pytz.utc.localize(match_time)
+        return match_time.astimezone(pytz.utc)
+    except Exception:
+        return None
+
+
 def scrape_one_day(driver: webdriver.Chrome, day: date, cal: Calendar, by_url: Dict[str, Event]) -> dict:
-    """
-    1) abre página do dia
-    2) coleta URLs reais via HTML
-    3) abre cada match e extrai SportsEvent do JSON-LD do match
-    4) upsert (URL ou fallback)
-    """
     stats = {
         "date": day.strftime("%d/%m/%Y"),
         "day_url": build_url_for_day(day),
@@ -519,83 +507,79 @@ def scrape_one_day(driver: webdriver.Chrome, day: date, cal: Calendar, by_url: D
     match_urls = collect_match_urls_from_day_html(driver.page_source)
     stats["match_urls"] = len(match_urls)
 
-    if DEBUG and DEBUG_LOG_MATCH_URLS:
-        sample = match_urls[:DEBUG_MATCH_URLS_LIMIT]
-        log(f"🔎 Dia {stats['date']} coletou {len(match_urls)} URLs de matches.")
-        for i, u in enumerate(sample, 1):
-            log(f"   • [{i:02d}] {u}")
-        if len(match_urls) > len(sample):
-            log(f"   … (+{len(match_urls) - len(sample)} URLs não exibidas)")
+    dlog(f"Dia {stats['date']} -> {stats['day_url']}")
+    dlog(f"URLs coletadas: {len(match_urls)} (ex.: {match_urls[:5]})")
 
     now_utc = datetime.now(pytz.utc)
 
-    for match_url in match_urls:
+    for i, match_url in enumerate(match_urls, start=1):
+        dlog(f"[{i}/{len(match_urls)}] Abrindo match_url={match_url}")
+
         se = scrape_match_page_sportsevent(driver, match_url)
         if not se:
             stats["match_pages_fail"] += 1
+            dlog(f"Falha: sem SportsEvent para {match_url}")
             continue
 
         stats["match_pages_ok"] += 1
 
-        # pega dados
         start_date_str = se.get("startDate", "") or ""
         description = se.get("description", "") or ""
         organizer_name = (se.get("organizer") or {}).get("name", "Desconhecido")
+        jsonld_url = normalize_abs_url(se.get("url", ""))
 
         competitors = se.get("competitor", []) or []
         if len(competitors) < 2:
-            if DEBUG:
-                log(f"⚠️ competitor < 2 | {match_url}")
+            dlog("Skip: competitor < 2")
             continue
 
         team1_raw = competitors[0].get("name", "TBD")
         team2_raw = competitors[1].get("name", "TBD")
 
-        if DEBUG:
-            log(
-                f"🎮 Match parseado: {team1_raw} vs {team2_raw} | "
-                f"org='{organizer_name}' | desc='{(description or '')[:80]}{'...' if len(description or '') > 80 else ''}'"
-            )
+        dlog(f"JSONLD url={jsonld_url} startDate={start_date_str}")
+        dlog(f"Times: {team1_raw} vs {team2_raw} | Organizer={organizer_name}")
 
         if team1_raw == "TBD" or team2_raw == "TBD":
             stats["skipped_tbd"] += 1
-            if DEBUG:
-                log(f"⏭️ Skip TBD: {team1_raw} vs {team2_raw} | {match_url}")
+            dlog("Skip: TBD")
             continue
 
         if not is_brazilian_team_involved(team1_raw, team2_raw):
             stats["skipped_not_br"] += 1
-            if DEBUG:
-                log(f"⏭️ Skip não-BR: {team1_raw} vs {team2_raw} | {match_url}")
+            dlog("Skip: não é BR (lista)")
             continue
 
-        # horário
-        try:
-            match_time_utc = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
-            if match_time_utc.tzinfo is None:
-                match_time_utc = pytz.utc.localize(match_time_utc)
-            match_time_utc = match_time_utc.astimezone(pytz.utc)
-        except Exception as e:
+        # horário pelo JSON-LD
+        match_time_utc = parse_startdate_utc(start_date_str)
+        if not match_time_utc:
             stats["skipped_bad_date"] += 1
-            if DEBUG:
-                log(f"⏭️ Skip bad_date: startDate='{start_date_str}' erro={e} | {match_url}")
+            dlog("Skip: startDate inválido")
             continue
+
+        # fallback pela URL (muito útil quando startDate vem “do nada” em running)
+        url_time_utc = extract_url_time_fallback(match_url)
+
+        if url_time_utc:
+            delta_min = abs(int((match_time_utc - url_time_utc).total_seconds() // 60))
+            if delta_min >= 60:
+                dlog(
+                    f"⏱️ ALERTA: startDate difere do horário da URL em {delta_min} min. "
+                    f"jsonld_utc={match_time_utc.isoformat()} url_utc={url_time_utc.isoformat()}. "
+                    "Vou preferir o horário da URL."
+                )
+                match_time_utc = url_time_utc
 
         if match_time_utc < now_utc:
             stats["skipped_past"] += 1
-            if DEBUG:
-                log_time_check(start_date_str, match_time_utc)
-                log(f"⏭️ Skip passado (agora UTC={fmt_dt(now_utc, pytz.utc)}): {team1_raw} vs {team2_raw} | {match_url}")
+            dlog(f"Skip: no passado (utc={match_time_utc.isoformat()})")
             continue
 
         begin_norm = normalize_event_datetime_utc(match_time_utc)
 
-        if DEBUG:
-            log_time_check(start_date_str, begin_norm)
+        local_br = begin_norm.astimezone(BR_TZ)
+        dlog(f"✅ Vai pro calendário: {team1_raw} vs {team2_raw} | BR={local_br.strftime('%d/%m %H:%M')} | UTC={begin_norm.strftime('%Y-%m-%d %H:%MZ')}")
 
         event_summary = f"{team1_raw} vs {team2_raw}"
-
-        # usa o match_url da própria página (mais estável)
         final_match_url = match_url
 
         added, updated = upsert_event_by_url_or_fallback(
@@ -606,34 +590,15 @@ def scrape_one_day(driver: webdriver.Chrome, day: date, cal: Calendar, by_url: D
             begin_norm=begin_norm,
             tournament_desc=description,
             organizer_name=organizer_name,
-            team_anchor_for_fallback="FURIA",  # âncora para trocar URL quando mudar
+            team_anchor_for_fallback="FURIA",
         )
 
         if added:
             stats["added"] += 1
+            dlog("📌 Evento ADICIONADO")
         if updated:
             stats["updated"] += 1
-
-    # Resumo do dia (eventos do script)
-    if DEBUG:
-        day_events = []
-        for ev in cal.events:
-            if not is_ours(ev):
-                continue
-            d = event_start_date_local(ev)
-            if d == day:
-                try:
-                    b = normalize_event_datetime_utc(ev.begin.datetime)
-                    day_events.append((b, getattr(ev, "name", ""), extract_match_url_from_event(ev)))
-                except Exception:
-                    continue
-        day_events.sort(key=lambda x: x[0])
-
-        log(f"📌 Eventos no calendário para {day.strftime('%d/%m/%Y')} (script): {len(day_events)}")
-        for b, name, url in day_events[:DEBUG_DAY_EVENTS_LIMIT]:
-            log(f"   • {fmt_dt(b, BR_TZ)} | {name} | {url}")
-        if len(day_events) > DEBUG_DAY_EVENTS_LIMIT:
-            log(f"   … (+{len(day_events) - DEBUG_DAY_EVENTS_LIMIT} eventos não exibidos)")
+            dlog("♻️ Evento ATUALIZADO")
 
     return stats
 
@@ -643,13 +608,11 @@ log("🔄 Iniciando execução (HTML do dia -> página do match -> upsert)...")
 
 cal = load_calendar(CALENDAR_FILENAME)
 
-# Limpeza
 today = datetime.now(BR_TZ).date()
 cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
 removed = prune_older_than(cal, cutoff)
 log(f"🧹 Limpeza: removidos {removed} eventos do script com data < {cutoff.strftime('%d/%m/%Y')}")
 
-# Index por URL
 by_url = index_events_by_url(cal)
 
 driver = None
@@ -686,7 +649,6 @@ finally:
             pass
         log("⚙️ Selenium fechado.")
 
-# Salva
 log(f"💾 Salvando arquivo: {CALENDAR_FILENAME}")
 try:
     save_calendar(cal, CALENDAR_FILENAME)
