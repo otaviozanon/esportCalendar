@@ -48,7 +48,7 @@ PAGE_LOAD_TIMEOUT_SECONDS = 15
 JSONLD_WAIT_SECONDS = 8
 
 # Marcador para identificar eventos do script
-SOURCE_MARKER = "X-RANALLI-SOURCE:TIPSGG"
+SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 
 # Âncora para identificar eventos antigos gerados sem marcador (mas do tips.gg)
 TIPS_URL_HINT = "https://tips.gg/matches/"
