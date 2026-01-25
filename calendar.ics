@@ -8,11 +8,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/25-01-2026/9z-vs-red-canids/03-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO5 Match. Playoffs. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/25-01-2026/gaimin-gladiators-vs-mibr/06-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260125T150000Z
-SUMMARY:9z vs RED Canids
-UID:bcbfc0a05cd14098b7e9e588044c5c1fa1e4aec7
+DTSTART:20260125T180000Z
+SUMMARY:Gaimin Gladiators vs MIBR
+UID:49f5845d84dfa45d16fbc49d1317233e649bd412
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -32,11 +32,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO5 Match. Playoffs. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/25-01-2026/gaimin-gladiators-vs-mibr/06-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Playoffs. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/25-01-2026/9z-vs-red-canids/03-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260125T180000Z
-SUMMARY:Gaimin Gladiators vs MIBR
-UID:49f5845d84dfa45d16fbc49d1317233e649bd412
+DTSTART:20260125T150000Z
+SUMMARY:9z vs RED Canids
+UID:bcbfc0a05cd14098b7e9e588044c5c1fa1e4aec7
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
