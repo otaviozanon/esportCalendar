@@ -32,11 +32,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/25-01-2026/9z-vs-red-canids/03-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Group A. Argentina. CS2 (CS:GO) Minor.\n📍 FiReCONTER 2026\n🌐 https://tips.gg/matches/counter-strike/29-01-2026/imperial-vs-zingaro-gaming/02-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260125T150000Z
-SUMMARY:9z vs RED Canids
-UID:bcbfc0a05cd14098b7e9e588044c5c1fa1e4aec7
+DTSTART:20260129T140000Z
+SUMMARY:Imperial vs Zingaro Gaming
+UID:4573b1bb22049efb5ad0c335cf137f54372946f4
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -56,11 +56,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group A. Argentina. CS2 (CS:GO) Minor.\n📍 FiReCONTER 2026\n🌐 https://tips.gg/matches/counter-strike/29-01-2026/imperial-vs-zingaro-gaming/02-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Playoffs. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/25-01-2026/9z-vs-red-canids/03-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260129T140000Z
-SUMMARY:Imperial vs Zingaro Gaming
-UID:4573b1bb22049efb5ad0c335cf137f54372946f4
+DTSTART:20260125T150000Z
+SUMMARY:9z vs RED Canids
+UID:bcbfc0a05cd14098b7e9e588044c5c1fa1e4aec7
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -97,6 +97,18 @@ DURATION:PT2H
 DTSTART:20260129T140000Z
 SUMMARY:ODDIK vs Bounty Hunters Esports
 UID:f183c0b5c6297dbe91b7aed444fc0135f639bcc9
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+DESCRIPTION:🏆 BO5 Match. Playoffs. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/25-01-2026/gaimin-gladiators-vs-mibr/06-00/\nX-SETT-SOURCE:TIPSGG
+DURATION:PT2H
+DTSTART:20260125T193000Z
+SUMMARY:Gaimin Gladiators vs MIBR
+UID:3ac8a47bfa2f2129e849102d5a4d2e9faf8371e6
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
