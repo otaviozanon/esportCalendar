@@ -21,7 +21,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # -------------------- Configurações Globais --------------------
 BRAZILIAN_TEAMS = [
-    "FURIA", "paiN", "MIBR", "Imperial", "Fluxo",
+    "FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo",
     "RED Canids", "Legacy", "ODDIK", "Imperial Esports"
 ]
 
