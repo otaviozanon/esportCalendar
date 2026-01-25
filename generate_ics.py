@@ -33,6 +33,8 @@ BRAZILIAN_TEAMS_EXCLUSIONS = [
 ]
 
 CALENDAR_FILENAME = "calendar.ics"
+STATE_FILE = "state.json"
+
 BR_TZ = pytz.timezone("America/Sao_Paulo")
 
 # Limite de futuro: hoje..hoje+4 (5 dias)
@@ -158,6 +160,33 @@ def prune_older_than(cal: Calendar, cutoff_date: date) -> int:
     return len(to_remove)
 
 
+# -------------------- Estado (cursor rotativo) --------------------
+def load_cursor(today: date, future_limit: date) -> date:
+    """
+    Cursor persistido em STATE_FILE:
+    - se não existir: começa em hoje
+    - se existir e estiver fora do range (hoje..future_limit): reseta para hoje
+    """
+    if not os.path.exists(STATE_FILE):
+        return today
+
+    try:
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        d = date.fromisoformat(data.get("cursor_date", ""))
+        if today <= d <= future_limit:
+            return d
+    except Exception:
+        pass
+
+    return today
+
+
+def save_cursor(d: date):
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump({"cursor_date": d.isoformat()}, f, ensure_ascii=False)
+
+
 # -------------------- Deduplicação lógica --------------------
 def extract_match_url_from_description(desc: str) -> str:
     if not desc:
@@ -229,11 +258,9 @@ def dedupe_calendar_events(cal: Calendar) -> int:
         new_has_marker = SOURCE_MARKER in new_desc
 
         if new_has_marker and not cur_has_marker:
-            # novo é melhor: remove o antigo
             to_remove.append(current_best)
             best_by_key[k] = ev
         else:
-            # novo é pior ou igual: remove o novo
             to_remove.append(ev)
 
     for ev in to_remove:
@@ -434,7 +461,7 @@ def scrape_one_day(
 
 
 # -------------------- Execução --------------------
-log("🔄 Iniciando execução incremental...")
+log("🔄 Iniciando execução (cursor rotativo)...")
 
 cal = load_calendar(CALENDAR_FILENAME)
 
@@ -453,29 +480,14 @@ cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
 removed = prune_older_than(cal, cutoff)
 log(f"🧹 Limpeza: removidos {removed} eventos do script com data < {cutoff.strftime('%d/%m/%Y')}")
 
-# 2) Decide qual dia buscar agora (1 dia por execução)
-last_day = max_date_in_calendar(cal)
-if last_day is None:
-    target_day = today
-    log("📌 Calendário vazio (do script). Vou buscar HOJE.")
-else:
-    target_day = last_day + timedelta(days=1)
-    log(
-        f"📌 Último dia no calendário (script): {last_day.strftime('%d/%m/%Y')} "
-        f"-> próximo alvo: {target_day.strftime('%d/%m/%Y')}"
-    )
+# 2) Cursor rotativo: decide qual dia buscar agora
+target_day = load_cursor(today, future_limit)
+log(f"📌 Cursor atual: {target_day.strftime('%d/%m/%Y')} (range: {today.strftime('%d/%m/%Y')}..{future_limit.strftime('%d/%m/%Y')})")
 
-# 3) Respeita limite de 5 dias (hoje..hoje+4)
-if target_day > future_limit:
-    log(f"⏭️ Nada a fazer: alvo {target_day.strftime('%d/%m/%Y')} passa do limite {future_limit.strftime('%d/%m/%Y')}.")
-    log(f"💾 Salvando {CALENDAR_FILENAME} (sem mudanças de scrape)...")
-    save_calendar(cal, CALENDAR_FILENAME)
-    log("✅ Salvo.")
-    raise SystemExit(0)
-
-# 4) Scrape do dia alvo e incrementa
+# 3) Scrape do dia alvo e incrementa
 driver = None
 total_added = 0
+ran_ok = False
 
 try:
     url = build_url_for_day(target_day)
@@ -487,14 +499,12 @@ try:
     for ev in new_events:
         cal.events.add(ev)
 
-    # 4.9) Deduplicação final (garantia)
+    # 3.9) Deduplicação final (garantia)
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final:
         log(f"🧼 Deduplicação final: removidos {deduped_final} eventos duplicados (tips.gg).")
 
-    # Recalcula UIDs após dedupe
     existing_uids = get_existing_uids(cal)
-
     total_added = stats["added"]
 
     log(f"🧾 RESUMO DO DIA {stats['date']}")
@@ -508,6 +518,8 @@ try:
         f"json_err={stats['json_decode_errors']}"
     )
 
+    ran_ok = True
+
 except WebDriverException as e:
     log(f"❌ WebDriverException: {e}")
 except Exception as e:
@@ -520,10 +532,20 @@ finally:
             pass
         log("⚙️ Selenium fechado.")
 
-# 5) Salva
+# 4) Salva calendário
 log(f"💾 Salvando arquivo: {CALENDAR_FILENAME}")
 try:
     save_calendar(cal, CALENDAR_FILENAME)
     log(f"✅ Salvo. Total adicionados nesta execução: {total_added}")
 except Exception as e:
     log(f"❌ Erro ao salvar {CALENDAR_FILENAME}: {e}")
+
+# 5) Avança cursor SOMENTE se rodou ok (pra não pular dia por falha)
+if ran_ok:
+    next_day = target_day + timedelta(days=1)
+    if next_day > future_limit:
+        next_day = today
+    save_cursor(next_day)
+    log(f"🔁 Cursor atualizado: próximo alvo {next_day.strftime('%d/%m/%Y')}")
+else:
+    log("⏸️ Cursor NÃO avançou porque a execução falhou (boa sorte na próxima).")
