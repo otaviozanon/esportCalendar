@@ -269,6 +269,53 @@ def dedupe_calendar_events(cal: Calendar) -> int:
     return len(to_remove)
 
 
+def dedupe_by_url_keep_latest(cal: Calendar) -> int:
+    """
+    Para eventos do tips.gg (is_ours):
+    - Agrupa por URL extraída da descrição
+    - Mantém apenas o evento com begin mais "novo" (maior datetime UTC)
+    - Preferência adicional: se empatar, fica com o que tem SOURCE_MARKER
+    """
+    groups: dict[str, list[Event]] = {}
+    removed = 0
+
+    for ev in list(cal.events):
+        if not is_ours(ev):
+            continue
+
+        desc = (getattr(ev, "description", "") or "")
+        url = extract_match_url_from_description(desc).strip().lower()
+
+        if not url:
+            continue
+
+        groups.setdefault(url, []).append(ev)
+
+    for url, evs in groups.items():
+        if len(evs) <= 1:
+            continue
+
+        def score(ev: Event):
+            try:
+                b = normalize_event_datetime_utc(ev.begin.datetime)
+            except Exception:
+                b = pytz.utc.localize(datetime.min)
+
+            desc = (getattr(ev, "description", "") or "")
+            has_marker = 1 if SOURCE_MARKER in desc else 0
+            return (b, has_marker)
+
+        keep = max(evs, key=score)
+
+        for ev in evs:
+            if ev is keep:
+                continue
+            cal.events.discard(ev)
+            removed += 1
+
+    return removed
+
+
 # -------------------- Selenium --------------------
 def setup_driver() -> webdriver.Chrome:
     chrome_options = Options()
@@ -470,6 +517,11 @@ deduped_initial = dedupe_calendar_events(cal)
 if deduped_initial:
     log(f"🧼 Deduplicação inicial: removidos {deduped_initial} eventos duplicados (tips.gg).")
 
+deduped_by_url_initial = dedupe_by_url_keep_latest(cal)
+if deduped_by_url_initial:
+    log(f"🧼 Dedup por URL (inicial): removidos {deduped_by_url_initial} eventos (mantido último horário).")
+
+# Recalcula uids após limpezas
 existing_uids = get_existing_uids(cal)
 
 today = datetime.now(BR_TZ).date()
@@ -503,6 +555,10 @@ try:
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final:
         log(f"🧼 Deduplicação final: removidos {deduped_final} eventos duplicados (tips.gg).")
+
+    deduped_by_url_final = dedupe_by_url_keep_latest(cal)
+    if deduped_by_url_final:
+        log(f"🧼 Dedup por URL (final): removidos {deduped_by_url_final} eventos (mantido último horário).")
 
     existing_uids = get_existing_uids(cal)
     total_added = stats["added"]
