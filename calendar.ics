@@ -8,11 +8,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Play-In. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/28-01-2026/astralis-vs-pain-gaming/11-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Play-In. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/29-01-2026/legacy-vs-fut-esports/06-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260128T123000Z
-SUMMARY:Astralis vs paiN Gaming
-UID:acbdacc39cda1f35307cf8b21b025df9bd5e878b
+DTSTART:20260129T180000Z
+SUMMARY:Legacy vs FUT Esports
+UID:913960814e655e23221dd992b122680fe6cb2c10
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -32,23 +32,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group A. Argentina. CS2 (CS:GO) Minor.\n📍 FiReCONTER 2026\n🌐 https://tips.gg/matches/counter-strike/29-01-2026/imperial-vs-zingaro-gaming/02-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Playoffs. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/25-01-2026/9z-vs-red-canids/03-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260129T140000Z
-SUMMARY:Imperial vs Zingaro Gaming
-UID:4573b1bb22049efb5ad0c335cf137f54372946f4
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group D. Argentina. CS2 (CS:GO) Minor.\n📍 FiReCONTER 2026\n🌐 https://tips.gg/matches/counter-strike/30-01-2026/mibr-vs-9z/08-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260130T200000Z
-SUMMARY:MIBR vs 9z
-UID:be069b260c5eb51edd781e558aad479cffc7b693
+DTSTART:20260125T150000Z
+SUMMARY:9z vs RED Canids
+UID:bcbfc0a05cd14098b7e9e588044c5c1fa1e4aec7
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -68,11 +56,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. Brazil. CS2 (CS:GO) Minor.\n📍 Circuit X Redemption Curitiba 2026\n🌐 https://tips.gg/matches/counter-strike/25-01-2026/9z-vs-red-canids/03-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Group D. Argentina. CS2 (CS:GO) Minor.\n📍 FiReCONTER 2026\n🌐 https://tips.gg/matches/counter-strike/30-01-2026/mibr-vs-9z/08-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260125T150000Z
-SUMMARY:9z vs RED Canids
-UID:bcbfc0a05cd14098b7e9e588044c5c1fa1e4aec7
+DTSTART:20260130T200000Z
+SUMMARY:MIBR vs 9z
+UID:be069b260c5eb51edd781e558aad479cffc7b693
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -80,11 +68,23 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Play-In. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/29-01-2026/legacy-vs-fut-esports/06-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Group A. Argentina. CS2 (CS:GO) Minor.\n📍 FiReCONTER 2026\n🌐 https://tips.gg/matches/counter-strike/29-01-2026/imperial-vs-zingaro-gaming/02-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260129T180000Z
-SUMMARY:Legacy vs FUT Esports
-UID:913960814e655e23221dd992b122680fe6cb2c10
+DTSTART:20260129T140000Z
+SUMMARY:Imperial vs Zingaro Gaming
+UID:4573b1bb22049efb5ad0c335cf137f54372946f4
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+DESCRIPTION:🏆 BO3 Match. Play-In. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/28-01-2026/astralis-vs-pain-gaming/11-00/\nX-SETT-SOURCE:TIPSGG
+DURATION:PT2H
+DTSTART:20260128T123000Z
+SUMMARY:Astralis vs paiN Gaming
+UID:acbdacc39cda1f35307cf8b21b025df9bd5e878b
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
