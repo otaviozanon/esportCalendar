@@ -56,11 +56,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO5 Match. Playoffs. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/08-02-2026/furia-vs-vitality/04-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Group A. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/03-02-2026/astralis-vs-furia/03-30/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260208T160000Z
-SUMMARY:FURIA vs Vitality
-UID:e9fbb9bdcf0edb161718edb574f00357534cb57b
+DTSTART:20260203T153000Z
+SUMMARY:Astralis vs FURIA
+UID:dd852d19d6dfb6585a94dfe4b7d318874236aa98
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -68,11 +68,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group A. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/03-02-2026/astralis-vs-furia/03-30/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO5 Match. Playoffs. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/08-02-2026/furia-vs-vitality/04-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260203T153000Z
-SUMMARY:Astralis vs FURIA
-UID:dd852d19d6dfb6585a94dfe4b7d318874236aa98
+DTSTART:20260208T160000Z
+SUMMARY:FURIA vs Vitality
+UID:e9fbb9bdcf0edb161718edb574f00357534cb57b
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
