@@ -80,18 +80,6 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260214T160000Z
-SUMMARY:FOLHA AMARELA vs RED Canids
-UID:5d49d09e338543089b06904e83f87f67b3270657
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
 DESCRIPTION:🏆 BO5 Match. Playoffs. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/08-02-2026/furia-vs-vitality/04-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
 DTSTART:20260208T160000Z
@@ -104,47 +92,23 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:TIPSGG
+DURATION:PT2H
+DTSTART:20260214T160000Z
+SUMMARY:FOLHA AMARELA vs RED Canids
+UID:5d49d09e338543089b06904e83f87f67b3270657
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
 DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/12-02-2026/red-canids-vs-vasco-esports/07-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
 DTSTART:20260212T190000Z
 SUMMARY:RED Canids vs Vasco Esports
 UID:8cb26e4b743bf379191721a825c32c4595cbaa01
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/06-02-2026/aurora-gaming-vs-furia/02-45/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260206T144500Z
-SUMMARY:Aurora Gaming vs FURIA
-UID:bc232672ea9da71ff9879dc7a6b95a99e6b2859e
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 BLAST Rising Ace South American Masters Spring 2026\n🌐 https://tips.gg/matches/counter-strike/06-02-2026/imperial-vs-bad-luck/03-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260206T150000Z
-SUMMARY:Imperial vs Bad Luck
-UID:9933fc0247fb34623a311c2bef8d1ec02a64cd0f
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 BLAST Rising Ace South American Masters Spring 2026\n🌐 https://tips.gg/matches/counter-strike/06-02-2026/red-canids-vs-bounty-hunters-esports/09-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260206T210000Z
-SUMMARY:RED Canids vs Bounty Hunters Esports
-UID:7af5bef49fbbd1254069bc28980147f6780df11f
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
