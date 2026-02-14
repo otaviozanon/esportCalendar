@@ -20,11 +20,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 BLAST Rising Ace South American Masters Spring 2026\n🌐 https://tips.gg/matches/counter-strike/07-02-2026/imperial-vs-9z/03-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/furia-vs-b8/05-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260207T150000Z
-SUMMARY:Imperial vs 9z
-UID:c408ce1498b45ea562b1d7afb5acbacac468e725
+DTSTART:20260214T181500Z
+SUMMARY:FURIA vs B8
+UID:bdd686fe8ec0fb8ed06fb18980e6d99f6d8dc666
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -32,11 +32,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/furia-vs-b8/05-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 BLAST Rising Ace South American Masters Spring 2026\n🌐 https://tips.gg/matches/counter-strike/07-02-2026/imperial-vs-9z/03-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260214T170000Z
-SUMMARY:FURIA vs B8
-UID:5c65fcae10df88a0c01b193b04530955ba0a29d8
+DTSTART:20260207T150000Z
+SUMMARY:Imperial vs 9z
+UID:c408ce1498b45ea562b1d7afb5acbacac468e725
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -92,6 +92,18 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:TIPSGG
+DURATION:PT2H
+DTSTART:20260214T160000Z
+SUMMARY:FOLHA AMARELA vs RED Canids
+UID:5d49d09e338543089b06904e83f87f67b3270657
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
 DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/12-02-2026/red-canids-vs-vasco-esports/07-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
 DTSTART:20260212T190000Z
@@ -109,17 +121,5 @@ DURATION:PT2H
 DTSTART:20260213T160000Z
 SUMMARY:ODDIK vs Fake do Biru
 UID:3b0bcd750105245b8ef5d6a7077902b22e753c73
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260214T160000Z
-SUMMARY:FOLHA AMARELA vs RED Canids
-UID:5d49d09e338543089b06904e83f87f67b3270657
 END:VEVENT
 END:VCALENDAR
