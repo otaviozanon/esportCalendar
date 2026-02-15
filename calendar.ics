@@ -8,11 +8,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/16-02-2026/g2-esports-vs-pain-gaming/05-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/the-mongolz-vs-pain-gaming/05-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260216T170000Z
-SUMMARY:G2 Esports vs paiN Gaming
-UID:010b56f62a3cebe29d8992c712f2b7b0f618b01a
+DTSTART:20260214T170000Z
+SUMMARY:The MongolZ vs paiN Gaming
+UID:56a428cbc5e9226bbf6911dda4b51cfd652b3061
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -44,11 +44,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/the-mongolz-vs-pain-gaming/05-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/16-02-2026/g2-esports-vs-pain-gaming/05-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260214T170000Z
-SUMMARY:The MongolZ vs paiN Gaming
-UID:56a428cbc5e9226bbf6911dda4b51cfd652b3061
+DTSTART:20260216T170000Z
+SUMMARY:G2 Esports vs paiN Gaming
+UID:010b56f62a3cebe29d8992c712f2b7b0f618b01a
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -85,6 +85,18 @@ DURATION:PT2H
 DTSTART:20260215T140000Z
 SUMMARY:Aurora Gaming vs paiN Gaming
 UID:fe9e9c680878410a2b76724ae44b943fd3a4bb29
+END:VEVENT
+BEGIN:VEVENT
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:TIPSGG
+DURATION:PT2H
+DTSTART:20260214T160000Z
+SUMMARY:FOLHA AMARELA vs RED Canids
+UID:5d49d09e338543089b06904e83f87f67b3270657
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -145,17 +157,5 @@ DURATION:PT2H
 DTSTART:20260213T160000Z
 SUMMARY:ODDIK vs Fake do Biru
 UID:3b0bcd750105245b8ef5d6a7077902b22e753c73
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260214T160000Z
-SUMMARY:FOLHA AMARELA vs RED Canids
-UID:5d49d09e338543089b06904e83f87f67b3270657
 END:VEVENT
 END:VCALENDAR
