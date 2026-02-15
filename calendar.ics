@@ -56,11 +56,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO5 Match. Playoffs. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/08-02-2026/furia-vs-vitality/04-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260214T160000Z
-SUMMARY:FOLHA AMARELA vs RED Canids
-UID:5d49d09e338543089b06904e83f87f67b3270657
+DTSTART:20260208T160000Z
+SUMMARY:FURIA vs Vitality
+UID:e9fbb9bdcf0edb161718edb574f00357534cb57b
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
@@ -68,11 +68,11 @@ ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO5 Match. Playoffs. Poland. CS2 (CS:GO) Premier.\n📍 IEM Krakow 2026\n🌐 https://tips.gg/matches/counter-strike/08-02-2026/furia-vs-vitality/04-00/\nX-SETT-SOURCE:TIPSGG
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:TIPSGG
 DURATION:PT2H
-DTSTART:20260208T160000Z
-SUMMARY:FURIA vs Vitality
-UID:e9fbb9bdcf0edb161718edb574f00357534cb57b
+DTSTART:20260214T160000Z
+SUMMARY:FOLHA AMARELA vs RED Canids
+UID:5d49d09e338543089b06904e83f87f67b3270657
 END:VEVENT
 BEGIN:VEVENT
 BEGIN:VALARM
