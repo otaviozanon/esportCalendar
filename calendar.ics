@@ -3,147 +3,190 @@ VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 CALSCALE:GEORGIAN
 BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/the-mongolz-vs-pain-gaming/05-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260214T170000Z
 SUMMARY:The MongolZ vs paiN Gaming
+DTSTART:20260214T170000Z
+DURATION:PT2H
 UID:56a428cbc5e9226bbf6911dda4b51cfd652b3061
-END:VEVENT
-BEGIN:VEVENT
+DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n
+ 📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/14-
+ 02-2026/the-mongolz-vs-pain-gaming/05-00/\nX-SETT-SOURCE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/15-02-2026/red-canids-vs-sharks-esports/09-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260215T210000Z
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:RED Canids vs Sharks Esports
+DTSTART:20260215T210000Z
+DURATION:PT2H
 UID:fe1f1c02097f9436ddee9c7548daa4671fd0fa1d
-END:VEVENT
-BEGIN:VEVENT
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
+ 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
+ unter-strike/15-02-2026/red-canids-vs-sharks-esports/09-00/\nX-SETT-SOURCE
+ :TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/furia-vs-b8/05-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260214T181500Z
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:FURIA vs B8
+DTSTART:20260214T181500Z
+DURATION:PT2H
 UID:bdd686fe8ec0fb8ed06fb18980e6d99f6d8dc666
-END:VEVENT
-BEGIN:VEVENT
+DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n
+ 📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/14-
+ 02-2026/furia-vs-b8/05-00/\nX-SETT-SOURCE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/16-02-2026/g2-esports-vs-pain-gaming/05-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260216T170000Z
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:G2 Esports vs paiN Gaming
-UID:010b56f62a3cebe29d8992c712f2b7b0f618b01a
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/16-02-2026/furia-vs-falcons-esports/05-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
 DTSTART:20260216T170000Z
+DURATION:PT2H
+UID:010b56f62a3cebe29d8992c712f2b7b0f618b01a
+DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n
+ 📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/16-
+ 02-2026/g2-esports-vs-pain-gaming/05-00/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:FURIA vs Falcons Esports
+DTSTART:20260216T170000Z
+DURATION:PT2H
 UID:1ba4072a96296e65709c4120edf0b418a9787743
-END:VEVENT
-BEGIN:VEVENT
+DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n
+ 📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/16-
+ 02-2026/furia-vs-falcons-esports/05-00/\nX-SETT-SOURCE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/13-02-2026/fluxo-vs-game-hunters/01-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260213T130000Z
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:Fluxo vs Game Hunters
+DTSTART:20260213T130000Z
+DURATION:PT2H
 UID:66293d0f5a3928d013672e77cfc4493f34959b37
-END:VEVENT
-BEGIN:VEVENT
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
+ 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
+ unter-strike/13-02-2026/fluxo-vs-game-hunters/01-00/\nX-SETT-SOURCE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/15-02-2026/aurora-gaming-vs-pain-gaming/02-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260215T140000Z
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:Aurora Gaming vs paiN Gaming
-UID:fe9e9c680878410a2b76724ae44b943fd3a4bb29
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/12-02-2026/red-canids-vs-vasco-esports/07-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260212T190000Z
-SUMMARY:RED Canids vs Vasco Esports
-UID:8cb26e4b743bf379191721a825c32c4595cbaa01
-END:VEVENT
-BEGIN:VEVENT
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/15-02-2026/furia-vs-fut-esports/02-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
 DTSTART:20260215T140000Z
+DURATION:PT2H
+UID:fe9e9c680878410a2b76724ae44b943fd3a4bb29
+DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n
+ 📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/15-
+ 02-2026/aurora-gaming-vs-pain-gaming/02-00/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:RED Canids vs Vasco Esports
+DTSTART:20260212T190000Z
+DURATION:PT2H
+UID:8cb26e4b743bf379191721a825c32c4595cbaa01
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
+ 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
+ unter-strike/12-02-2026/red-canids-vs-vasco-esports/07-00/\nX-SETT-SOURCE:
+ TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:FURIA vs FUT Esports
+DTSTART:20260215T140000Z
+DURATION:PT2H
 UID:6cc783b3db714d2eb7861bbaa2ee69726fb0209a
-END:VEVENT
-BEGIN:VEVENT
+DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n
+ 📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/15-
+ 02-2026/furia-vs-fut-esports/02-00/\nX-SETT-SOURCE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/15-02-2026/red-canids-vs-largadosypelados/03-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260215T150000Z
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:RED Canids vs largadosypelados
+DTSTART:20260215T150000Z
+DURATION:PT2H
 UID:4b4c0861a580d51d0f95aabff9a9c5dd9f470416
-END:VEVENT
-BEGIN:VEVENT
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
+ 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
+ unter-strike/15-02-2026/red-canids-vs-largadosypelados/03-00/\nX-SETT-SOUR
+ CE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/13-02-2026/oddik-vs-fake-do-biru/04-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260213T160000Z
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:ODDIK vs Fake do Biru
+DTSTART:20260213T160000Z
+DURATION:PT2H
 UID:3b0bcd750105245b8ef5d6a7077902b22e753c73
-END:VEVENT
-BEGIN:VEVENT
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
+ 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
+ unter-strike/13-02-2026/oddik-vs-fake-do-biru/04-00/\nX-SETT-SOURCE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
 TRIGGER:-PT15M
 END:VALARM
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/counter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:TIPSGG
-DURATION:PT2H
-DTSTART:20260214T160000Z
+END:VEVENT
+BEGIN:VEVENT
 SUMMARY:FOLHA AMARELA vs RED Canids
+DTSTART:20260214T160000Z
+DURATION:PT2H
 UID:5d49d09e338543089b06904e83f87f67b3270657
+DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
+ 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
+ unter-strike/14-02-2026/folha-amarela-vs-red-canids/04-00/\nX-SETT-SOURCE:
+ TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:FURIA vs The MongolZ
+DTSTART:20260220T170000Z
+DTEND:20260220T190000Z
+DTSTAMP:20260218T235829Z
+UID:e714582cbfa1de476c0c47c33adda5a3efb0cb6c
+DESCRIPTION:🏆 BO3 Match. Playoffs. Romania. CS2 (CS:GO) Premier.\n📍 
+ PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/20-02-20
+ 26/furia-vs-the-mongolz/05-00/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: FURIA vs The MongolZ
+TRIGGER:-PT15M
+END:VALARM
 END:VEVENT
 END:VCALENDAR
