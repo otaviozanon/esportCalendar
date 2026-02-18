@@ -5,8 +5,7 @@ from datetime import datetime, timedelta, date
 
 import pytz
 from bs4 import BeautifulSoup
-from ics import Calendar, Event
-from ics.alarm import DisplayAlarm
+from icalendar import Calendar, Event, Alarm
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -37,20 +36,13 @@ STATE_FILE = "state.json"
 
 BR_TZ = pytz.timezone("America/Sao_Paulo")
 
-# Limite de futuro: hoje..hoje+4 (5 dias)
 FUTURE_LIMIT_DAYS = 4
-
-# Limpeza: remove eventos do script com mais de 7 dias atrás
 DELETE_OLDER_THAN_DAYS = 7
 
-# Timeouts
 PAGE_LOAD_TIMEOUT_SECONDS = 15
 JSONLD_WAIT_SECONDS = 8
 
-# Marcador para identificar eventos do script
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
-
-# Âncora para identificar eventos antigos gerados sem marcador (mas do tips.gg)
 TIPS_URL_HINT = "https://tips.gg/matches/"
 
 
@@ -76,97 +68,74 @@ def build_url_for_day(target_date: date) -> str:
 def load_calendar(path: str) -> Calendar:
     if os.path.exists(path):
         try:
-            with open(path, "r", encoding="utf-8") as f:
-                return Calendar(f.read())
+            with open(path, "rb") as f:
+                return Calendar.from_ical(f.read())
         except Exception as e:
             log(f"⚠️ Falha ao ler {path}: {e}. Criando calendário novo.")
-    return Calendar()
+
+    cal = Calendar()
+    cal.add('prodid', '-//Esport Calendar BR//tips.gg//')
+    cal.add('version', '2.0')
+    return cal
 
 
 def save_calendar(cal: Calendar, path: str):
-    with open(path, "w", encoding="utf-8") as f:
-        f.writelines(cal.serialize_iter())
+    with open(path, "wb") as f:
+        f.write(cal.to_ical())
 
 
 def get_existing_uids(cal: Calendar) -> set:
-    return {getattr(ev, "uid", None) for ev in cal.events if getattr(ev, "uid", None)}
+    uids = set()
+    for component in cal.walk('VEVENT'):
+        uid = component.get('uid')
+        if uid:
+            uids.add(str(uid))
+    return uids
 
 
 def normalize_event_datetime_utc(dt: datetime) -> datetime:
-    """
-    Normaliza datetime para UTC, sem microsegundos e com segundo=0.
-    Isso evita UID diferente por variação de segundos/microsegundos do JSON-LD.
-    """
     if dt.tzinfo is None:
         dt = pytz.utc.localize(dt)
     dt = dt.astimezone(pytz.utc).replace(microsecond=0, second=0)
     return dt
 
 
-def is_ours(ev: Event) -> bool:
-    """
-    Evento gerado pelo script:
-    - tem SOURCE_MARKER, OU
-    - tem link do tips.gg no description (casos antigos que você gerou sem marcador)
-    """
-    desc = (getattr(ev, "description", "") or "")
+def is_ours(component) -> bool:
+    desc = str(component.get('description', ''))
     return (SOURCE_MARKER in desc) or (TIPS_URL_HINT in desc)
 
 
-def event_start_date_local(ev: Event) -> date | None:
-    """
-    Converte o begin do evento para data local.
-    """
+def event_start_date_local(component) -> date | None:
     try:
-        dt = ev.begin.datetime
-        if dt.tzinfo is None:
-            dt = pytz.utc.localize(dt)
-        return dt.astimezone(BR_TZ).date()
+        dt = component.get('dtstart').dt
+        if isinstance(dt, datetime):
+            if dt.tzinfo is None:
+                dt = pytz.utc.localize(dt)
+            return dt.astimezone(BR_TZ).date()
+        elif isinstance(dt, date):
+            return dt
     except Exception:
-        return None
-
-
-def max_date_in_calendar(cal: Calendar) -> date | None:
-    """
-    Pega a maior data dos eventos DO SCRIPT no calendário.
-    Agora considera também eventos antigos do tips.gg sem marker.
-    """
-    dates = []
-    for ev in cal.events:
-        if not is_ours(ev):
-            continue
-        d = event_start_date_local(ev)
-        if d:
-            dates.append(d)
-    return max(dates) if dates else None
+        pass
+    return None
 
 
 def prune_older_than(cal: Calendar, cutoff_date: date) -> int:
-    """
-    Remove eventos DO SCRIPT com data < cutoff_date.
-    Considera também eventos antigos do tips.gg sem marker.
-    """
     to_remove = []
-    for ev in list(cal.events):
-        if not is_ours(ev):
+    for component in cal.walk('VEVENT'):
+        if not is_ours(component):
             continue
-        d = event_start_date_local(ev)
+        d = event_start_date_local(component)
         if d and d < cutoff_date:
-            to_remove.append(ev)
+            to_remove.append(component)
 
-    for ev in to_remove:
-        cal.events.discard(ev)
+    for comp in to_remove:
+        cal.subcomponents.remove(comp)
 
     return len(to_remove)
 
 
-# -------------------- Estado (cursor rotativo) --------------------
+# -------------------- Estado --------------------
 def load_cursor(today: date, future_limit: date) -> date:
-    """
-    Cursor persistido em STATE_FILE:
-    - se não existir: começa em hoje
-    - se existir e estiver fora do range (hoje..future_limit): reseta para hoje
-    """
     if not os.path.exists(STATE_FILE):
         return today
 
@@ -187,7 +156,7 @@ def save_cursor(d: date):
         json.dump({"cursor_date": d.isoformat()}, f, ensure_ascii=False)
 
 
-# -------------------- Deduplicação lógica --------------------
+# -------------------- Deduplicação --------------------
 def extract_match_url_from_description(desc: str) -> str:
     if not desc:
         return ""
@@ -210,20 +179,19 @@ def extract_tournament_from_description(desc: str) -> str:
     return ""
 
 
-def event_key(ev: Event) -> tuple:
-    """
-    Chave lógica do evento: (nome, horário UTC normalizado, campeonato, url)
-    """
-    name = (getattr(ev, "name", "") or "").strip().lower()
+def event_key(component) -> tuple:
+    name = str(component.get('summary', '')).strip().lower()
 
     begin_iso = ""
     try:
-        dtd = normalize_event_datetime_utc(ev.begin.datetime)
-        begin_iso = dtd.isoformat()
+        dt = component.get('dtstart').dt
+        if isinstance(dt, datetime):
+            dtd = normalize_event_datetime_utc(dt)
+            begin_iso = dtd.isoformat()
     except Exception:
-        begin_iso = ""
+        pass
 
-    desc = (getattr(ev, "description", "") or "")
+    desc = str(component.get('description', ''))
     tournament = extract_tournament_from_description(desc).lower()
     url = extract_match_url_from_description(desc).lower()
 
@@ -231,86 +199,77 @@ def event_key(ev: Event) -> tuple:
 
 
 def dedupe_calendar_events(cal: Calendar) -> int:
-    """
-    Remove duplicados do tips.gg (mesma chave lógica).
-    Regra:
-      - se existir versão com SOURCE_MARKER, ela vence
-      - senão, mantém o primeiro
-    """
-    best_by_key: dict[tuple, Event] = {}
-    to_remove: list[Event] = []
+    best_by_key = {}
+    to_remove = []
 
-    for ev in list(cal.events):
-        if not is_ours(ev):
+    for component in list(cal.walk('VEVENT')):
+        if not is_ours(component):
             continue
 
-        k = event_key(ev)
+        k = event_key(component)
         if k not in best_by_key:
-            best_by_key[k] = ev
+            best_by_key[k] = component
             continue
 
         current_best = best_by_key[k]
-
-        cur_desc = (getattr(current_best, "description", "") or "")
-        new_desc = (getattr(ev, "description", "") or "")
+        cur_desc = str(current_best.get('description', ''))
+        new_desc = str(component.get('description', ''))
 
         cur_has_marker = SOURCE_MARKER in cur_desc
         new_has_marker = SOURCE_MARKER in new_desc
 
         if new_has_marker and not cur_has_marker:
             to_remove.append(current_best)
-            best_by_key[k] = ev
+            best_by_key[k] = component
         else:
-            to_remove.append(ev)
+            to_remove.append(component)
 
-    for ev in to_remove:
-        cal.events.discard(ev)
+    for comp in to_remove:
+        cal.subcomponents.remove(comp)
 
     return len(to_remove)
 
 
 def dedupe_by_url_keep_latest(cal: Calendar) -> int:
-    """
-    Para eventos do tips.gg (is_ours):
-    - Agrupa por URL extraída da descrição
-    - Mantém apenas o evento com begin mais "novo" (maior datetime UTC)
-    - Preferência adicional: se empatar, fica com o que tem SOURCE_MARKER
-    """
-    groups: dict[str, list[Event]] = {}
+    groups = {}
     removed = 0
 
-    for ev in list(cal.events):
-        if not is_ours(ev):
+    for component in list(cal.walk('VEVENT')):
+        if not is_ours(component):
             continue
 
-        desc = (getattr(ev, "description", "") or "")
+        desc = str(component.get('description', ''))
         url = extract_match_url_from_description(desc).strip().lower()
 
         if not url:
             continue
 
-        groups.setdefault(url, []).append(ev)
+        groups.setdefault(url, []).append(component)
 
-    for url, evs in groups.items():
-        if len(evs) <= 1:
+    for url, comps in groups.items():
+        if len(comps) <= 1:
             continue
 
-        def score(ev: Event):
+        def score(comp):
             try:
-                b = normalize_event_datetime_utc(ev.begin.datetime)
+                dt = comp.get('dtstart').dt
+                if isinstance(dt, datetime):
+                    b = normalize_event_datetime_utc(dt)
+                else:
+                    b = pytz.utc.localize(datetime.min)
             except Exception:
                 b = pytz.utc.localize(datetime.min)
 
-            desc = (getattr(ev, "description", "") or "")
+            desc = str(comp.get('description', ''))
             has_marker = 1 if SOURCE_MARKER in desc else 0
             return (b, has_marker)
 
-        keep = max(evs, key=score)
+        keep = max(comps, key=score)
 
-        for ev in evs:
-            if ev is keep:
+        for comp in comps:
+            if comp is keep:
                 continue
-            cal.events.discard(ev)
+            cal.subcomponents.remove(comp)
             removed += 1
 
     return removed
@@ -342,12 +301,6 @@ def build_stable_uid(
     organizer_name: str,
     match_url: str,
 ) -> str:
-    """
-    UID determinístico e estável:
-    - nome do jogo
-    - horário UTC normalizado (sem microsegundos, segundo=0)
-    - campeonato/organizer/url
-    """
     dt_norm = normalize_event_datetime_utc(match_time_utc)
 
     uid_payload = "|".join([
@@ -405,7 +358,7 @@ def scrape_one_day(
     stats["scripts_total"] = len(scripts)
 
     now_utc = datetime.now(pytz.utc)
-    new_events: list[Event] = []
+    new_events = []
 
     for script in scripts:
         raw = (script.string or "").strip()
@@ -490,15 +443,21 @@ def scrape_one_day(
             f"{SOURCE_MARKER}"
         )
 
+        # Criar evento com icalendar
         e = Event()
-        e.name = event_summary
-        e.begin = normalize_event_datetime_utc(match_time_utc)
-        e.duration = timedelta(hours=2)
-        e.description = event_description
-        e.uid = event_uid
+        e.add('summary', event_summary)
+        e.add('dtstart', normalize_event_datetime_utc(match_time_utc))
+        e.add('dtend', normalize_event_datetime_utc(match_time_utc) + timedelta(hours=2))
+        e.add('description', event_description)
+        e.add('uid', event_uid)
+        e.add('dtstamp', datetime.now(pytz.utc))
 
-        alarm = DisplayAlarm(trigger=timedelta(minutes=-15))
-        e.alarms.append(alarm)
+        # Adicionar alarme
+        alarm = Alarm()
+        alarm.add('action', 'DISPLAY')
+        alarm.add('trigger', timedelta(minutes=-15))
+        alarm.add('description', f'Lembrete: {event_summary}')
+        e.add_component(alarm)
 
         new_events.append(e)
         existing_uids.add(event_uid)
@@ -512,7 +471,7 @@ log("🔄 Iniciando execução (cursor rotativo)...")
 
 cal = load_calendar(CALENDAR_FILENAME)
 
-# 0) Dedup inicial (limpa o arquivo sujo)
+# 0) Dedup inicial
 deduped_initial = dedupe_calendar_events(cal)
 if deduped_initial:
     log(f"🧼 Deduplicação inicial: removidos {deduped_initial} eventos duplicados (tips.gg).")
@@ -521,22 +480,21 @@ deduped_by_url_initial = dedupe_by_url_keep_latest(cal)
 if deduped_by_url_initial:
     log(f"🧼 Dedup por URL (inicial): removidos {deduped_by_url_initial} eventos (mantido último horário).")
 
-# Recalcula uids após limpezas
 existing_uids = get_existing_uids(cal)
 
 today = datetime.now(BR_TZ).date()
 future_limit = today + timedelta(days=FUTURE_LIMIT_DAYS)
 
-# 1) Limpeza: remove eventos antigos
+# 1) Limpeza
 cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
 removed = prune_older_than(cal, cutoff)
 log(f"🧹 Limpeza: removidos {removed} eventos do script com data < {cutoff.strftime('%d/%m/%Y')}")
 
-# 2) Cursor rotativo: decide qual dia buscar agora
+# 2) Cursor rotativo
 target_day = load_cursor(today, future_limit)
 log(f"📌 Cursor atual: {target_day.strftime('%d/%m/%Y')} (range: {today.strftime('%d/%m/%Y')}..{future_limit.strftime('%d/%m/%Y')})")
 
-# 3) Scrape do dia alvo e incrementa
+# 3) Scrape
 driver = None
 total_added = 0
 ran_ok = False
@@ -549,9 +507,9 @@ try:
     new_events, stats = scrape_one_day(driver, target_day, existing_uids)
 
     for ev in new_events:
-        cal.events.add(ev)
+        cal.add_component(ev)
 
-    # 3.9) Deduplicação final (garantia)
+    # Deduplicação final
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final:
         log(f"🧼 Deduplicação final: removidos {deduped_final} eventos duplicados (tips.gg).")
@@ -596,7 +554,7 @@ try:
 except Exception as e:
     log(f"❌ Erro ao salvar {CALENDAR_FILENAME}: {e}")
 
-# 5) Avança cursor SOMENTE se rodou ok (pra não pular dia por falha)
+# 5) Avança cursor
 if ran_ok:
     next_day = target_day + timedelta(days=1)
     if next_day > future_limit:
