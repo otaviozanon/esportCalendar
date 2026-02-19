@@ -19,18 +19,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 
 # -------------------- Configurações Globais --------------------
-BRAZILIAN_TEAMS = [
-    "FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo",
-    "RED Canids", "Legacy", "ODDIK", "Imperial Esports"
-]
-
-BRAZILIAN_TEAMS_EXCLUSIONS = [
-    "Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A",
-    "Imperial Academy", "Imperial.Acd", "Imperial Female",
-    "Furia Academy", "Furia.A", "Pain Academy", "Mibr Academy", "Legacy Academy", "ODDIK Academy",
-    "RED Canids Academy", "Fluxo Academy"
-]
-
 CALENDAR_FILENAME = "calendar.ics"
 STATE_FILE = "state.json"
 
@@ -46,23 +34,60 @@ SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
 
 
+# -------------------- Jogos / Times --------------------
+def normalize_team(name: str) -> str:
+    return (name or "").lower().strip()
+
+
+GAMES = {
+    # CS2 (no tips.gg continua sendo /csgo/)
+    "CS2": {
+        "prefix": "[CS2] ",
+        "base_path": "https://tips.gg/csgo/matches/",
+        "teams": {"FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo", "RED Canids", "Legacy", "ODDIK", "Imperial Esports"},
+        "exclusions": {
+            "Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A",
+            "Imperial Academy", "Imperial.Acd", "Imperial Female",
+            "Furia Academy", "Furia.A", "Pain Academy", "Mibr Academy", "Legacy Academy", "ODDIK Academy",
+            "RED Canids Academy", "Fluxo Academy"
+        },
+    },
+    "VAL": {
+        "prefix": "[V] ",
+        "base_path": "https://tips.gg/valorant/matches/",
+        "teams": {"LOUD", "FURIA", "MIBR"},
+        "exclusions": set(),
+    },
+    "RL": {
+        "prefix": "[RL] ",
+        "base_path": "https://tips.gg/rl/matches/",
+        "teams": {"FURIA", "Team Secret"},
+        "exclusions": set(),
+    },
+    "LOL": {
+        "prefix": "[LOL] ",
+        "base_path": "https://tips.gg/lol/matches/",
+        "teams": {"paiN Gaming", "LOUD", "Vivo Keyd Stars", "RED Canids"},
+        "exclusions": set(),
+    },
+}
+
+# Pre-normaliza
+for k, cfg in GAMES.items():
+    cfg["teams_norm"] = {normalize_team(t) for t in cfg["teams"]}
+    cfg["exclusions_norm"] = {normalize_team(t) for t in cfg["exclusions"]}
+
+
 # -------------------- Helpers --------------------
 def log(msg: str):
     now = datetime.now(BR_TZ).strftime("%H:%M:%S")
     print(f"[{now}] {msg}")
 
 
-def normalize_team(name: str) -> str:
-    return (name or "").lower().strip()
-
-
-NORMALIZED_BRAZILIAN_TEAMS = {normalize_team(t) for t in BRAZILIAN_TEAMS}
-NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS = {normalize_team(t) for t in BRAZILIAN_TEAMS_EXCLUSIONS}
-
-
-def build_url_for_day(target_date: date) -> str:
+def build_url_for_day(base_path: str, target_date: date) -> str:
     date_str = target_date.strftime("%d-%m-%Y")
-    return f"https://tips.gg/csgo/matches/{date_str}/"
+    # base_path já termina com /matches/
+    return f"{base_path}{date_str}/"
 
 
 def load_calendar(path: str) -> Calendar:
@@ -295,6 +320,7 @@ def setup_driver() -> webdriver.Chrome:
 
 
 def build_stable_uid(
+    game_key: str,
     event_summary: str,
     match_time_utc: datetime,
     tournament_desc: str,
@@ -304,6 +330,7 @@ def build_stable_uid(
     dt_norm = normalize_event_datetime_utc(match_time_utc)
 
     uid_payload = "|".join([
+        (game_key or "").strip().lower(),
         (event_summary or "").strip().lower(),
         dt_norm.isoformat(),
         (tournament_desc or "").strip().lower(),
@@ -314,21 +341,31 @@ def build_stable_uid(
     return hashlib.sha1(uid_payload.encode("utf-8")).hexdigest()
 
 
-def scrape_one_day(
+def match_url_absolute(match_url: str) -> str:
+    match_url = match_url or ""
+    if match_url and not match_url.startswith("http"):
+        return f"https://tips.gg{match_url}"
+    return match_url
+
+
+def scrape_one_day_for_game(
     driver: webdriver.Chrome,
+    game_key: str,
+    game_cfg: dict,
     target_day: date,
     existing_uids: set
 ) -> tuple[list[Event], dict]:
     stats = {
+        "game": game_key,
         "date": target_day.strftime("%d/%m/%Y"),
-        "url": build_url_for_day(target_day),
+        "url": build_url_for_day(game_cfg["base_path"], target_day),
         "scripts_total": 0,
         "sports_events": 0,
         "added": 0,
         "skipped_tbd": 0,
         "skipped_past": 0,
         "skipped_no_competitors": 0,
-        "skipped_not_br": 0,
+        "skipped_not_allowed": 0,
         "skipped_bad_date": 0,
         "json_decode_errors": 0,
         "timeouts_load": 0,
@@ -360,6 +397,10 @@ def scrape_one_day(
     now_utc = datetime.now(pytz.utc)
     new_events = []
 
+    teams_norm = game_cfg["teams_norm"]
+    exclusions_norm = game_cfg["exclusions_norm"]
+    prefix = game_cfg["prefix"]
+
     for script in scripts:
         raw = (script.string or "").strip()
         if not raw:
@@ -379,10 +420,7 @@ def scrape_one_day(
         start_date_str = event_data.get("startDate", "") or ""
         description = event_data.get("description", "") or ""
         organizer_name = (event_data.get("organizer") or {}).get("name", "Desconhecido")
-        match_url = event_data.get("url", "") or ""
-
-        if match_url and not match_url.startswith("http"):
-            match_url = f"https://tips.gg{match_url}"
+        match_url = match_url_absolute(event_data.get("url", "") or "")
 
         competitors = event_data.get("competitor", []) or []
         if len(competitors) < 2:
@@ -409,23 +447,20 @@ def scrape_one_day(
             stats["skipped_past"] += 1
             continue
 
-        normalized_team1 = normalize_team(team1_raw)
-        normalized_team2 = normalize_team(team2_raw)
+        t1 = normalize_team(team1_raw)
+        t2 = normalize_team(team2_raw)
 
-        is_br_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS
-        is_br_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS
-
-        is_excluded_team1 = normalized_team1 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
-        is_excluded_team2 = normalized_team2 in NORMALIZED_BRAZILIAN_TEAMS_EXCLUSIONS
-
-        is_br_team_involved = (is_br_team1 and not is_excluded_team1) or (is_br_team2 and not is_excluded_team2)
-        if not is_br_team_involved:
-            stats["skipped_not_br"] += 1
+        # Regra: pelo menos um time precisa estar na lista permitida, e não pode ser "exclusion"
+        allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
+        allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
+        if not (allowed_t1 or allowed_t2):
+            stats["skipped_not_allowed"] += 1
             continue
 
-        event_summary = f"{team1_raw} vs {team2_raw}"
+        event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
 
         event_uid = build_stable_uid(
+            game_key=game_key,
             event_summary=event_summary,
             match_time_utc=match_time_utc,
             tournament_desc=description,
@@ -443,7 +478,6 @@ def scrape_one_day(
             f"{SOURCE_MARKER}"
         )
 
-        # Criar evento com icalendar
         e = Event()
         e.add('summary', event_summary)
         e.add('dtstart', normalize_event_datetime_utc(match_time_utc))
@@ -452,7 +486,6 @@ def scrape_one_day(
         e.add('uid', event_uid)
         e.add('dtstamp', datetime.now(pytz.utc))
 
-        # Adicionar alarme
         alarm = Alarm()
         alarm.add('action', 'DISPLAY')
         alarm.add('trigger', timedelta(minutes=-15))
@@ -471,7 +504,6 @@ log("🔄 Iniciando execução (cursor rotativo)...")
 
 cal = load_calendar(CALENDAR_FILENAME)
 
-# 0) Dedup inicial
 deduped_initial = dedupe_calendar_events(cal)
 if deduped_initial:
     log(f"🧼 Deduplicação inicial: removidos {deduped_initial} eventos duplicados (tips.gg).")
@@ -485,29 +517,42 @@ existing_uids = get_existing_uids(cal)
 today = datetime.now(BR_TZ).date()
 future_limit = today + timedelta(days=FUTURE_LIMIT_DAYS)
 
-# 1) Limpeza
 cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
 removed = prune_older_than(cal, cutoff)
 log(f"🧹 Limpeza: removidos {removed} eventos do script com data < {cutoff.strftime('%d/%m/%Y')}")
 
-# 2) Cursor rotativo
 target_day = load_cursor(today, future_limit)
 log(f"📌 Cursor atual: {target_day.strftime('%d/%m/%Y')} (range: {today.strftime('%d/%m/%Y')}..{future_limit.strftime('%d/%m/%Y')})")
 
-# 3) Scrape
 driver = None
 total_added = 0
 ran_ok = False
 
 try:
-    url = build_url_for_day(target_day)
-    log(f"🌐 Abrindo Selenium e raspando: {target_day.strftime('%d/%m/%Y')} -> {url}")
-
     driver = setup_driver()
-    new_events, stats = scrape_one_day(driver, target_day, existing_uids)
 
-    for ev in new_events:
-        cal.add_component(ev)
+    # Agora: roda TODOS os jogos no mesmo dia do cursor
+    for game_key, cfg in GAMES.items():
+        url = build_url_for_day(cfg["base_path"], target_day)
+        log(f"🌐 Raspando {game_key} em {target_day.strftime('%d/%m/%Y')} -> {url}")
+
+        new_events, stats = scrape_one_day_for_game(driver, game_key, cfg, target_day, existing_uids)
+
+        for ev in new_events:
+            cal.add_component(ev)
+
+        total_added += stats["added"]
+
+        log(f"🧾 RESUMO {game_key} - {stats['date']}")
+        log(f"  scripts={stats['scripts_total']} sports={stats['sports_events']} added={stats['added']}")
+        log(
+            f"  skipped: tbd={stats['skipped_tbd']} past={stats['skipped_past']} "
+            f"not_allowed={stats['skipped_not_allowed']} bad_date={stats['skipped_bad_date']}"
+        )
+        log(
+            f"  timeouts: load={stats['timeouts_load']} jsonld={stats['timeouts_jsonld']} "
+            f"json_err={stats['json_decode_errors']}"
+        )
 
     # Deduplicação final
     deduped_final = dedupe_calendar_events(cal)
@@ -519,19 +564,6 @@ try:
         log(f"🧼 Dedup por URL (final): removidos {deduped_by_url_final} eventos (mantido último horário).")
 
     existing_uids = get_existing_uids(cal)
-    total_added = stats["added"]
-
-    log(f"🧾 RESUMO DO DIA {stats['date']}")
-    log(f"  scripts={stats['scripts_total']} sports={stats['sports_events']} added={stats['added']}")
-    log(
-        f"  skipped: tbd={stats['skipped_tbd']} past={stats['skipped_past']} "
-        f"not_br={stats['skipped_not_br']} bad_date={stats['skipped_bad_date']}"
-    )
-    log(
-        f"  timeouts: load={stats['timeouts_load']} jsonld={stats['timeouts_jsonld']} "
-        f"json_err={stats['json_decode_errors']}"
-    )
-
     ran_ok = True
 
 except WebDriverException as e:
@@ -546,7 +578,6 @@ finally:
             pass
         log("⚙️ Selenium fechado.")
 
-# 4) Salva calendário
 log(f"💾 Salvando arquivo: {CALENDAR_FILENAME}")
 try:
     save_calendar(cal, CALENDAR_FILENAME)
@@ -554,7 +585,6 @@ try:
 except Exception as e:
     log(f"❌ Erro ao salvar {CALENDAR_FILENAME}: {e}")
 
-# 5) Avança cursor
 if ran_ok:
     next_day = target_day + timedelta(days=1)
     if next_day > future_limit:
