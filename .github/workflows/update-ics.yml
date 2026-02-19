@@ -52,7 +52,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "✅ Nenhuma mudança detectada - commit ignorado"
           else
-            git commit -m "Atualizar ICS CS2 - $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            git commit -m "Atualizar ICS - $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
             git push
             echo "✅ Mudanças detectadas e commitadas com sucesso"
           fi
