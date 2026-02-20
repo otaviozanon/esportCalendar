@@ -205,4 +205,36 @@ DESCRIPTION:Lembrete: [CS2] MIBR vs ODDIK
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] Sharks Esports vs Imperial
+DTSTART:20260220T220000Z
+DTEND:20260221T000000Z
+DTSTAMP:20260220T073452Z
+UID:09232a68944ce62f34d9bfa94736f02816979cae
+DESCRIPTION:🏆 BO3 Match. Cup #1. South America. CS2 (CS:GO) Major.\n
+ 📍 ESL Challenger League Season 51 South America\n🌐 https://tips.gg/m
+ atches/counter-strike/20-02-2026/sharks-esports-vs-imperial/10-00/\nX-SETT
+ -SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] Sharks Esports vs Imperial
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] largadosypelados vs RED Canids
+DTSTART:20260220T220000Z
+DTEND:20260221T000000Z
+DTSTAMP:20260220T073452Z
+UID:a2488ccb611ac4aef60d1c9d794d7134ee7c9ad1
+DESCRIPTION:🏆 BO3 Match. Cup #1. South America. CS2 (CS:GO) Major.\n
+ 📍 ESL Challenger League Season 51 South America\n🌐 https://tips.gg/m
+ atches/counter-strike/20-02-2026/largadosypelados-vs-red-canids/10-00/\nX-
+ SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] largadosypelados vs RED Canids
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
 END:VCALENDAR
