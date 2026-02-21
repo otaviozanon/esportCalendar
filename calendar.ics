@@ -74,20 +74,6 @@ TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-SUMMARY:Fluxo vs Game Hunters
-DTSTART:20260213T130000Z
-DURATION:PT2H
-UID:66293d0f5a3928d013672e77cfc4493f34959b37
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
- 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
- unter-strike/13-02-2026/fluxo-vs-game-hunters/01-00/\nX-SETT-SOURCE:TIPSGG
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:Aurora Gaming vs paiN Gaming
 DTSTART:20260215T140000Z
 DURATION:PT2H
@@ -124,20 +110,6 @@ DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
  📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
  unter-strike/15-02-2026/red-canids-vs-largadosypelados/03-00/\nX-SETT-SOUR
  CE:TIPSGG
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-SUMMARY:ODDIK vs Fake do Biru
-DTSTART:20260213T160000Z
-DURATION:PT2H
-UID:3b0bcd750105245b8ef5d6a7077902b22e753c73
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
- 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
- unter-strike/13-02-2026/oddik-vs-fake-do-biru/04-00/\nX-SETT-SOURCE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
