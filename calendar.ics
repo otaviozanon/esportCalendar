@@ -3,21 +3,6 @@ VERSION:2.0
 PRODID:ics.py - http://git.io/lLljaA
 CALSCALE:GEORGIAN
 BEGIN:VEVENT
-SUMMARY:RED Canids vs Sharks Esports
-DTSTART:20260215T210000Z
-DURATION:PT2H
-UID:fe1f1c02097f9436ddee9c7548daa4671fd0fa1d
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
- 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
- unter-strike/15-02-2026/red-canids-vs-sharks-esports/09-00/\nX-SETT-SOURCE
- :TIPSGG
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:G2 Esports vs paiN Gaming
 DTSTART:20260216T170000Z
 DURATION:PT2H
@@ -39,49 +24,6 @@ UID:1ba4072a96296e65709c4120edf0b418a9787743
 DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n
  📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/16-
  02-2026/furia-vs-falcons-esports/05-00/\nX-SETT-SOURCE:TIPSGG
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-SUMMARY:Aurora Gaming vs paiN Gaming
-DTSTART:20260215T140000Z
-DURATION:PT2H
-UID:fe9e9c680878410a2b76724ae44b943fd3a4bb29
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n
- 📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/15-
- 02-2026/aurora-gaming-vs-pain-gaming/02-00/\nX-SETT-SOURCE:TIPSGG
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-SUMMARY:FURIA vs FUT Esports
-DTSTART:20260215T140000Z
-DURATION:PT2H
-UID:6cc783b3db714d2eb7861bbaa2ee69726fb0209a
-DESCRIPTION:🏆 BO3 Match. Group Stage. Romania. CS2 (CS:GO) Premier.\n
- 📍 PGL Cluj-Napoca 2026\n🌐 https://tips.gg/matches/counter-strike/15-
- 02-2026/furia-vs-fut-esports/02-00/\nX-SETT-SOURCE:TIPSGG
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-SUMMARY:RED Canids vs largadosypelados
-DTSTART:20260215T150000Z
-DURATION:PT2H
-UID:4b4c0861a580d51d0f95aabff9a9c5dd9f470416
-DESCRIPTION:🏆 BO3 Match. Playoffs. South America. CS2 (CS:GO) Minor.\n
- 📍 CCT Season 3 South America Series #8\n🌐 https://tips.gg/matches/co
- unter-strike/15-02-2026/red-canids-vs-largadosypelados/03-00/\nX-SETT-SOUR
- CE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:
