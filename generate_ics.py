@@ -44,7 +44,7 @@ GAMES = {
     "CS2": {
         "prefix": "[CS2] ",
         "base_path": "https://tips.gg/csgo/matches/",
-        "teams": {"FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo", "RED Canids", "Legacy", "ODDIK", "Imperial Esports"},
+        "teams": {"FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo", "RED Canids", "Legacy", "ODDIK", "Imperial Esports", "Gaimin Gladiators" },
         "exclusions": {
             "Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A",
             "Imperial Academy", "Imperial.Acd", "Imperial Female",
