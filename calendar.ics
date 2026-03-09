@@ -377,4 +377,64 @@ DESCRIPTION:Lembrete: [CS2] FURIA vs paiN Gaming
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] Gaimin Gladiators vs OlyBet SB
+DTSTART:20260313T121500Z
+DTEND:20260313T141500Z
+DTSTAMP:20260309T105419Z
+UID:84cf88d494117385faf70eb04d1b747e4c340ddf
+DESCRIPTION:🏆 BO1 Match. Group C. Portugal. CS2 (CS:GO) Minor.\n📍 Ro
+ man Imperium Cup VI\n🌐 https://tips.gg/matches/counter-strike/13-03-202
+ 6/gaimin-gladiators-vs-olybet-sb/12-15/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] Gaimin Gladiators vs OlyBet SB
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] Gaimin Gladiators vs FC Famalicão Esports
+DTSTART:20260313T123000Z
+DTEND:20260313T143000Z
+DTSTAMP:20260309T105419Z
+UID:bc889f582bc83fa9e13b5374a1e062034ef5d9d1
+DESCRIPTION:🏆 BO1 Match. Group C. Portugal. CS2 (CS:GO) Minor.\n📍 Ro
+ man Imperium Cup VI\n🌐 https://tips.gg/matches/counter-strike/13-03-202
+ 6/gaimin-gladiators-vs-fc-famalicao-esports/12-30/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] Gaimin Gladiators vs FC Famalicão Esports
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] BESTIA vs Gaimin Gladiators
+DTSTART:20260313T134500Z
+DTEND:20260313T154500Z
+DTSTAMP:20260309T105419Z
+UID:c376062ba0b829bc8ea61c7f31215bbe62539185
+DESCRIPTION:🏆 BO1 Match. Group C. Portugal. CS2 (CS:GO) Minor.\n📍 Ro
+ man Imperium Cup VI\n🌐 https://tips.gg/matches/counter-strike/13-03-202
+ 6/bestia-vs-gaimin-gladiators/01-45/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] BESTIA vs Gaimin Gladiators
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] Team Liquid vs Gaimin Gladiators
+DTSTART:20260313T150000Z
+DTEND:20260313T170000Z
+DTSTAMP:20260309T105419Z
+UID:63bf4264941280e4511083d80c6bb4c12d0513d1
+DESCRIPTION:🏆 BO1 Match. Group C. Portugal. CS2 (CS:GO) Minor.\n📍 Ro
+ man Imperium Cup VI\n🌐 https://tips.gg/matches/counter-strike/13-03-202
+ 6/team-liquid-vs-gaimin-gladiators/03-00/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] Team Liquid vs Gaimin Gladiators
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
 END:VCALENDAR
