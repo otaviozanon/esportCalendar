@@ -40,11 +40,10 @@ def normalize_team(name: str) -> str:
 
 
 GAMES = {
-    # CS2 (no tips.gg continua sendo /csgo/)
     "CS2": {
         "prefix": "[CS2] ",
         "base_path": "https://tips.gg/csgo/matches/",
-        "teams": {"FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo", "RED Canids", "Legacy", "ODDIK", "Imperial Esports", "Gaimin Gladiators" },
+        "teams": {"FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo", "RED Canids", "Legacy", "ODDIK", "Imperial Esports", "Gaimin Gladiators"},
         "exclusions": {
             "Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A",
             "Imperial Academy", "Imperial.Acd", "Imperial Female",
@@ -72,7 +71,6 @@ GAMES = {
     },
 }
 
-# Pre-normaliza
 for k, cfg in GAMES.items():
     cfg["teams_norm"] = {normalize_team(t) for t in cfg["teams"]}
     cfg["exclusions_norm"] = {normalize_team(t) for t in cfg["exclusions"]}
@@ -86,7 +84,6 @@ def log(msg: str):
 
 def build_url_for_day(base_path: str, target_date: date) -> str:
     date_str = target_date.strftime("%d-%m-%Y")
-    # base_path já termina com /matches/
     return f"{base_path}{date_str}/"
 
 
@@ -348,55 +345,43 @@ def match_url_absolute(match_url: str) -> str:
     return match_url
 
 
-def scrape_one_day_for_game(
-    driver: webdriver.Chrome,
-    game_key: str,
-    game_cfg: dict,
-    target_day: date,
-    existing_uids: set
-) -> tuple[list[Event], dict]:
-    stats = {
-        "game": game_key,
-        "date": target_day.strftime("%d/%m/%Y"),
-        "url": build_url_for_day(game_cfg["base_path"], target_day),
-        "scripts_total": 0,
-        "sports_events": 0,
-        "added": 0,
-        "skipped_tbd": 0,
-        "skipped_past": 0,
-        "skipped_no_competitors": 0,
-        "skipped_not_allowed": 0,
-        "skipped_bad_date": 0,
-        "json_decode_errors": 0,
-        "timeouts_load": 0,
-        "timeouts_jsonld": 0,
-    }
+# -------------------- Parse de horário com fallback de timezone --------------------
+def parse_match_time(date_str: str, time_str: str) -> datetime | None:
+    """
+    Tenta interpretar o horário exibido no site como horário de Brasília.
+    Se isso falhar, tenta como UTC puro (sem conversão).
+    Retorna datetime em UTC ou None se tudo falhar.
+    """
+    # Normaliza time_str: remove sufixos como " CET", " UTC", etc.
+    time_clean = time_str.strip().split(" ")[0]
 
-    url = stats["url"]
-
-    try:
-        driver.get(url)
-    except TimeoutException:
-        stats["timeouts_load"] += 1
+    # Tenta formato DD.MM.YYYY HH:MM (horário de Brasília — padrão esperado)
+    for fmt in ("%d.%m.%Y %H:%M", "%d-%m-%Y %H:%M"):
         try:
-            driver.execute_script("window.stop();")
+            naive = datetime.strptime(f"{date_str} {time_clean}", fmt)
+            local = BR_TZ.localize(naive)
+            return local.astimezone(pytz.utc)
         except Exception:
-            pass
+            continue
 
-    try:
-        WebDriverWait(driver, JSONLD_WAIT_SECONDS).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'script[type="application/ld+json"]'))
-        )
-    except TimeoutException:
-        stats["timeouts_jsonld"] += 1
+    # Fallback: trata como UTC direto
+    for fmt in ("%d.%m.%Y %H:%M", "%d-%m-%Y %H:%M"):
+        try:
+            naive = datetime.strptime(f"{date_str} {time_clean}", fmt)
+            return pytz.utc.localize(naive)
+        except Exception:
+            continue
 
-    soup = BeautifulSoup(driver.page_source, "html.parser")
+    return None
+
+
+# -------------------- Scraping via JSON-LD --------------------
+def scrape_via_jsonld(soup: BeautifulSoup, game_key: str, game_cfg: dict,
+                      existing_uids: set, now_utc: datetime, stats: dict) -> list[Event]:
     scripts = soup.find_all("script", type="application/ld+json")
     stats["scripts_total"] = len(scripts)
 
-    now_utc = datetime.now(pytz.utc)
     new_events = []
-
     teams_norm = game_cfg["teams_norm"]
     exclusions_norm = game_cfg["exclusions_norm"]
     prefix = game_cfg["prefix"]
@@ -450,7 +435,6 @@ def scrape_one_day_for_game(
         t1 = normalize_team(team1_raw)
         t2 = normalize_team(team2_raw)
 
-        # Regra: pelo menos um time precisa estar na lista permitida, e não pode ser "exclusion"
         allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
         allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
         if not (allowed_t1 or allowed_t2):
@@ -496,6 +480,198 @@ def scrape_one_day_for_game(
         existing_uids.add(event_uid)
         stats["added"] += 1
 
+    return new_events
+
+
+# -------------------- Scraping via DOM HTML (fallback) --------------------
+def scrape_via_dom(soup: BeautifulSoup, game_key: str, game_cfg: dict,
+                   existing_uids: set, now_utc: datetime, stats: dict) -> list[Event]:
+    match_elements = soup.select('.element.match')
+    stats["dom_matches_found"] = len(match_elements)
+
+    new_events = []
+    teams_norm = game_cfg["teams_norm"]
+    exclusions_norm = game_cfg["exclusions_norm"]
+    prefix = game_cfg["prefix"]
+
+    for el in match_elements:
+        team_names = [t.get_text(strip=True) for t in el.select('.team .name')]
+        if len(team_names) < 2:
+            stats["skipped_no_competitors"] += 1
+            continue
+
+        team1_raw, team2_raw = team_names[0], team_names[1]
+
+        if team1_raw == "TBD" or team2_raw == "TBD":
+            stats["skipped_tbd"] += 1
+            continue
+
+        # URL do match
+        link_tag = el.select_one('a.match-link')
+        match_url = link_tag['href'] if link_tag and link_tag.get('href') else ""
+        if match_url and not match_url.startswith("http"):
+            match_url = f"https://tips.gg{match_url}"
+
+        # Data e hora exibidas na página
+        date_span = el.select_one('.status')
+        time_span = el.select_one('.time')
+
+        date_str = date_span.get_text(strip=True) if date_span else ""
+        time_str = time_span.get_text(strip=True) if time_span else "00:00"
+
+        match_time_utc = parse_match_time(date_str, time_str)
+        if match_time_utc is None:
+            stats["skipped_bad_date"] += 1
+            continue
+
+        if match_time_utc < now_utc:
+            stats["skipped_past"] += 1
+            continue
+
+        t1 = normalize_team(team1_raw)
+        t2 = normalize_team(team2_raw)
+
+        allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
+        allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
+        if not (allowed_t1 or allowed_t2):
+            stats["skipped_not_allowed"] += 1
+            continue
+
+        # Tenta extrair torneio do href
+        # Ex: /matches/counter-strike/08-04-2026/b8-vs-legacy/11-00/
+        tournament_desc = ""
+        if match_url:
+            parts = match_url.rstrip("/").split("/")
+            if len(parts) >= 5:
+                tournament_desc = parts[-4]  # "counter-strike", "valorant", etc.
+
+        event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
+
+        event_uid = build_stable_uid(
+            game_key=game_key,
+            event_summary=event_summary,
+            match_time_utc=match_time_utc,
+            tournament_desc=tournament_desc,
+            organizer_name=tournament_desc,
+            match_url=match_url,
+        )
+
+        if event_uid in existing_uids:
+            continue
+
+        event_description = (
+            f"🏆 {tournament_desc}\n"
+            f"📍 {tournament_desc}\n"
+            f"🌐 {match_url}\n"
+            f"{SOURCE_MARKER}"
+        )
+
+        e = Event()
+        e.add('summary', event_summary)
+        e.add('dtstart', normalize_event_datetime_utc(match_time_utc))
+        e.add('dtend', normalize_event_datetime_utc(match_time_utc) + timedelta(hours=2))
+        e.add('description', event_description)
+        e.add('uid', event_uid)
+        e.add('dtstamp', datetime.now(pytz.utc))
+
+        alarm = Alarm()
+        alarm.add('action', 'DISPLAY')
+        alarm.add('trigger', timedelta(minutes=-15))
+        alarm.add('description', f'Lembrete: {event_summary}')
+        e.add_component(alarm)
+
+        new_events.append(e)
+        existing_uids.add(event_uid)
+        stats["added"] += 1
+
+    return new_events
+
+
+# -------------------- Orquestrador principal --------------------
+def scrape_one_day_for_game(
+    driver: webdriver.Chrome,
+    game_key: str,
+    game_cfg: dict,
+    target_day: date,
+    existing_uids: set
+) -> tuple[list[Event], dict]:
+    stats = {
+        "game": game_key,
+        "date": target_day.strftime("%d/%m/%Y"),
+        "url": build_url_for_day(game_cfg["base_path"], target_day),
+        "method": "none",
+        # JSON-LD
+        "scripts_total": 0,
+        "sports_events": 0,
+        # DOM
+        "dom_matches_found": 0,
+        # Comuns
+        "added": 0,
+        "skipped_tbd": 0,
+        "skipped_past": 0,
+        "skipped_no_competitors": 0,
+        "skipped_not_allowed": 0,
+        "skipped_bad_date": 0,
+        "json_decode_errors": 0,
+        "timeouts_load": 0,
+        "timeouts_wait": 0,
+    }
+
+    url = stats["url"]
+
+    # Carrega a página
+    try:
+        driver.get(url)
+    except TimeoutException:
+        stats["timeouts_load"] += 1
+        try:
+            driver.execute_script("window.stop();")
+        except Exception:
+            pass
+
+    # Espera pelo JSON-LD primeiro; se não aparecer, espera pelo DOM
+    jsonld_found = False
+    try:
+        WebDriverWait(driver, JSONLD_WAIT_SECONDS).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'script[type="application/ld+json"]'))
+        )
+        jsonld_found = True
+    except TimeoutException:
+        pass
+
+    if not jsonld_found:
+        # Tenta aguardar elementos DOM como fallback
+        try:
+            WebDriverWait(driver, JSONLD_WAIT_SECONDS).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, '.element.match'))
+            )
+        except TimeoutException:
+            stats["timeouts_wait"] += 1
+
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    now_utc = datetime.now(pytz.utc)
+
+    # Tenta JSON-LD primeiro
+    jsonld_scripts = soup.find_all("script", type="application/ld+json")
+    sports_in_jsonld = False
+    if jsonld_scripts:
+        for s in jsonld_scripts:
+            raw = (s.string or "").strip()
+            try:
+                d = json.loads(raw)
+                if d.get("@type") == "SportsEvent":
+                    sports_in_jsonld = True
+                    break
+            except Exception:
+                pass
+
+    if sports_in_jsonld:
+        stats["method"] = "jsonld"
+        new_events = scrape_via_jsonld(soup, game_key, game_cfg, existing_uids, now_utc, stats)
+    else:
+        stats["method"] = "dom"
+        new_events = scrape_via_dom(soup, game_key, game_cfg, existing_uids, now_utc, stats)
+
     return new_events, stats
 
 
@@ -531,7 +707,6 @@ ran_ok = False
 try:
     driver = setup_driver()
 
-    # Agora: roda TODOS os jogos no mesmo dia do cursor
     for game_key, cfg in GAMES.items():
         url = build_url_for_day(cfg["base_path"], target_day)
         log(f"🌐 Raspando {game_key} em {target_day.strftime('%d/%m/%Y')} -> {url}")
@@ -543,18 +718,17 @@ try:
 
         total_added += stats["added"]
 
-        log(f"🧾 RESUMO {game_key} - {stats['date']}")
-        log(f"  scripts={stats['scripts_total']} sports={stats['sports_events']} added={stats['added']}")
+        log(f"🧾 RESUMO {game_key} - {stats['date']} [método: {stats['method']}]")
+        log(f"  scripts={stats['scripts_total']} sports={stats['sports_events']} dom_matches={stats['dom_matches_found']} added={stats['added']}")
         log(
             f"  skipped: tbd={stats['skipped_tbd']} past={stats['skipped_past']} "
             f"not_allowed={stats['skipped_not_allowed']} bad_date={stats['skipped_bad_date']}"
         )
         log(
-            f"  timeouts: load={stats['timeouts_load']} jsonld={stats['timeouts_jsonld']} "
+            f"  timeouts: load={stats['timeouts_load']} wait={stats['timeouts_wait']} "
             f"json_err={stats['json_decode_errors']}"
         )
 
-    # Deduplicação final
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final:
         log(f"🧼 Deduplicação final: removidos {deduped_final} eventos duplicados (tips.gg).")
