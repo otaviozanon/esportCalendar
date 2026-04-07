@@ -4,6 +4,7 @@ import hashlib
 import time
 import random
 import requests
+import cloudscraper
 from datetime import datetime, timedelta, date
 
 import pytz
@@ -30,7 +31,7 @@ BR_TZ = pytz.timezone("America/Sao_Paulo")
 FUTURE_LIMIT_DAYS = 4
 DELETE_OLDER_THAN_DAYS = 7
 
-REQUEST_TIMEOUT = 20
+REQUEST_TIMEOUT = 30
 REQUEST_DELAY = 2
 PAGE_LOAD_TIMEOUT_SECONDS = 20
 JSONLD_WAIT_SECONDS = 12
@@ -313,28 +314,58 @@ def soup_has_sports_events(soup: BeautifulSoup) -> bool:
     return False
 
 
+def fetch_soup_with_cloudscraper(url: str) -> BeautifulSoup | None:
+    """Tenta buscar via cloudscraper — contorna Cloudflare."""
+    try:
+        scraper = cloudscraper.create_scraper(
+            browser={
+                "browser": "chrome",
+                "platform": "windows",
+                "mobile": False,
+            }
+        )
+
+        try:
+            scraper.get("https://tips.gg/", timeout=REQUEST_TIMEOUT)
+            time.sleep(random.uniform(1.0, 2.0))
+        except Exception:
+            pass
+
+        resp = scraper.get(url, timeout=REQUEST_TIMEOUT)
+
+        if resp.status_code == 403:
+            log(f"  ↳ cloudscraper: 403 Forbidden")
+            return None
+
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        if soup_has_sports_events(soup):
+            return soup
+
+        if soup.select('.element.match'):
+            return soup
+
+        log(f"  ↳ cloudscraper: página sem conteúdo útil")
+        return None
+
+    except Exception as e:
+        log(f"  ↳ cloudscraper falhou: {e}")
+        return None
+
+
 def fetch_soup_with_requests(url: str) -> BeautifulSoup | None:
-    """Tenta buscar via requests com sessão, cookies da home e retry com backoff."""
+    """Tenta buscar via requests com retry e backoff."""
     for attempt in range(3):
         try:
             session = requests.Session()
-
-            # Visita a home primeiro para obter cookies de sessão
             try:
-                session.get(
-                    "https://tips.gg/",
-                    headers=get_random_headers(),
-                    timeout=REQUEST_TIMEOUT
-                )
-                time.sleep(1 + random.uniform(0, 1))
+                session.get("https://tips.gg/", headers=get_random_headers(), timeout=REQUEST_TIMEOUT)
+                time.sleep(random.uniform(1.0, 2.0))
             except Exception:
                 pass
 
-            resp = session.get(
-                url,
-                headers=get_random_headers(),
-                timeout=REQUEST_TIMEOUT
-            )
+            resp = session.get(url, headers=get_random_headers(), timeout=REQUEST_TIMEOUT)
 
             if resp.status_code == 403:
                 log(f"  ↳ requests tentativa {attempt + 1}/3: 403 Forbidden")
@@ -347,7 +378,10 @@ def fetch_soup_with_requests(url: str) -> BeautifulSoup | None:
             if soup_has_sports_events(soup):
                 return soup
 
-            log(f"  ↳ requests tentativa {attempt + 1}/3: sem SportsEvent JSON-LD")
+            if soup.select('.element.match'):
+                return soup
+
+            log(f"  ↳ requests tentativa {attempt + 1}/3: sem conteúdo útil")
             return None
 
         except Exception as e:
@@ -395,6 +429,17 @@ def fetch_soup_with_selenium(url: str, driver: webdriver.Chrome) -> BeautifulSou
 
 
 def fetch_soup(url: str, driver: webdriver.Chrome | None) -> tuple[BeautifulSoup | None, str]:
+    """
+    Cascata de fetch:
+    1. cloudscraper
+    2. requests
+    3. Selenium
+    """
+    log(f"  → Tentando cloudscraper...")
+    soup = fetch_soup_with_cloudscraper(url)
+    if soup is not None:
+        return soup, "cloudscraper"
+
     log(f"  → Tentando requests...")
     soup = fetch_soup_with_requests(url)
     if soup is not None:
@@ -422,15 +467,12 @@ def setup_driver() -> webdriver.Chrome:
     chrome_options.add_argument("--disable-extensions")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option("useAutomationExtension", False)
-    chrome_options.add_argument(
-        f"user-agent={random.choice(USER_AGENTS)}"
-    )
+    chrome_options.add_argument(f"user-agent={random.choice(USER_AGENTS)}")
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT_SECONDS)
 
-    # Remove flag webdriver do navigator
     driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
         "source": """
             Object.defineProperty(navigator, 'webdriver', {
