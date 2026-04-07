@@ -2,6 +2,7 @@ import os
 import json
 import hashlib
 import time
+import random
 import requests
 from datetime import datetime, timedelta, date
 
@@ -37,19 +38,30 @@ JSONLD_WAIT_SECONDS = 12
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Cache-Control": "max-age=0",
-}
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0",
+]
+
+
+def get_random_headers() -> dict:
+    return {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Cache-Control": "max-age=0",
+        "DNT": "1",
+    }
 
 
 # -------------------- Jogos / Times --------------------
@@ -290,7 +302,6 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
 
 # -------------------- Fetch com fallback --------------------
 def soup_has_sports_events(soup: BeautifulSoup) -> bool:
-    """Verifica se o HTML contém pelo menos um SportsEvent JSON-LD."""
     for script in soup.find_all("script", type="application/ld+json"):
         raw = (script.string or "").strip()
         try:
@@ -303,22 +314,51 @@ def soup_has_sports_events(soup: BeautifulSoup) -> bool:
 
 
 def fetch_soup_with_requests(url: str) -> BeautifulSoup | None:
-    """Tenta buscar a página via requests simples."""
-    try:
-        resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
-        resp.raise_for_status()
-        soup = BeautifulSoup(resp.text, "html.parser")
-        if soup_has_sports_events(soup):
-            return soup
-        log(f"  ↳ requests: página carregada mas sem SportsEvent JSON-LD")
-        return None
-    except Exception as e:
-        log(f"  ↳ requests falhou: {e}")
-        return None
+    """Tenta buscar via requests com sessão, cookies da home e retry com backoff."""
+    for attempt in range(3):
+        try:
+            session = requests.Session()
+
+            # Visita a home primeiro para obter cookies de sessão
+            try:
+                session.get(
+                    "https://tips.gg/",
+                    headers=get_random_headers(),
+                    timeout=REQUEST_TIMEOUT
+                )
+                time.sleep(1 + random.uniform(0, 1))
+            except Exception:
+                pass
+
+            resp = session.get(
+                url,
+                headers=get_random_headers(),
+                timeout=REQUEST_TIMEOUT
+            )
+
+            if resp.status_code == 403:
+                log(f"  ↳ requests tentativa {attempt + 1}/3: 403 Forbidden")
+                time.sleep(3 * (attempt + 1))
+                continue
+
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, "html.parser")
+
+            if soup_has_sports_events(soup):
+                return soup
+
+            log(f"  ↳ requests tentativa {attempt + 1}/3: sem SportsEvent JSON-LD")
+            return None
+
+        except Exception as e:
+            log(f"  ↳ requests tentativa {attempt + 1}/3 falhou: {e}")
+            time.sleep(2 * (attempt + 1))
+
+    return None
 
 
 def fetch_soup_with_selenium(url: str, driver: webdriver.Chrome) -> BeautifulSoup | None:
-    """Tenta buscar a página via Selenium."""
+    """Tenta buscar via Selenium com anti-detecção."""
     try:
         driver.get(url)
     except TimeoutException:
@@ -327,7 +367,6 @@ def fetch_soup_with_selenium(url: str, driver: webdriver.Chrome) -> BeautifulSou
         except Exception:
             pass
 
-    # Aguarda JSON-LD
     try:
         WebDriverWait(driver, JSONLD_WAIT_SECONDS).until(
             EC.presence_of_element_located(
@@ -341,7 +380,6 @@ def fetch_soup_with_selenium(url: str, driver: webdriver.Chrome) -> BeautifulSou
     if soup_has_sports_events(soup):
         return soup
 
-    # Fallback: aguarda elementos DOM
     try:
         WebDriverWait(driver, JSONLD_WAIT_SECONDS).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, '.element.match'))
@@ -357,12 +395,6 @@ def fetch_soup_with_selenium(url: str, driver: webdriver.Chrome) -> BeautifulSou
 
 
 def fetch_soup(url: str, driver: webdriver.Chrome | None) -> tuple[BeautifulSoup | None, str]:
-    """
-    Cascata de fetch:
-    1. requests
-    2. Selenium (se disponível)
-    Retorna (soup, método_usado) ou (None, 'failed')
-    """
     log(f"  → Tentando requests...")
     soup = fetch_soup_with_requests(url)
     if soup is not None:
@@ -385,13 +417,28 @@ def setup_driver() -> webdriver.Chrome:
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--log-level=3")
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--disable-infobars")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option("useAutomationExtension", False)
     chrome_options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        f"user-agent={random.choice(USER_AGENTS)}"
     )
+
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT_SECONDS)
+
+    # Remove flag webdriver do navigator
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        "source": """
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        """
+    })
+
     return driver
 
 
@@ -666,12 +713,10 @@ def scrape_one_day_for_game(
 
     now_utc = datetime.now(pytz.utc)
 
-    # Tenta JSON-LD primeiro
     if soup_has_sports_events(soup):
         stats["method"] = "jsonld"
         new_events = parse_jsonld(soup, game_key, game_cfg, existing_uids, now_utc, stats)
     else:
-        # Fallback para DOM
         stats["method"] = "dom"
         new_events = parse_dom(soup, game_key, game_cfg, existing_uids, now_utc, stats)
 
