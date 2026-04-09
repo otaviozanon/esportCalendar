@@ -652,7 +652,7 @@ cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
 removed = prune_older_than(cal, cutoff)
 log(f"🧹 Limpeza: removidos {removed} eventos com data < {cutoff.strftime('%d/%m/%Y')}")
 
-target_day = load_cursor(today, future_limit)
+target_day = today
 log(f"📌 Cursor atual: {target_day.strftime('%d/%m/%Y')} "
     f"(range: {today.strftime('%d/%m/%Y')}..{future_limit.strftime('%d/%m/%Y')})")
 
