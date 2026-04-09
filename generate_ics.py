@@ -2,9 +2,6 @@ import os
 import json
 import hashlib
 import time
-import random
-import requests
-import cloudscraper
 from datetime import datetime, timedelta, date
 
 import pytz
@@ -31,10 +28,8 @@ BR_TZ = pytz.timezone("America/Sao_Paulo")
 FUTURE_LIMIT_DAYS = 4
 DELETE_OLDER_THAN_DAYS = 7
 
-REQUEST_TIMEOUT = 30
-REQUEST_DELAY = 2
-PAGE_LOAD_TIMEOUT_SECONDS = 15
-JSONLD_WAIT_SECONDS = 8
+PAGE_LOAD_TIMEOUT_SECONDS = 20
+MATCH_WAIT_SECONDS = 12
 
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
@@ -276,122 +271,8 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
     return removed
 
 
-# -------------------- Fetch com fallback --------------------
-def soup_has_sports_events(soup: BeautifulSoup) -> bool:
-    for script in soup.find_all("script", type="application/ld+json"):
-        raw = (script.string or "").strip()
-        try:
-            d = json.loads(raw)
-            if d.get("@type") == "SportsEvent":
-                return True
-        except Exception:
-            pass
-    return False
-
-
-def fetch_soup_with_cloudscraper(url: str) -> BeautifulSoup | None:
-    """Tenta buscar via cloudscraper — contorna Cloudflare."""
-    try:
-        scraper = cloudscraper.create_scraper(
-            browser={
-                "browser": "chrome",
-                "platform": "windows",
-                "mobile": False,
-            }
-        )
-
-        resp = scraper.get(url, timeout=REQUEST_TIMEOUT)
-
-        if resp.status_code == 403:
-            log(f"  ↳ cloudscraper: 403 Forbidden")
-            return None
-
-        resp.raise_for_status()
-        soup = BeautifulSoup(resp.text, "html.parser")
-
-        if soup_has_sports_events(soup):
-            return soup
-
-        if soup.select('.element.match'):
-            return soup
-
-        log(f"  ↳ cloudscraper: página sem conteúdo útil")
-        return None
-
-    except Exception as e:
-        log(f"  ↳ cloudscraper falhou: {e}")
-        return None
-
-
-def fetch_soup_with_selenium(url: str, driver: webdriver.Chrome) -> BeautifulSoup | None:
-    """
-    Busca via Selenium — mesmo comportamento da versão que funcionava,
-    sem flags extras de anti-detecção que causam rejeição.
-    """
-    try:
-        driver.get(url)
-    except TimeoutException:
-        try:
-            driver.execute_script("window.stop();")
-        except Exception:
-            pass
-
-    # Aguarda JSON-LD aparecer
-    try:
-        WebDriverWait(driver, JSONLD_WAIT_SECONDS).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, 'script[type="application/ld+json"]')
-            )
-        )
-    except TimeoutException:
-        pass
-
-    soup = BeautifulSoup(driver.page_source, "html.parser")
-    if soup_has_sports_events(soup):
-        return soup
-
-    # Fallback: aguarda elementos DOM
-    try:
-        WebDriverWait(driver, JSONLD_WAIT_SECONDS).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, '.element.match'))
-        )
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-        if soup.select('.element.match'):
-            return soup
-    except TimeoutException:
-        pass
-
-    log(f"  ↳ Selenium: nenhum conteúdo útil encontrado")
-    return None
-
-
-def fetch_soup(url: str, driver: webdriver.Chrome | None) -> tuple[BeautifulSoup | None, str]:
-    """
-    Cascata de fetch:
-    1. cloudscraper
-    2. Selenium (método principal que funciona)
-    """
-    log(f"  → Tentando cloudscraper...")
-    soup = fetch_soup_with_cloudscraper(url)
-    if soup is not None:
-        return soup, "cloudscraper"
-
-    if driver is not None:
-        log(f"  → Tentando Selenium...")
-        soup = fetch_soup_with_selenium(url, driver)
-        if soup is not None:
-            return soup, "selenium"
-
-    return None, "failed"
-
-
-# -------------------- Selenium Setup --------------------
+# -------------------- Selenium --------------------
 def setup_driver() -> webdriver.Chrome:
-    """
-    Configuração simples igual à versão que funcionava.
-    Flags agressivas de anti-detecção causam mais problema que solução
-    com o Cloudflare em ambiente headless de CI.
-    """
     chrome_options = Options()
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
@@ -402,7 +283,6 @@ def setup_driver() -> webdriver.Chrome:
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     )
-
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT_SECONDS)
@@ -485,6 +365,19 @@ def build_event(
     return e
 
 
+# -------------------- soup_has_sports_events --------------------
+def soup_has_sports_events(soup: BeautifulSoup) -> bool:
+    for script in soup.find_all("script", type="application/ld+json"):
+        raw = (script.string or "").strip()
+        try:
+            d = json.loads(raw)
+            if d.get("@type") == "SportsEvent":
+                return True
+        except Exception:
+            pass
+    return False
+
+
 # -------------------- Parse JSON-LD --------------------
 def parse_jsonld(
     soup: BeautifulSoup,
@@ -535,9 +428,7 @@ def parse_jsonld(
             continue
 
         try:
-            match_time_utc = datetime.fromisoformat(
-                start_date_str.replace("Z", "+00:00")
-            )
+            match_time_utc = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
             if match_time_utc.tzinfo is None:
                 match_time_utc = pytz.utc.localize(match_time_utc)
             match_time_utc = match_time_utc.astimezone(pytz.utc)
@@ -569,9 +460,105 @@ def parse_jsonld(
     return new_events
 
 
+# -------------------- Parse DOM --------------------
+def parse_dom(
+    soup: BeautifulSoup,
+    game_key: str,
+    game_cfg: dict,
+    existing_uids: set,
+    now_utc: datetime,
+    target_day: date,
+    stats: dict,
+) -> list[Event]:
+    """
+    Fallback para quando não há JSON-LD.
+    Estrutura atual do tips.gg:
+      - times:   .team .name
+      - horário: .time  (ex: "04:00") — exibido em UTC pelo servidor
+      - link:    a.match-link[href]   (ex: /matches/counter-strike/09-04-2026/mibr-vs-3dmax/08-00/)
+    """
+    match_elements = soup.select('.element.match')
+    stats["dom_matches_found"] = len(match_elements)
+    new_events = []
+
+    teams_norm = game_cfg["teams_norm"]
+    exclusions_norm = game_cfg["exclusions_norm"]
+    prefix = game_cfg["prefix"]
+
+    for el in match_elements:
+        team_tags = el.select('.team .name')
+        if len(team_tags) < 2:
+            stats["skipped_no_competitors"] += 1
+            continue
+
+        team1_raw = team_tags[0].get_text(strip=True)
+        team2_raw = team_tags[1].get_text(strip=True)
+
+        if not team1_raw or not team2_raw:
+            stats["skipped_no_competitors"] += 1
+            continue
+
+        if team1_raw == "TBD" or team2_raw == "TBD":
+            stats["skipped_tbd"] += 1
+            continue
+
+        t1 = normalize_team(team1_raw)
+        t2 = normalize_team(team2_raw)
+        allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
+        allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
+        if not (allowed_t1 or allowed_t2):
+            stats["skipped_not_allowed"] += 1
+            continue
+
+        # Horário exibido pelo site é UTC
+        time_tag = el.select_one('.time')
+        time_str = time_tag.get_text(strip=True) if time_tag else "00:00"
+        try:
+            hour, minute = [int(x) for x in time_str.split(":")]
+            match_time_utc = datetime(
+                target_day.year, target_day.month, target_day.day,
+                hour, minute, tzinfo=pytz.utc
+            )
+        except Exception:
+            stats["skipped_bad_date"] += 1
+            continue
+
+        if match_time_utc < now_utc:
+            stats["skipped_past"] += 1
+            continue
+
+        # Link da partida — agora no formato /matches/counter-strike/...
+        link_tag = el.select_one('a.match-link[href]')
+        match_url = link_tag['href'] if link_tag else ""
+        match_url = match_url_absolute(match_url)
+
+        # Torneio: tenta extrair do slug da URL
+        # ex: /matches/counter-strike/09-04-2026/mibr-vs-3dmax/08-00/
+        # parts[-2] após rstrip("/") = "08-00", parts[-3] = slug da partida
+        tournament_desc = ""
+        try:
+            parts = match_url.rstrip("/").split("/")
+            # estrutura: ['https:', '', 'tips.gg', 'matches', 'counter-strike', 'DD-MM-YYYY', 'slug-partida', 'HH-MM']
+            if len(parts) >= 7:
+                tournament_desc = parts[-3]  # ex: "mibr-vs-3dmax"
+        except Exception:
+            pass
+
+        ev = build_event(
+            game_key, prefix, team1_raw, team2_raw,
+            match_time_utc, tournament_desc, "tips.gg", match_url,
+            existing_uids,
+        )
+        if ev:
+            new_events.append(ev)
+            stats["added"] += 1
+
+    return new_events
+
+
 # -------------------- Scrape principal --------------------
 def scrape_one_day_for_game(
-    driver: webdriver.Chrome | None,
+    driver: webdriver.Chrome,
     game_key: str,
     game_cfg: dict,
     target_day: date,
@@ -581,9 +568,10 @@ def scrape_one_day_for_game(
         "game": game_key,
         "date": target_day.strftime("%d/%m/%Y"),
         "url": build_url_for_day(game_cfg["base_path"], target_day),
-        "fetch_method": "none",
+        "method": "none",
         "scripts_total": 0,
         "sports_events": 0,
+        "dom_matches_found": 0,
         "added": 0,
         "skipped_tbd": 0,
         "skipped_past": 0,
@@ -591,18 +579,54 @@ def scrape_one_day_for_game(
         "skipped_not_allowed": 0,
         "skipped_bad_date": 0,
         "json_decode_errors": 0,
+        "timeouts_load": 0,
+        "timeouts_wait": 0,
     }
 
     url = stats["url"]
-    soup, fetch_method = fetch_soup(url, driver)
-    stats["fetch_method"] = fetch_method
 
-    if soup is None:
-        log(f"  ✖ Nenhum método conseguiu carregar {url}")
-        return [], stats
+    try:
+        driver.get(url)
+    except TimeoutException:
+        stats["timeouts_load"] += 1
+        try:
+            driver.execute_script("window.stop();")
+        except Exception:
+            pass
 
+    # Espera JSON-LD primeiro; se não aparecer espera pelo DOM
+    try:
+        WebDriverWait(driver, MATCH_WAIT_SECONDS).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'script[type="application/ld+json"]')
+            )
+        )
+    except TimeoutException:
+        try:
+            WebDriverWait(driver, MATCH_WAIT_SECONDS).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, '.element.match')
+                )
+            )
+        except TimeoutException:
+            stats["timeouts_wait"] += 1
+
+    soup = BeautifulSoup(driver.page_source, "html.parser")
     now_utc = datetime.now(pytz.utc)
-    new_events = parse_jsonld(soup, game_key, game_cfg, existing_uids, now_utc, stats)
+
+    if soup_has_sports_events(soup):
+        stats["method"] = "jsonld"
+        log(f"  ↳ Usando JSON-LD")
+        new_events = parse_jsonld(soup, game_key, game_cfg, existing_uids, now_utc, stats)
+    elif soup.select('.element.match'):
+        stats["method"] = "dom"
+        log(f"  ↳ JSON-LD ausente, usando DOM")
+        new_events = parse_dom(soup, game_key, game_cfg, existing_uids, now_utc, target_day, stats)
+    else:
+        stats["method"] = "none"
+        log(f"  ↳ Nenhum conteúdo útil encontrado")
+        new_events = []
+
     return new_events, stats
 
 
@@ -638,11 +662,8 @@ ran_ok = False
 
 try:
     driver = setup_driver()
-    log("⚙️ Selenium iniciado como fallback.")
-except Exception as e:
-    log(f"⚠️ Selenium não disponível: {e}.")
+    log("⚙️ Selenium iniciado.")
 
-try:
     for game_key, cfg in GAMES.items():
         url = build_url_for_day(cfg["base_path"], target_day)
         log(f"🌐 Raspando {game_key} em {target_day.strftime('%d/%m/%Y')} -> {url}")
@@ -654,13 +675,15 @@ try:
 
         total_added += stats["added"]
 
-        log(f"🧾 RESUMO {game_key} - {stats['date']} [fetch: {stats['fetch_method']}]")
-        log(f"  scripts={stats['scripts_total']} sports={stats['sports_events']} added={stats['added']}")
+        log(f"🧾 RESUMO {game_key} - {stats['date']} [método: {stats['method']}]")
+        log(f"  scripts={stats['scripts_total']} sports={stats['sports_events']} "
+            f"dom_matches={stats['dom_matches_found']} added={stats['added']}")
         log(f"  skipped: tbd={stats['skipped_tbd']} past={stats['skipped_past']} "
             f"not_allowed={stats['skipped_not_allowed']} bad_date={stats['skipped_bad_date']}")
-        log(f"  json_err={stats['json_decode_errors']}")
+        log(f"  timeouts: load={stats['timeouts_load']} wait={stats['timeouts_wait']} "
+            f"json_err={stats['json_decode_errors']}")
 
-        time.sleep(REQUEST_DELAY)
+        time.sleep(2)
 
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final:
