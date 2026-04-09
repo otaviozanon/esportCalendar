@@ -29,7 +29,7 @@ FUTURE_LIMIT_DAYS = 4
 DELETE_OLDER_THAN_DAYS = 7
 
 PAGE_LOAD_TIMEOUT_SECONDS = 20
-JSONLD_WAIT_SECONDS = 15
+MATCH_WAIT_SECONDS = 15
 
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
@@ -80,88 +80,136 @@ for k, cfg in GAMES.items():
     cfg["exclusions_norm"] = {normalize_team(t) for t in cfg["exclusions"]}
 
 
-# -------------------- Helpers --------------------
+# -------------------- Logging --------------------
 def log(msg: str):
     now = datetime.now(BR_TZ).strftime("%H:%M:%S")
-    print(f"[{now}] {msg}")
+    print(f"[{now}] {msg}", flush=True)
 
 
-def build_url_for_day(base_path: str, target_date: date) -> str:
-    return f"{base_path}{target_date.strftime('%d-%m-%Y')}/"
-
-
-def match_url_absolute(url: str) -> str:
-    if url.startswith("http"):
-        return url
-    return f"https://tips.gg{url}" if url.startswith("/") else url
-
-
-def load_calendar(path: str) -> Calendar:
-    if os.path.exists(path):
+# -------------------- Calendário --------------------
+def load_calendar(filename: str) -> Calendar:
+    if os.path.exists(filename):
         try:
-            with open(path, "rb") as f:
+            with open(filename, "rb") as f:
                 return Calendar.from_ical(f.read())
-        except Exception as e:
-            log(f"⚠️ Falha ao ler {path}: {e}. Criando calendário novo.")
+        except Exception:
+            pass
     cal = Calendar()
-    cal.add('prodid', '-//Esport Calendar BR//tips.gg//')
-    cal.add('version', '2.0')
+    cal.add("prodid", "-//Sett Tips.GG Scraper//EN")
+    cal.add("version", "2.0")
     return cal
 
 
-def save_calendar(cal: Calendar, path: str):
-    with open(path, "wb") as f:
+def save_calendar(cal: Calendar, filename: str):
+    with open(filename, "wb") as f:
         f.write(cal.to_ical())
 
 
 def get_existing_uids(cal: Calendar) -> set:
     uids = set()
-    for component in cal.walk('VEVENT'):
-        uid = component.get('uid')
-        if uid:
-            uids.add(str(uid))
+    for component in cal.walk():
+        if component.name == "VEVENT":
+            uid = str(component.get("uid", ""))
+            if uid:
+                uids.add(uid)
     return uids
 
 
-def normalize_event_datetime_utc(dt: datetime) -> datetime:
-    if dt.tzinfo is None:
-        dt = pytz.utc.localize(dt)
-    return dt.astimezone(pytz.utc).replace(microsecond=0, second=0)
-
-
 def is_ours(component) -> bool:
-    desc = str(component.get('description', ''))
-    return (SOURCE_MARKER in desc) or (TIPS_URL_HINT in desc)
+    for line in component.content_lines():
+        if SOURCE_MARKER in line:
+            return True
+    url = str(component.get("url", ""))
+    return TIPS_URL_HINT in url
 
 
-def event_start_date_local(component) -> date | None:
-    try:
-        dt = component.get('dtstart').dt
-        if isinstance(dt, datetime):
-            if dt.tzinfo is None:
-                dt = pytz.utc.localize(dt)
-            return dt.astimezone(BR_TZ).date()
-        elif isinstance(dt, date):
-            return dt
-    except Exception:
-        pass
-    return None
-
-
-def prune_older_than(cal: Calendar, cutoff_date: date) -> int:
+def prune_older_than(cal: Calendar, cutoff: datetime) -> int:
     to_remove = []
-    for component in cal.walk('VEVENT'):
+    for component in cal.walk():
+        if component.name != "VEVENT":
+            continue
         if not is_ours(component):
             continue
-        d = event_start_date_local(component)
-        if d and d < cutoff_date:
+        dtstart = component.get("dtstart")
+        if dtstart is None:
+            continue
+        dt = dtstart.dt
+        if isinstance(dt, date) and not isinstance(dt, datetime):
+            dt = datetime(dt.year, dt.month, dt.day, tzinfo=BR_TZ)
+        if dt.tzinfo is None:
+            dt = BR_TZ.localize(dt)
+        else:
+            dt = dt.astimezone(BR_TZ)
+        if dt < cutoff:
             to_remove.append(component)
-    for comp in to_remove:
-        cal.subcomponents.remove(comp)
+    for c in to_remove:
+        cal.subcomponents.remove(c)
     return len(to_remove)
 
 
-# -------------------- Estado --------------------
+def dedupe_calendar_events(cal: Calendar) -> int:
+    seen = {}
+    to_remove = []
+    for component in cal.walk():
+        if component.name != "VEVENT":
+            continue
+        uid = str(component.get("uid", ""))
+        if not uid:
+            continue
+        if uid in seen:
+            to_remove.append(component)
+        else:
+            seen[uid] = component
+    for c in to_remove:
+        cal.subcomponents.remove(c)
+    return len(to_remove)
+
+
+def dedupe_by_url_keep_latest(cal: Calendar) -> int:
+    url_map = {}
+    for component in cal.walk():
+        if component.name != "VEVENT":
+            continue
+        if not is_ours(component):
+            continue
+        url = str(component.get("url", ""))
+        if not url:
+            continue
+        dtstart = component.get("dtstart")
+        if dtstart is None:
+            continue
+        dt = dtstart.dt
+        if isinstance(dt, date) and not isinstance(dt, datetime):
+            dt = datetime(dt.year, dt.month, dt.day, tzinfo=BR_TZ)
+        if dt.tzinfo is None:
+            dt = BR_TZ.localize(dt)
+        if url not in url_map:
+            url_map[url] = component
+        else:
+            existing_dt = url_map[url].get("dtstart").dt
+            if isinstance(existing_dt, date) and not isinstance(existing_dt, datetime):
+                existing_dt = datetime(existing_dt.year, existing_dt.month, existing_dt.day, tzinfo=BR_TZ)
+            if existing_dt.tzinfo is None:
+                existing_dt = BR_TZ.localize(existing_dt)
+            if dt > existing_dt:
+                url_map[url] = component
+
+    to_keep = set(id(c) for c in url_map.values())
+    to_remove = []
+    for component in cal.walk():
+        if component.name != "VEVENT":
+            continue
+        if not is_ours(component):
+            continue
+        url = str(component.get("url", ""))
+        if url and id(component) not in to_keep:
+            to_remove.append(component)
+    for c in to_remove:
+        cal.subcomponents.remove(c)
+    return len(to_remove)
+
+
+# -------------------- Estado (cursor rotativo) --------------------
 def load_cursor(today: date, future_limit: date) -> date:
     if not os.path.exists(STATE_FILE):
         return today
@@ -178,84 +226,7 @@ def load_cursor(today: date, future_limit: date) -> date:
 
 def save_cursor(d: date):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump({"cursor_date": d.isoformat()}, f, ensure_ascii=False)
-
-
-# -------------------- Deduplicação --------------------
-def extract_match_url_from_description(desc: str) -> str:
-    for line in (desc or "").splitlines():
-        line = line.strip()
-        if line.startswith("https://tips.gg/matches/"):
-            return line
-        if line.startswith("🌐"):
-            return line.replace("🌐", "").strip()
-    return ""
-
-
-def event_key(component) -> tuple:
-    name = str(component.get('summary', '')).strip().lower()
-    begin_iso = ""
-    try:
-        dt = component.get('dtstart').dt
-        if isinstance(dt, datetime):
-            begin_iso = normalize_event_datetime_utc(dt).isoformat()
-    except Exception:
-        pass
-    desc = str(component.get('description', ''))
-    url = extract_match_url_from_description(desc)
-    return (name, begin_iso, url)
-
-
-def dedupe_calendar_events(cal: Calendar) -> int:
-    seen = set()
-    to_remove = []
-    for component in cal.walk('VEVENT'):
-        if not is_ours(component):
-            continue
-        key = event_key(component)
-        if key in seen:
-            to_remove.append(component)
-        else:
-            seen.add(key)
-    for comp in to_remove:
-        cal.subcomponents.remove(comp)
-    return len(to_remove)
-
-
-def dedupe_by_url_keep_latest(cal: Calendar) -> int:
-    url_to_components: dict[str, list] = {}
-    for component in cal.walk('VEVENT'):
-        if not is_ours(component):
-            continue
-        desc = str(component.get('description', ''))
-        url = extract_match_url_from_description(desc)
-        if not url:
-            continue
-        url_to_components.setdefault(url, []).append(component)
-
-    to_remove = []
-    for url, comps in url_to_components.items():
-        if len(comps) <= 1:
-            continue
-        def get_dtstamp(c):
-            try:
-                ds = c.get('dtstamp')
-                if ds:
-                    dt = ds.dt if hasattr(ds, 'dt') else ds
-                    if isinstance(dt, datetime):
-                        return dt
-            except Exception:
-                pass
-            return datetime.min.replace(tzinfo=pytz.utc)
-        comps_sorted = sorted(comps, key=get_dtstamp, reverse=True)
-        to_remove.extend(comps_sorted[1:])
-
-    for comp in to_remove:
-        try:
-            cal.subcomponents.remove(comp)
-        except ValueError:
-            pass
-    return len(to_remove)
+        json.dump({"cursor_date": d.isoformat()}, f)
 
 
 # -------------------- Selenium --------------------
@@ -265,11 +236,11 @@ def setup_driver() -> webdriver.Chrome:
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1280,900")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--lang=en-US")
     options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
+        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     )
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
@@ -277,216 +248,209 @@ def setup_driver() -> webdriver.Chrome:
     return driver
 
 
-# -------------------- UID --------------------
-def build_stable_uid(game_key, summary, match_time_utc, tournament, organizer, match_url) -> str:
-    raw = f"{game_key}|{summary}|{match_time_utc.isoformat()}|{tournament}|{organizer}|{match_url}"
+# -------------------- URL --------------------
+def build_url_for_day(base_path: str, target_day: date) -> str:
+    if target_day == date.today():
+        return base_path
+    return f"{base_path}{target_day.strftime('%d-%m-%Y')}/"
+
+
+# -------------------- Parse JSON-LD via JavaScript --------------------
+def extract_jsonld_via_js(driver) -> list:
+    """
+    Usa JavaScript para extrair todos os JSON-LDs da página,
+    contornando o Cloudflare Rocket Loader que modifica o type dos scripts.
+    """
+    js = """
+    var results = [];
+    var scripts = document.querySelectorAll('script');
+    for (var i = 0; i < scripts.length; i++) {
+        var s = scripts[i];
+        var t = s.getAttribute('type') || '';
+        var txt = s.textContent || s.innerText || '';
+        if (t === 'application/ld+json' || txt.indexOf('"@type"') !== -1) {
+            if (txt.trim().startsWith('{') || txt.trim().startsWith('[')) {
+                results.push(txt);
+            }
+        }
+    }
+    return results;
+    """
+    try:
+        return driver.execute_script(js) or []
+    except Exception:
+        return []
+
+
+# -------------------- Scrape --------------------
+def make_uid(game_key: str, team1: str, team2: str, start_dt: datetime) -> str:
+    raw = f"{game_key}|{normalize_team(team1)}|{normalize_team(team2)}|{start_dt.isoformat()}"
     return hashlib.md5(raw.encode()).hexdigest() + "@tipsgg"
 
 
-# -------------------- Parse JSON-LD --------------------
-def parse_jsonld_scripts(soup: BeautifulSoup) -> list[dict]:
-    events = []
-    for script in soup.find_all("script", type="application/ld+json"):
-        try:
-            data = json.loads(script.string or "")
-            if isinstance(data, dict) and data.get("@type") == "SportsEvent":
-                events.append(data)
-            elif isinstance(data, list):
-                for item in data:
-                    if isinstance(item, dict) and item.get("@type") == "SportsEvent":
-                        events.append(item)
-        except Exception:
-            pass
-    return events
-
-
-def process_jsonld_events(
-    events: list[dict],
-    game_key: str,
-    game_cfg: dict,
-    existing_uids: set,
-    now_utc: datetime,
-    stats: dict,
-) -> list[Event]:
-    prefix = game_cfg["prefix"]
-    teams_norm = game_cfg["teams_norm"]
-    exclusions_norm = game_cfg["exclusions_norm"]
-    new_events = []
-
-    stats["sports_events"] += len(events)
-
-    for event_data in events:
-        start_date_str = event_data.get("startDate", "")
-        if not start_date_str:
-            stats["skipped_bad_date"] += 1
-            continue
-
-        description = event_data.get("description", "")
-        organizer_name = (event_data.get("organizer") or {}).get("name", "")
-        match_url = match_url_absolute(event_data.get("url", "") or "")
-
-        competitors = event_data.get("competitor", []) or []
-        if len(competitors) < 2:
-            stats["skipped_no_competitors"] += 1
-            continue
-
-        team1_raw = competitors[0].get("name", "TBD")
-        team2_raw = competitors[1].get("name", "TBD")
-
-        if team1_raw == "TBD" or team2_raw == "TBD":
-            stats["skipped_tbd"] += 1
-            continue
-
-        # Parse da data — o site usa -0300, fromisoformat lida bem com isso
-        try:
-            match_time = datetime.fromisoformat(start_date_str)
-            if match_time.tzinfo is None:
-                match_time = BR_TZ.localize(match_time)
-            match_time_utc = match_time.astimezone(pytz.utc)
-        except Exception:
-            stats["skipped_bad_date"] += 1
-            continue
-
-        if match_time_utc < now_utc:
-            stats["skipped_past"] += 1
-            continue
-
-        t1 = normalize_team(team1_raw)
-        t2 = normalize_team(team2_raw)
-
-        allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
-        allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
-        if not (allowed_t1 or allowed_t2):
-            stats["skipped_not_allowed"] += 1
-            continue
-
-        event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
-
-        event_uid = build_stable_uid(
-            game_key=game_key,
-            summary=event_summary,
-            match_time_utc=match_time_utc,
-            tournament=description,
-            organizer=organizer_name,
-            match_url=match_url,
-        )
-
-        if event_uid in existing_uids:
-            continue
-
-        event_description = (
-            f"🏆 {description}\n"
-            f"📍 {organizer_name}\n"
-            f"🌐 {match_url}\n"
-            f"{SOURCE_MARKER}"
-        )
-
-        e = Event()
-        e.add('summary', event_summary)
-        e.add('dtstart', normalize_event_datetime_utc(match_time_utc))
-        e.add('dtend', normalize_event_datetime_utc(match_time_utc) + timedelta(hours=2))
-        e.add('description', event_description)
-        e.add('uid', event_uid)
-        e.add('dtstamp', datetime.now(pytz.utc))
-
-        alarm = Alarm()
-        alarm.add('action', 'DISPLAY')
-        alarm.add('trigger', timedelta(minutes=-15))
-        alarm.add('description', f'Lembrete: {event_summary}')
-        e.add_component(alarm)
-
-        new_events.append(e)
-        existing_uids.add(event_uid)
-        stats["added"] += 1
-
-    return new_events
-
-
-# -------------------- Scrape principal --------------------
 def scrape_one_day_for_game(
-    driver: webdriver.Chrome,
-    game_key: str,
-    game_cfg: dict,
-    target_day: date,
-    existing_uids: set,
-) -> tuple[list[Event], dict]:
+    driver, game_key: str, cfg: dict, target_day: date, existing_uids: set
+) -> tuple:
     stats = {
-        "game": game_key,
         "date": target_day.strftime("%d/%m/%Y"),
         "scripts_total": 0,
         "sports_events": 0,
         "added": 0,
         "skipped_tbd": 0,
         "skipped_past": 0,
-        "skipped_no_competitors": 0,
         "skipped_not_allowed": 0,
         "skipped_bad_date": 0,
-        "json_decode_errors": 0,
         "timeouts_load": 0,
         "timeouts_jsonld": 0,
+        "json_decode_errors": 0,
     }
+    new_events = []
+    url = build_url_for_day(cfg["base_path"], target_day)
+    now_br = datetime.now(BR_TZ)
 
-    url = build_url_for_day(game_cfg["base_path"], target_day)
-
+    # Carrega a página
     try:
         driver.get(url)
     except TimeoutException:
         stats["timeouts_load"] += 1
-        try:
-            driver.execute_script("window.stop();")
-        except Exception:
-            pass
+        log(f"  ↳ Timeout carregando página {game_key}")
+        return new_events, stats
 
-    # Aguarda qualquer JSON-LD de SportsEvent aparecer
+    # Aguarda pelo elemento .element.match aparecer no DOM
     try:
-        WebDriverWait(driver, JSONLD_WAIT_SECONDS).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, 'script[type="application/ld+json"]')
-            )
+        WebDriverWait(driver, MATCH_WAIT_SECONDS).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".element.match"))
         )
     except TimeoutException:
+        # Pode não ter partidas no dia — não é necessariamente erro
+        log(f"  ↳ Nenhuma partida encontrada em {game_key} para {target_day.strftime('%d/%m/%Y')}")
         stats["timeouts_jsonld"] += 1
-        log(f"  ↳ Timeout aguardando JSON-LD em {game_key}")
+        return new_events, stats
 
-    soup = BeautifulSoup(driver.page_source, "html.parser")
-    now_utc = datetime.now(pytz.utc)
+    # Pequena pausa para o Rocket Loader processar
+    time.sleep(2)
 
-    all_scripts = soup.find_all("script", type="application/ld+json")
-    stats["scripts_total"] = len(all_scripts)
+    # Extrai JSON-LDs via JavaScript (contorna o Rocket Loader)
+    raw_scripts = extract_jsonld_via_js(driver)
+    stats["scripts_total"] = len(raw_scripts)
 
-    jsonld_events = parse_jsonld_scripts(soup)
+    for raw in raw_scripts:
+        try:
+            data = json.loads(raw.strip())
+        except json.JSONDecodeError:
+            stats["json_decode_errors"] += 1
+            continue
 
-    if jsonld_events:
-        log(f"  ↳ JSON-LD: {len(jsonld_events)} eventos encontrados")
-        new_events = process_jsonld_events(
-            jsonld_events, game_key, game_cfg, existing_uids, now_utc, stats
-        )
-    else:
-        log(f"  ↳ Nenhum JSON-LD de SportsEvent encontrado")
-        new_events = []
+        if not isinstance(data, dict):
+            continue
+        if data.get("@type") != "SportsEvent":
+            continue
+
+        stats["sports_events"] += 1
+
+        # Extrai dados
+        name = data.get("name", "")
+        start_raw = data.get("startDate", "")
+        event_url = data.get("url", "")
+        organizer = data.get("organizer", {})
+        tournament = organizer.get("name", "") if isinstance(organizer, dict) else ""
+        competitors = data.get("competitor", [])
+
+        if len(competitors) < 2:
+            continue
+
+        team1 = competitors[0].get("name", "")
+        team2 = competitors[1].get("name", "")
+
+        # Verifica TBD
+        if not team1 or not team2 or "tbd" in normalize_team(team1) or "tbd" in normalize_team(team2):
+            stats["skipped_tbd"] += 1
+            continue
+
+        # Verifica exclusões
+        t1n = normalize_team(team1)
+        t2n = normalize_team(team2)
+        excl = cfg["exclusions_norm"]
+        if t1n in excl or t2n in excl:
+            stats["skipped_not_allowed"] += 1
+            continue
+
+        # Verifica se algum time é da lista permitida
+        allowed = cfg["teams_norm"]
+        if t1n not in allowed and t2n not in allowed:
+            stats["skipped_not_allowed"] += 1
+            continue
+
+        # Parse da data — o site usa offset -0300 (horário de Brasília)
+        try:
+            start_dt = datetime.fromisoformat(start_raw)
+            if start_dt.tzinfo is None:
+                start_dt = BR_TZ.localize(start_dt)
+            else:
+                start_dt = start_dt.astimezone(BR_TZ)
+        except Exception:
+            stats["skipped_bad_date"] += 1
+            continue
+
+        # Verifica se é do dia certo
+        if start_dt.date() != target_day:
+            stats["skipped_bad_date"] += 1
+            continue
+
+        # Verifica se já passou
+        if start_dt < now_br:
+            stats["skipped_past"] += 1
+            continue
+
+        # Monta URL completa
+        if event_url and not event_url.startswith("http"):
+            event_url = "https://tips.gg" + event_url
+
+        # Gera UID e verifica duplicata
+        uid = make_uid(game_key, team1, team2, start_dt)
+        if uid in existing_uids:
+            continue
+
+        # Cria evento
+        prefix = cfg["prefix"]
+        summary = f"{prefix}{team1} vs {team2}"
+        if tournament:
+            summary += f" — {tournament}"
+
+        ev = Event()
+        ev.add("summary", summary)
+        ev.add("dtstart", start_dt)
+        ev.add("dtend", start_dt + timedelta(hours=3))
+        ev.add("uid", uid)
+        if event_url:
+            ev.add("url", event_url)
+        ev.add("description", f"{name}\n{event_url}")
+        ev["X-SETT-SOURCE"] = "TIPSGG"
+
+        alarm = Alarm()
+        alarm.add("action", "DISPLAY")
+        alarm.add("description", f"Em breve: {summary}")
+        alarm.add("trigger", timedelta(minutes=-30))
+        ev.add_component(alarm)
+
+        new_events.append(ev)
+        existing_uids.add(uid)
+        stats["added"] += 1
+        log(f"  ✅ {summary} às {start_dt.strftime('%H:%M')} (BR)")
 
     return new_events, stats
 
 
-# -------------------- Execução --------------------
+# -------------------- Main --------------------
 log("🔄 Iniciando execução (cursor rotativo)...")
 
 cal = load_calendar(CALENDAR_FILENAME)
-
-deduped_initial = dedupe_calendar_events(cal)
-if deduped_initial:
-    log(f"🧼 Deduplicação inicial: removidos {deduped_initial} eventos duplicados.")
-
-deduped_by_url_initial = dedupe_by_url_keep_latest(cal)
-if deduped_by_url_initial:
-    log(f"🧼 Dedup por URL (inicial): removidos {deduped_by_url_initial} eventos.")
-
 existing_uids = get_existing_uids(cal)
 
-today = datetime.now(BR_TZ).date()
+today = date.today()
 future_limit = today + timedelta(days=FUTURE_LIMIT_DAYS)
+cutoff = datetime.now(BR_TZ) - timedelta(days=DELETE_OLDER_THAN_DAYS)
 
-cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
 removed = prune_older_than(cal, cutoff)
 log(f"🧹 Limpeza: removidos {removed} eventos com data < {cutoff.strftime('%d/%m/%Y')}")
 
