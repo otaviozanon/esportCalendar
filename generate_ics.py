@@ -8,7 +8,7 @@ import pytz
 from bs4 import BeautifulSoup
 from icalendar import Calendar, Event, Alarm
 
-# Importar undetected_chromedriver em vez de selenium.webdriver
+# Importar undetected_chromedriver
 import undetected_chromedriver as uc
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -114,7 +114,8 @@ def setup_driver():
 
     # Usar undetected_chromedriver
     # Ele gerencia o Chromedriver automaticamente e aplica patches anti-detecção
-    driver = uc.Chrome(options=options)
+    # Removido: driver_executable_path=ChromeDriverManager().install()
+    driver = uc.Chrome(options=options) 
     driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT_SECONDS)
     return driver
 
@@ -133,346 +134,298 @@ def save_calendar(cal: Calendar, filename: str):
 
 
 def get_existing_uids(cal: Calendar) -> set:
-    uids = set()
-    for component in cal.subcomponents:
-        if isinstance(component, Event) and SOURCE_MARKER in component.get("X-SETT-SOURCE", ""):
-            uids.add(str(component["uid"]))
-    return uids
+    return {str(event["UID"]) for event in cal.walk("VEVENT")}
 
 
-def dedupe_calendar_events(cal: Calendar) -> int:
-    unique_events = {}
+def create_event(
+    summary: str,
+    dtstart: datetime,
+    dtend: datetime,
+    url: str,
+    description: str,
+    uid: str,
+) -> Event:
+    event = Event()
+    event.add("SUMMARY", summary)
+    event.add("DTSTART", dtstart)
+    event.add("DTEND", dtend)
+    event.add("URL", url)
+    event.add("DESCRIPTION", description)
+    event.add("UID", uid)
+    event.add("DTSTAMP", datetime.now(pytz.utc)) # Usar UTC para DTSTAMP
+
+    # Adicionar alarme 15 minutos antes
+    alarm = Alarm()
+    alarm.add("ACTION", "DISPLAY")
+    alarm.add("DESCRIPTION", summary)
+    alarm.add("TRIGGER", timedelta(minutes=-15))
+    event.add_component(alarm)
+
+    return event
+
+
+def generate_uid(url: str, start_time: datetime) -> str:
+    # Gerar um UID único baseado na URL e no horário de início
+    hash_input = f"{url}-{start_time.isoformat()}"
+    return hashlib.md5(hash_input.encode("utf-8")).hexdigest() + "@tips.gg"
+
+
+def prune_older_than(cal: Calendar, cutoff_date: date) -> int:
     to_remove = []
-    removed_count = 0
-
-    for event in cal.subcomponents:
-        if isinstance(event, Event) and SOURCE_MARKER in event.get("X-SETT-SOURCE", ""):
-            # Usar uma combinação de summary e data/hora de início para identificar duplicatas
-            # Normalizar o summary para ignorar pequenas variações
-            summary_norm = normalize_team(event.get("summary", ""))
-            start_dt = event.get("dtstart").dt.isoformat()
-
-            key = (summary_norm, start_dt)
-
-            if key in unique_events:
-                to_remove.append(event)
-                removed_count += 1
-            else:
-                unique_events[key] = event
-
-    for event in to_remove:
-        cal.subcomponents.remove(event)
-    return removed_count
-
-
-def dedupe_by_url_keep_latest(cal: Calendar) -> int:
-    events_by_url = {}
-    to_remove = []
-    removed_count = 0
-
-    for event in cal.subcomponents:
-        if isinstance(event, Event) and SOURCE_MARKER in event.get("X-SETT-SOURCE", ""):
-            url = event.get("url")
-            if url:
-                if url not in events_by_url:
-                    events_by_url[url] = event
-                else:
-                    # Se houver duplicata, mantém o evento com o DTSTAMP mais recente
-                    existing_event = events_by_url[url]
-                    if event.get("dtstamp").dt > existing_event.get("dtstamp").dt:
-                        to_remove.append(existing_event)
-                        events_by_url[url] = event
-                    else:
-                        to_remove.append(event)
-
-    for event in to_remove:
-        if event in cal.subcomponents: # Verifica se o evento ainda está na lista antes de remover
-            cal.subcomponents.remove(event)
-            removed_count += 1
-    return removed_count
-
-
-def prune_older_than(cal: Calendar, cutoff: date) -> int:
-    to_remove = []
-    for event in cal.subcomponents:
-        if isinstance(event, Event) and SOURCE_MARKER in event.get("X-SETT-SOURCE", ""):
-            event_date = event.get("dtstart").dt.date()
-            if event_date < cutoff:
-                to_remove.append(event)
+    for component in cal.walk("VEVENT"):
+        if "DTSTART" in component:
+            event_date = component["DTSTART"].dt.date()
+            if event_date < cutoff_date:
+                to_remove.append(component)
     for comp in to_remove:
         cal.subcomponents.remove(comp)
     return len(to_remove)
 
 
-# -------------------- State --------------------
-def load_cursor(today: date, future_limit: date) -> date:
-    if not os.path.exists(STATE_FILE):
-        return today
-    try:
-        with open(STATE_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        d = date.fromisoformat(data.get("cursor_date", ""))
-        if today <= d <= future_limit:
-            return d
-    except Exception:
-        pass
-    return today
+def dedupe_calendar_events(cal: Calendar) -> int:
+    unique_events = {}
+    removed_count = 0
+    for event in cal.walk("VEVENT"):
+        uid = str(event["UID"])
+        if uid in unique_events:
+            removed_count += 1
+        else:
+            unique_events[uid] = event
+    cal.subcomponents = list(unique_events.values())
+    return removed_count
 
 
-def save_cursor(d: date):
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump({"cursor_date": d.isoformat()}, f)
+def dedupe_by_url_keep_latest(cal: Calendar) -> int:
+    events_by_url = {}
+    for event in cal.walk("VEVENT"):
+        url = str(event.get("URL"))
+        if url:
+            # Manter o evento mais recente para a mesma URL
+            if url not in events_by_url or event["DTSTAMP"].dt > events_by_url[url]["DTSTAMP"].dt:
+                events_by_url[url] = event
+
+    original_count = len(list(cal.walk("VEVENT")))
+    cal.subcomponents = list(events_by_url.values())
+    return original_count - len(cal.subcomponents)
 
 
-# -------------------- Scraper Logic --------------------
+# -------------------- Scraping Logic --------------------
 def build_url_for_day(base_path: str, target_day: date) -> str:
-    # O site tips.gg usa o formato https://tips.gg/csgo/matches/DD-MM-YYYY/
-    # Para o dia atual, ele pode usar apenas https://tips.gg/csgo/matches/
+    # O site tips.gg usa o formato base_path/DD-MM-YYYY/ ou apenas base_path/ para o dia atual
     if target_day == datetime.now(BR_TZ).date():
         return base_path
     return f"{base_path}{target_day.strftime('%d-%m-%Y')}/"
 
 
+def is_team_allowed(team_name: str, game_cfg: dict) -> bool:
+    norm_name = normalize_team(team_name)
+    if norm_name in game_cfg["teams_norm"]:
+        return True
+    if norm_name in game_cfg["exclusions_norm"]:
+        return False
+    return False # Por padrão, não permitir se não estiver na lista de times
+
+
 def extract_jsonld_via_js(driver) -> list:
-    """Extrai todos os objetos JSON-LD de SportsEvent da página via JavaScript."""
-    json_ld_scripts = driver.execute_script(
-        """
-        let results = [];
-        document.querySelectorAll('script').forEach(script => {
-            if (script.textContent.includes('"@type":"SportsEvent"') && script.textContent.startsWith('{')) {
-                try {
-                    results.push(JSON.parse(script.textContent));
-                } catch (e) {
-                    console.error("Erro ao parsear JSON-LD:", e);
-                }
+    """
+    Extrai todos os scripts JSON-LD de SportsEvent da página usando JavaScript.
+    Isso contorna a modificação do 'type' pelo Cloudflare Rocket Loader.
+    """
+    script = """
+    let jsonLdScripts = [];
+    document.querySelectorAll('script').forEach(s => {
+        try {
+            if (s.textContent.includes('"@type":"SportsEvent"') && s.textContent.startsWith('{')) {
+                jsonLdScripts.push(JSON.parse(s.textContent));
             }
-        });
-        return results;
-        """
-    )
-    return json_ld_scripts
+        } catch (e) {
+            // console.error("Erro ao parsear JSON-LD:", e);
+        }
+    });
+    return jsonLdScripts;
+    """
+    return driver.execute_script(script)
 
 
-def parse_jsonld_event(json_data: dict, game_key: str, cfg: dict, target_day: date, existing_uids: set, stats: dict) -> Event | None:
-    """Processa um único objeto JSON-LD e cria um evento iCalendar."""
+def parse_jsonld_event(
+    json_data: dict, game_key: str, cfg: dict, target_day: date, existing_uids: set, stats: dict
+) -> Event | None:
+    if json_data.get("@type") != "SportsEvent":
+        return None
+
     try:
-        if json_data.get("@type") != "SportsEvent":
-            return None
+        event_name = json_data.get("name", "N/A")
+        start_date_str = json_data.get("startDate")
+        event_url = json_data.get("url")
+        organizer_name = json_data.get("organizer", {}).get("name", "N/A")
 
-        name = json_data.get("name", "Evento Desconhecido")
-        url = json_data.get("url")
-        if not url:
-            url = json_data.get("location", {}).get("url")
-        if not url:
-            url = TIPS_URL_HINT # Fallback para URL genérica se não encontrar
-
-        # O startDate vem com o offset de timezone (ex: -0300), fromisoformat lida com isso
-        start_dt_str = json_data.get("startDate")
-        if not start_dt_str:
-            log(f"    ↳ Pulando evento '{name}': Sem startDate.")
+        if not start_date_str or not event_url:
             stats["skipped_bad_date"] += 1
             return None
 
-        start_dt_local = datetime.fromisoformat(start_dt_str)
-        start_dt_utc = start_dt_local.astimezone(pytz.utc)
+        # Parsear a data com o offset de timezone (ex: 2026-04-09T04:00:00-0300)
+        dt_start_br = datetime.fromisoformat(start_date_str)
+        dt_start_utc = dt_start_br.astimezone(pytz.utc)
 
-        # Verificar se a data do evento corresponde ao target_day
-        if start_dt_utc.date() != target_day:
-            log(f"    ↳ Pulando evento '{name}': Data ({start_dt_utc.date()}) não corresponde ao alvo ({target_day}).")
+        # Verificar se a partida é para o dia alvo
+        if dt_start_utc.date() != target_day:
             stats["skipped_bad_date"] += 1
             return None
 
-        # Verificar se o evento já passou (em relação ao BR_TZ)
+        # Verificar se a partida já passou (considerando o horário atual em BR_TZ)
         now_br = datetime.now(BR_TZ)
-        if start_dt_local < now_br - timedelta(minutes=10): # Margem de 10 minutos
-            log(f"    ↳ Pulando evento '{name}': Já passou ({start_dt_local.strftime('%H:%M')}).")
+        if dt_start_br < now_br - timedelta(minutes=15): # Dar uma margem de 15 minutos
             stats["skipped_past"] += 1
             return None
 
-        team1_name = json_data.get("competitor", [{}, {}])[0].get("name")
-        team2_name = json_data.get("competitor", [{}, {}])[1].get("name")
-        tournament_name = json_data.get("organizer", {}).get("name")
+        # Extrair times
+        competitors = json_data.get("competitor", [])
+        team1_name = competitors[0].get("name") if len(competitors) > 0 else "TBD"
+        team2_name = competitors[1].get("name") if len(competitors) > 1 else "TBD"
 
-        if not team1_name or not team2_name:
-            log(f"    ↳ Pulando evento '{name}': Times não encontrados.")
+        if team1_name == "TBD" or team2_name == "TBD":
             stats["skipped_tbd"] += 1
             return None
 
-        # Normalizar nomes dos times para comparação
-        norm_team1 = normalize_team(team1_name)
-        norm_team2 = normalize_team(team2_name)
-
-        # Verificar exclusões
-        if norm_team1 in cfg["exclusions_norm"] or norm_team2 in cfg["exclusions_norm"]:
-            log(f"    ↳ Pulando evento '{name}': Time excluído encontrado.")
-            stats["skipped_not_allowed"] += 1
-            return None
-
         # Verificar se algum dos times é de interesse
-        is_relevant = False
-        if cfg["teams_norm"]: # Se a lista de times de interesse não estiver vazia
-            if norm_team1 in cfg["teams_norm"] or norm_team2 in cfg["teams_norm"]:
-                is_relevant = True
-        else: # Se a lista de times de interesse estiver vazia, todos são relevantes
-            is_relevant = True
-
-        if not is_relevant:
-            log(f"    ↳ Pulando evento '{name}': Nenhum time de interesse encontrado.")
+        if not (is_team_allowed(team1_name, cfg) or is_team_allowed(team2_name, cfg)):
             stats["skipped_not_allowed"] += 1
             return None
 
-        summary = f"{cfg['prefix']}{team1_name} vs {team2_name}"
-        description = f"Torneio: {tournament_name}\nURL: {url}"
+        # Formatar summary e description
+        summary = f"{cfg['prefix']}{team1_name} vs {team2_name} ({organizer_name})"
+        description = f"Torneio: {organizer_name}\nURL: {event_url}\n"
 
-        # Gerar UID consistente
-        unique_string = f"{summary}-{start_dt_utc.isoformat()}-{url}"
-        uid = hashlib.sha1(unique_string.encode()).hexdigest() + "@tips.gg"
+        # O site retorna URL relativa, precisa da base
+        full_event_url = f"https://tips.gg{event_url}" if event_url.startswith('/') else event_url
 
+        # Calcular dt_end (assumindo 3 horas de duração para BO3, ou 1 hora para BO1/BO2)
+        # O JSON-LD também pode ter endDate, vamos preferir ele se existir
+        end_date_str = json_data.get("endDate")
+        if end_date_str:
+            dt_end_br = datetime.fromisoformat(end_date_str)
+            dt_end_utc = dt_end_br.astimezone(pytz.utc)
+        else:
+            # Fallback: estimar duração
+            description_text = json_data.get("description", "").lower()
+            if "bo1" in description_text:
+                dt_end_utc = dt_start_utc + timedelta(hours=1)
+            elif "bo2" in description_text:
+                dt_end_utc = dt_start_utc + timedelta(hours=2)
+            else: # Padrão para BO3 ou desconhecido
+                dt_end_utc = dt_start_utc + timedelta(hours=3)
+
+
+        uid = generate_uid(full_event_url, dt_start_utc)
         if uid in existing_uids:
-            log(f"    ↳ Pulando evento '{summary}': Já existe (UID: {uid}).")
-            return None
+            return None # Já existe, pular
 
-        event = Event()
-        event.add("summary", summary)
-        event.add("dtstart", start_dt_utc)
-        event.add("dtend", start_dt_utc + timedelta(hours=3)) # Duração padrão de 3 horas
-        event.add("description", description)
-        event.add("uid", uid)
-        event.add("url", url)
-        event.add("dtstamp", datetime.now(pytz.utc))
-        event.add("X-SETT-SOURCE", SOURCE_MARKER)
-
-        # Adicionar alarme 30 minutos antes
-        alarm = Alarm()
-        alarm.add("action", "DISPLAY")
-        alarm.add("description", f"Partida de {game_key} começando!")
-        alarm.add("trigger", timedelta(minutes=-30))
-        event.add_component(alarm)
-
-        log(f"    ✅ Evento JSON-LD adicionado: {summary} em {start_dt_local.strftime('%d/%m/%Y %H:%M')}")
-        stats["added"] += 1
         stats["sports_events"] += 1
-        return event
+        stats["added"] += 1
+        return create_event(summary, dt_start_utc, dt_end_utc, full_event_url, description, uid)
 
     except Exception as e:
-        log(f"    ❌ Erro ao processar JSON-LD para '{json_data.get('name', 'N/A')}': {e}")
+        log(f"  ↳ Erro ao parsear JSON-LD de SportsEvent: {e} - Data: {json_data}")
         stats["json_decode_errors"] += 1
         return None
 
 
-def parse_dom_matches(soup: BeautifulSoup, game_key: str, cfg: dict, target_day: date, existing_uids: set, stats: dict) -> list:
+def parse_dom_matches(
+    soup: BeautifulSoup, game_key: str, cfg: dict, target_day: date, existing_uids: set, stats: dict
+) -> list[Event]:
     """
-    Extrai eventos de partidas da estrutura DOM (div.element.match).
+    Parses match data from the DOM structure if JSON-LD is not available.
     """
     events = []
     matches = soup.select("div.element.match.upcoming")
-    stats["dom_matches_found"] += len(matches)
+    stats["dom_matches_found"] = len(matches)
 
     for match_element in matches:
         try:
+            # Extrair URL
+            link_element = match_element.select_one("a.match-link")
+            if not link_element:
+                continue
+            relative_url = link_element["href"]
+            full_event_url = f"https://tips.gg{relative_url}" if relative_url.startswith('/') else relative_url
+
+            # Extrair times
             team_names = [
-                name.get_text(strip=True)
-                for name in match_element.select(".teams .team .name")
+                name_elem.get_text(strip=True)
+                for name_elem in match_element.select("div.team span.name")
             ]
             if len(team_names) < 2:
-                log("    ↳ Pulando evento DOM: Não foi possível encontrar 2 times.")
-                stats["skipped_tbd"] += 1
                 continue
-
             team1_name = team_names[0]
             team2_name = team_names[1]
 
-            time_str = match_element.select_one(".info .time").get_text(strip=True)
-            match_link_element = match_element.select_one("a.match-link")
-            url = match_link_element["href"] if match_link_element else TIPS_URL_HINT
-
-            # O torneio pode ser extraído do cabeçalho acima do grupo de partidas
-            tournament_element = match_element.find_previous(class_="header").select_one(".tournament-link.title h2")
-            tournament_name = tournament_element.get_text(strip=True) if tournament_element else "Torneio Desconhecido"
-
-            # Combinar data do target_day com o horário da string
-            # O horário no DOM é local (BR_TZ)
-            try:
-                match_time_local = datetime.strptime(time_str, "%H:%M").time()
-                start_dt_local = BR_TZ.localize(datetime.combine(target_day, match_time_local))
-                start_dt_utc = start_dt_local.astimezone(pytz.utc)
-            except ValueError:
-                log(f"    ↳ Pulando evento DOM '{team1_name} vs {team2_name}': Formato de hora inválido '{time_str}'.")
-                stats["skipped_bad_date"] += 1
+            if team1_name == "TBD" or team2_name == "TBD":
+                stats["skipped_tbd"] += 1
                 continue
 
-            # Verificar se o evento já passou (em relação ao BR_TZ)
+            if not (is_team_allowed(team1_name, cfg) or is_team_allowed(team2_name, cfg)):
+                stats["skipped_not_allowed"] += 1
+                continue
+
+            # Extrair horário
+            time_str = match_element.select_one("span.time").get_text(strip=True)
+
+            # O site mostra o horário local (BR_TZ), então combinamos com a data alvo
+            # e depois convertemos para UTC
+            dt_start_br_naive = datetime.strptime(f"{target_day} {time_str}", "%Y-%m-%d %H:%M")
+            dt_start_br = BR_TZ.localize(dt_start_br_naive)
+            dt_start_utc = dt_start_br.astimezone(pytz.utc)
+
+            # Verificar se a partida já passou (considerando o horário atual em BR_TZ)
             now_br = datetime.now(BR_TZ)
-            if start_dt_local < now_br - timedelta(minutes=10): # Margem de 10 minutos
-                log(f"    ↳ Pulando evento DOM '{team1_name} vs {team2_name}': Já passou ({start_dt_local.strftime('%H:%M')}).")
+            if dt_start_br < now_br - timedelta(minutes=15): # Dar uma margem de 15 minutos
                 stats["skipped_past"] += 1
                 continue
 
-            # Normalizar nomes dos times para comparação
-            norm_team1 = normalize_team(team1_name)
-            norm_team2 = normalize_team(team2_name)
+            # Extrair torneio (do header ou da URL)
+            tournament_title_element = match_element.find_previous(
+                "div", class_="header"
+            ).select_one("h2")
+            organizer_name = (
+                tournament_title_element.get_text(strip=True)
+                if tournament_title_element
+                else "Desconhecido"
+            )
 
-            # Verificar exclusões
-            if norm_team1 in cfg["exclusions_norm"] or norm_team2 in cfg["exclusions_norm"]:
-                log(f"    ↳ Pulando evento DOM '{team1_name} vs {team2_name}': Time excluído encontrado.")
-                stats["skipped_not_allowed"] += 1
-                continue
+            # Tentar extrair o stage (Playoffs, Regular Season, etc.)
+            stage_element = match_element.find_previous("div", class_="toggle-content").find_previous_sibling("div", class_="header").find_next_sibling("div", class_="performer")
+            stage = stage_element.select_one("div.name").get_text(strip=True) if stage_element and stage_element.select_one("div.name") else ""
 
-            # Verificar se algum dos times é de interesse
-            is_relevant = False
-            if cfg["teams_norm"]: # Se a lista de times de interesse não estiver vazia
-                if norm_team1 in cfg["teams_norm"] or norm_team2 in cfg["teams_norm"]:
-                    is_relevant = True
-            else: # Se a lista de times de interesse estiver vazia, todos são relevantes
-                is_relevant = True
+            if stage:
+                organizer_name = f"{organizer_name} {stage}"
 
-            if not is_relevant:
-                log(f"    ↳ Pulando evento DOM '{team1_name} vs {team2_name}': Nenhum time de interesse encontrado.")
-                stats["skipped_not_allowed"] += 1
-                continue
+            summary = f"{cfg['prefix']}{team1_name} vs {team2_name} ({organizer_name})"
+            description = f"Torneio: {organizer_name}\nURL: {full_event_url}\n"
 
-            summary = f"{cfg['prefix']}{team1_name} vs {team2_name}"
-            description = f"Torneio: {tournament_name}\nURL: {url}"
+            # Estimar duração (padrão 3 horas para BO3, 1 hora para BO1)
+            # Sem JSON-LD, é mais difícil saber o formato (BO1, BO3, etc.)
+            # Podemos tentar inferir da URL ou da descrição se houver
+            dt_end_utc = dt_start_utc + timedelta(hours=3) # Padrão para 3 horas
 
-            # Gerar UID consistente
-            unique_string = f"{summary}-{start_dt_utc.isoformat()}-{url}"
-            uid = hashlib.sha1(unique_string.encode()).hexdigest() + "@tips.gg"
-
+            uid = generate_uid(full_event_url, dt_start_utc)
             if uid in existing_uids:
-                log(f"    ↳ Pulando evento DOM '{summary}': Já existe (UID: {uid}).")
                 continue
 
-            event = Event()
-            event.add("summary", summary)
-            event.add("dtstart", start_dt_utc)
-            event.add("dtend", start_dt_utc + timedelta(hours=3)) # Duração padrão de 3 horas
-            event.add("description", description)
-            event.add("uid", uid)
-            event.add("url", url)
-            event.add("dtstamp", datetime.now(pytz.utc))
-            event.add("X-SETT-SOURCE", SOURCE_MARKER)
-
-            # Adicionar alarme 30 minutos antes
-            alarm = Alarm()
-            alarm.add("action", "DISPLAY")
-            alarm.add("description", f"Partida de {game_key} começando!")
-            alarm.add("trigger", timedelta(minutes=-30))
-            event.add_component(alarm)
-
-            events.append(event)
-            log(f"    ✅ Evento DOM adicionado: {summary} em {start_dt_local.strftime('%d/%m/%Y %H:%M')}")
             stats["added"] += 1
+            events.append(create_event(summary, dt_start_utc, dt_end_utc, full_event_url, description, uid))
 
         except Exception as e:
-            log(f"    ❌ Erro ao processar elemento DOM de partida: {e}")
-            stats["json_decode_errors"] += 1 # Reutilizando para erros de parse
+            log(f"  ↳ Erro ao parsear partida DOM: {e} - Elemento: {match_element}")
+            stats["json_decode_errors"] += 1 # Reutilizando para erros de parse DOM
 
     return events
 
 
-def scrape_one_day_for_game(driver, game_key: str, cfg: dict, target_day: date, existing_uids: set) -> tuple[list, dict]:
+def scrape_one_day_for_game(
+    driver, game_key: str, cfg: dict, target_day: date, existing_uids: set
+) -> tuple[list[Event], dict]:
     """
-    Navega para a URL do dia e tenta raspar eventos usando JSON-LD e, se falhar, DOM.
+    Navega para a página de um jogo para um dia específico e raspa eventos usando JSON-LD e, se falhar, DOM.
     """
     all_new_events = []
     stats = {
@@ -569,7 +522,7 @@ if __name__ == "__main__":
     removed = prune_older_than(cal, cutoff)
     log(f"🧹 Limpeza: removidos {removed} eventos com data < {cutoff.strftime('%d/%m/%Y')}")
 
-    target_day = today
+    target_day = today# Usar load_cursor para manter a persistência
     log(f"📌 Cursor atual: {target_day.strftime('%d/%m/%Y')} "
         f"(range: {today.strftime('%d/%m/%Y')}..{future_limit.strftime('%d/%m/%Y')})")
 
