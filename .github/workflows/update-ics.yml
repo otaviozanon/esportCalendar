@@ -2,7 +2,7 @@ name: Atualizar Calendário E-sports
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "0,48 * * * *"  # A cada 48 minutos
   workflow_dispatch:
 
 permissions:
@@ -28,6 +28,8 @@ jobs:
           pip install -r requirements.txt
 
       - name: Executar script Python
+        env:
+          SCRAPE_DO_API_KEY: ${{ secrets.SCRAPE_DO_API_KEY }}
         run: python generate_ics.py
 
       - name: Commit e Push
