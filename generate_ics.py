@@ -6,8 +6,7 @@ from datetime import datetime, timedelta, date
 import pytz
 from bs4 import BeautifulSoup
 from icalendar import Calendar, Event, Alarm
-
-from playwright.sync_api import sync_playwright
+from curl_cffi import requests
 
 
 # -------------------- Configurações Globais --------------------
@@ -18,9 +17,6 @@ BR_TZ = pytz.timezone("America/Sao_Paulo")
 
 FUTURE_LIMIT_DAYS = 4
 DELETE_OLDER_THAN_DAYS = 7
-
-PAGE_LOAD_TIMEOUT_SECONDS = 15
-JSONLD_WAIT_SECONDS = 8
 
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
@@ -290,17 +286,24 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
     return removed
 
 
-# -------------------- Playwright --------------------
-def setup_playwright():
-    log("⚙️ Configurando Playwright (Firefox)...")
-    playwright = sync_playwright().start()
-    browser = playwright.firefox.launch(headless=True)
-    context = browser.new_context(
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    )
-    page = context.new_page()
-    log("✅ Playwright (Firefox) configurado com sucesso")
-    return page, playwright, browser, context
+# -------------------- HTTP com curl_cffi --------------------
+def fetch_page(url: str) -> str:
+    log(f"  📡 GET {url}")
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        response = requests.get(url, headers=headers, timeout=15, impersonate="chrome")
+        log(f"  ✅ Status: {response.status_code}")
+
+        if response.status_code == 200:
+            return response.text
+        else:
+            log(f"  ⚠️ Status {response.status_code}")
+            return ""
+    except Exception as e:
+        log(f"  ❌ Erro ao buscar: {e}")
+        return ""
 
 
 def build_stable_uid(
@@ -333,7 +336,6 @@ def match_url_absolute(match_url: str) -> str:
 
 
 def scrape_one_day_for_game(
-    page,
     game_key: str,
     game_cfg: dict,
     target_day: date,
@@ -352,29 +354,15 @@ def scrape_one_day_for_game(
         "skipped_not_allowed": 0,
         "skipped_bad_date": 0,
         "json_decode_errors": 0,
-        "timeouts_load": 0,
-        "timeouts_jsonld": 0,
     }
 
     url = stats["url"]
-    log(f"  📡 GET {url}")
+    html_content = fetch_page(url)
 
-    try:
-        page.goto(url, wait_until="networkidle", timeout=PAGE_LOAD_TIMEOUT_SECONDS * 1000)
-        log(f"  ✅ Página carregada com sucesso")
-    except Exception as e:
-        stats["timeouts_load"] += 1
-        log(f"  ⏱️ Erro ao carregar página: {e}")
+    if not html_content:
+        log(f"  ❌ Nenhum conteúdo retornado")
+        return [], stats
 
-    log(f"  ⏳ Aguardando scripts JSON-LD ({JSONLD_WAIT_SECONDS}s)...")
-    try:
-        page.wait_for_selector('script[type="application/ld+json"]', timeout=JSONLD_WAIT_SECONDS * 1000)
-        log(f"  ✅ Scripts JSON-LD encontrados")
-    except Exception:
-        stats["timeouts_jsonld"] += 1
-        log(f"  ⏱️ TIMEOUT aguardando JSON-LD (continuando...)")
-
-    html_content = page.content()
     soup = BeautifulSoup(html_content, "html.parser")
     scripts = soup.find_all("script", type="application/ld+json")
     stats["scripts_total"] = len(scripts)
@@ -382,11 +370,10 @@ def scrape_one_day_for_game(
 
     # 🔍 DEBUG: Ver TODO o HTML para CS2
     if game_key == "CS2":
-        log(f"  🔍 HTML COMPLETO (primeiros 5000 caracteres):")
-        html_preview = html_content[:5000]
+        log(f"  🔍 HTML COMPLETO (primeiros 2000 caracteres):")
+        html_preview = html_content[:2000]
         log(f"{html_preview}")
 
-    # 🔍 DEBUG: Ver se há algum script na página
     all_scripts = soup.find_all("script")
     log(f"  📋 Total de scripts na página: {len(all_scripts)}")
 
@@ -535,20 +522,14 @@ log(f"🧹 Limpeza: removidos {removed} eventos do script com data < {cutoff.str
 target_day = load_cursor(today, future_limit)
 log(f"📌 Cursor atual: {target_day.strftime('%d/%m/%Y')} (range: {today.strftime('%d/%m/%Y')}..{future_limit.strftime('%d/%m/%Y')})")
 
-page = None
-playwright = None
-browser = None
-context = None
 total_added = 0
 ran_ok = False
 
 try:
-    page, playwright, browser, context = setup_playwright()
-
     for game_key, cfg in GAMES.items():
         log(f"🌐 Raspando {game_key} em {target_day.strftime('%d/%m/%Y')}")
 
-        new_events, stats = scrape_one_day_for_game(page, game_key, cfg, target_day, existing_uids)
+        new_events, stats = scrape_one_day_for_game(game_key, cfg, target_day, existing_uids)
 
         for ev in new_events:
             cal.add_component(ev)
@@ -561,10 +542,7 @@ try:
             f"  skipped: tbd={stats['skipped_tbd']} past={stats['skipped_past']} "
             f"not_allowed={stats['skipped_not_allowed']} bad_date={stats['skipped_bad_date']}"
         )
-        log(
-            f"  timeouts: load={stats['timeouts_load']} jsonld={stats['timeouts_jsonld']} "
-            f"json_err={stats['json_decode_errors']}"
-        )
+        log(f"  json_err={stats['json_decode_errors']}")
 
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final:
@@ -581,16 +559,6 @@ except Exception as e:
     log(f"❌ Erro geral: {e}")
     import traceback
     log(f"📋 Traceback: {traceback.format_exc()}")
-finally:
-    if page:
-        page.close()
-    if context:
-        context.close()
-    if browser:
-        browser.close()
-    if playwright:
-        playwright.stop()
-    log("⚙️ Playwright (Firefox) fechado.")
 
 log(f"💾 Salvando arquivo: {CALENDAR_FILENAME}")
 try:
