@@ -6,3 +6,4 @@ icalendar>=5.0.0
 selenium>=4.17.2
 webdriver-manager>=4.0.1
 scrapling>=0.1.0
+curl_cffi>=0.5.0
