@@ -2,13 +2,11 @@ import os
 import json
 import hashlib
 import time
-import random
 from datetime import datetime, timedelta, date
 
 import pytz
 from bs4 import BeautifulSoup
 from icalendar import Calendar, Event, Alarm
-import cloudscraper
 import requests
 
 
@@ -24,63 +22,9 @@ DELETE_OLDER_THAN_DAYS = 7
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
 
-# ScraperAPI (opcional, como fallback)
-SCRAPER_API_KEY = os.getenv("SCRAPER_API_KEY", "")
-
-# Lista de proxies gratuitos
-PROXIES = [
-    "http://195.154.33.211:3128",
-    "http://200.174.198.86:8080",
-    "http://200.195.169.226:8080",
-    "http://201.20.100.142:8080",
-    "http://201.20.106.230:8080",
-    "http://201.20.110.38:8080",
-    "http://201.20.116.134:8080",
-    "http://201.20.118.8:8080",
-    "http://201.20.119.98:8080",
-    "http://201.20.120.142:8080",
-    "http://201.20.120.248:8080",
-    "http://201.20.122.226:8080",
-    "http://201.20.123.206:8080",
-    "http://201.20.124.170:8080",
-    "http://201.20.124.226:8080",
-    "http://201.20.125.98:8080",
-    "http://201.20.126.226:8080",
-    "http://201.20.127.226:8080",
-    "http://201.20.128.226:8080",
-    "http://201.20.129.226:8080",
-    "http://201.20.130.226:8080",
-    "http://201.20.131.226:8080",
-    "http://201.20.132.226:8080",
-    "http://201.20.133.226:8080",
-    "http://201.20.134.226:8080",
-    "http://201.20.135.226:8080",
-    "http://201.20.136.226:8080",
-    "http://201.20.137.226:8080",
-    "http://201.20.138.226:8080",
-    "http://201.20.139.226:8080",
-    "http://201.20.140.226:8080",
-    "http://201.20.141.226:8080",
-    "http://201.20.142.226:8080",
-    "http://201.20.143.226:8080",
-    "http://201.20.144.226:8080",
-    "http://201.20.145.226:8080",
-    "http://201.20.146.226:8080",
-    "http://201.20.147.226:8080",
-    "http://201.20.148.226:8080",
-    "http://201.20.149.226:8080",
-    "http://201.20.150.226:8080",
-    "http://201.20.151.226:8080",
-    "http://201.20.152.226:8080",
-    "http://201.20.153.226:8080",
-    "http://201.20.154.226:8080",
-    "http://201.20.155.226:8080",
-    "http://201.20.156.226:8080",
-    "http://201.20.157.226:8080",
-    "http://201.20.158.226:8080",
-    "http://201.20.159.226:8080",
-    "http://201.20.160.226:8080",
-]
+# Scrape.do API
+SCRAPE_DO_API_KEY = os.getenv("SCRAPE_DO_API_KEY", "")
+SCRAPE_DO_URL = "https://api.scrape.do"
 
 
 # -------------------- Jogos / Times --------------------
@@ -347,88 +291,34 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
     return removed
 
 
-# -------------------- HTTP com Proxies e ScraperAPI --------------------
-def setup_scraper():
-    log("⚙️ Configurando Cloudscraper...")
-    scraper = cloudscraper.create_scraper()
-    log("✅ Cloudscraper configurado com sucesso")
-    return scraper
+# -------------------- HTTP com Scrape.do --------------------
+def fetch_page_scrape_do(url: str) -> str:
+    """Usa Scrape.do para contornar Cloudflare"""
+    log(f"  📡 GET {url} (via Scrape.do)")
 
-
-def fetch_page_with_proxy(scraper, url: str) -> str:
-    """Tenta com proxies gratuitos"""
-    log(f"  📡 GET {url} (tentando com proxies gratuitos)")
-
-    proxies_shuffled = random.sample(PROXIES, len(PROXIES))
-
-    for attempt, proxy in enumerate(proxies_shuffled[:5], 1):  # Tenta 5 proxies diferentes
-        try:
-            log(f"  🔀 Tentativa {attempt}/5 com proxy: {proxy}")
-
-            proxies = {
-                "http": proxy,
-                "https": proxy,
-            }
-
-            response = scraper.get(url, timeout=10, proxies=proxies)
-
-            if response.status_code == 200:
-                log(f"  ✅ Sucesso com proxy!")
-                return response.text
-            else:
-                log(f"  ⚠️ Status {response.status_code}, tentando próximo proxy...")
-                time.sleep(1)
-
-        except Exception as e:
-            log(f"  ❌ Erro com proxy {proxy}: {str(e)[:50]}")
-            time.sleep(1)
-
-    return ""
-
-
-def fetch_page_with_scraper_api(url: str) -> str:
-    """Fallback para ScraperAPI"""
-    if not SCRAPER_API_KEY:
-        log(f"  ⚠️ ScraperAPI não configurado (SCRAPER_API_KEY vazio)")
+    if not SCRAPE_DO_API_KEY:
+        log(f"  ⚠️ Scrape.do não configurado")
         return ""
 
-    log(f"  📡 GET {url} (via ScraperAPI)")
     try:
-        payload = {
-            'api_key': SCRAPER_API_KEY,
-            'url': url,
-            'render': 'false'
+        params = {
+            "apikey": SCRAPE_DO_API_KEY,
+            "url": url,
+            "render": "false",  # Sem JavaScript (mais rápido)
         }
-        response = requests.get('http://api.scraperapi.com', params=payload, timeout=15)
+
+        response = requests.get(SCRAPE_DO_URL, params=params, timeout=30)
 
         if response.status_code == 200:
-            log(f"  ✅ Sucesso com ScraperAPI!")
+            log(f"  ✅ Sucesso!")
             return response.text
         else:
-            log(f"  ⚠️ ScraperAPI Status {response.status_code}")
+            log(f"  ⚠️ Status {response.status_code}")
             return ""
+
     except Exception as e:
-        log(f"  ❌ Erro ScraperAPI: {e}")
+        log(f"  ❌ Erro: {str(e)[:80]}")
         return ""
-
-
-def fetch_page(scraper, url: str) -> str:
-    """Tenta proxies primeiro, depois ScraperAPI"""
-
-    # Tenta com proxies gratuitos
-    html = fetch_page_with_proxy(scraper, url)
-    if html:
-        return html
-
-    log(f"  ⚠️ Proxies falharam, tentando ScraperAPI...")
-
-    # Fallback para ScraperAPI
-    html = fetch_page_with_scraper_api(url)
-    if html:
-        return html
-
-    log(f"  ❌ Todas as tentativas falharam")
-    return ""
 
 
 def build_stable_uid(
@@ -439,177 +329,163 @@ def build_stable_uid(
     organizer_name: str,
     match_url: str,
 ) -> str:
-    dt_norm = normalize_event_datetime_utc(match_time_utc)
-
-    uid_payload = "|".join([
-        (game_key or "").strip().lower(),
-        (event_summary or "").strip().lower(),
-        dt_norm.isoformat(),
-        (tournament_desc or "").strip().lower(),
-        (organizer_name or "").strip().lower(),
-        (match_url or "").strip().lower(),
-    ])
-
-    return hashlib.sha1(uid_payload.encode("utf-8")).hexdigest()
+    parts = f"{game_key}|{event_summary}|{match_time_utc.isoformat()}|{tournament_desc}|{organizer_name}|{match_url}"
+    return hashlib.sha256(parts.encode()).hexdigest()
 
 
-def match_url_absolute(match_url: str) -> str:
-    match_url = match_url or ""
-    if match_url and not match_url.startswith("http"):
-        return f"https://tips.gg{match_url}"
-    return match_url
+def match_url_absolute(rel_url: str) -> str:
+    if not rel_url:
+        return ""
+    if rel_url.startswith("http"):
+        return rel_url
+    if rel_url.startswith("/"):
+        return f"https://tips.gg{rel_url}"
+    return f"https://tips.gg/{rel_url}"
 
 
-def scrape_one_day_for_game(
-    scraper,
-    game_key: str,
-    game_cfg: dict,
-    target_day: date,
-    existing_uids: set
-) -> tuple[list[Event], dict]:
+def scrape_one_day_for_game(game_key: str, cfg: dict, target_date: date, existing_uids: set) -> tuple:
+    prefix = cfg["prefix"]
+    base_path = cfg["base_path"]
+    teams_norm = cfg["teams_norm"]
+    exclusions_norm = cfg["exclusions_norm"]
+
+    url = build_url_for_day(base_path, target_date)
+    html = fetch_page_scrape_do(url)
+
     stats = {
-        "game": game_key,
-        "date": target_day.strftime("%d/%m/%Y"),
-        "url": build_url_for_day(game_cfg["base_path"], target_day),
+        "date": target_date.strftime("%d/%m/%Y"),
         "scripts_total": 0,
         "sports_events": 0,
-        "added": 0,
         "skipped_tbd": 0,
         "skipped_past": 0,
-        "skipped_no_competitors": 0,
         "skipped_not_allowed": 0,
         "skipped_bad_date": 0,
         "json_decode_errors": 0,
+        "added": 0,
     }
 
-    url = stats["url"]
-    html_content = fetch_page(scraper, url)
-
-    if not html_content:
-        log(f"  ❌ Nenhum conteúdo retornado")
-        return [], stats
-
-    soup = BeautifulSoup(html_content, "html.parser")
-    scripts = soup.find_all("script", type="application/ld+json")
-    stats["scripts_total"] = len(scripts)
-    log(f"  📊 Total de scripts JSON-LD encontrados: {stats['scripts_total']}")
-
-    if game_key == "CS2":
-        log(f"  🔍 HTML (primeiros 1500 caracteres):")
-        html_preview = html_content[:1500]
-        log(f"{html_preview}")
-
-    all_scripts = soup.find_all("script")
-    log(f"  📋 Total de scripts na página: {len(all_scripts)}")
-
-    now_utc = datetime.now(pytz.utc)
     new_events = []
 
-    teams_norm = game_cfg["teams_norm"]
-    exclusions_norm = game_cfg["exclusions_norm"]
-    prefix = game_cfg["prefix"]
+    if not html:
+        return new_events, stats
 
-    for idx, script in enumerate(scripts, 1):
-        raw = (script.string or "").strip()
-        if not raw:
-            continue
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+    except Exception as e:
+        log(f"      ❌ Erro ao parsear HTML: {e}")
+        return new_events, stats
+
+    now_utc = datetime.now(pytz.utc)
+
+    for script_tag in soup.find_all("script", {"type": "application/ld+json"}):
+        stats["scripts_total"] += 1
 
         try:
-            event_data = json.loads(raw)
-        except json.JSONDecodeError as e:
+            data = json.loads(script_tag.string)
+        except json.JSONDecodeError:
             stats["json_decode_errors"] += 1
             continue
 
-        if event_data.get("@type") != "SportsEvent":
-            continue
+        events = data.get("@graph", []) if isinstance(data, dict) else []
 
-        stats["sports_events"] += 1
+        for event_data in events:
+            if not isinstance(event_data, dict):
+                continue
 
-        start_date_str = event_data.get("startDate", "") or ""
-        description = event_data.get("description", "") or ""
-        organizer_name = (event_data.get("organizer") or {}).get("name", "Desconhecido")
-        match_url = match_url_absolute(event_data.get("url", "") or "")
+            if event_data.get("@type") != "SportsEvent":
+                continue
 
-        competitors = event_data.get("competitor", []) or []
-        if len(competitors) < 2:
-            stats["skipped_no_competitors"] += 1
-            continue
+            stats["sports_events"] += 1
 
-        team1_raw = competitors[0].get("name", "TBD")
-        team2_raw = competitors[1].get("name", "TBD")
+            start_date_str = event_data.get("startDate", "") or ""
+            description = event_data.get("description", "") or ""
+            organizer_name = (event_data.get("organizer") or {}).get("name", "Desconhecido")
+            match_url = match_url_absolute(event_data.get("url", "") or "")
 
-        if team1_raw == "TBD" or team2_raw == "TBD":
-            stats["skipped_tbd"] += 1
-            continue
+            competitors = event_data.get("competitor", []) or []
+            if len(competitors) < 2:
+                continue
 
-        try:
-            match_time_utc = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
-            if match_time_utc.tzinfo is None:
-                match_time_utc = pytz.utc.localize(match_time_utc)
-            match_time_utc = match_time_utc.astimezone(pytz.utc)
-        except Exception:
-            stats["skipped_bad_date"] += 1
-            continue
+            team1_raw = competitors[0].get("name", "TBD")
+            team2_raw = competitors[1].get("name", "TBD")
 
-        if match_time_utc < now_utc:
-            stats["skipped_past"] += 1
-            continue
+            if team1_raw == "TBD" or team2_raw == "TBD":
+                stats["skipped_tbd"] += 1
+                continue
 
-        t1 = normalize_team(team1_raw)
-        t2 = normalize_team(team2_raw)
+            try:
+                match_time_utc = datetime.fromisoformat(start_date_str.replace("Z", "+00:00"))
+                if match_time_utc.tzinfo is None:
+                    match_time_utc = pytz.utc.localize(match_time_utc)
+                match_time_utc = match_time_utc.astimezone(pytz.utc)
+            except Exception:
+                stats["skipped_bad_date"] += 1
+                continue
 
-        allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
-        allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
+            if match_time_utc < now_utc:
+                stats["skipped_past"] += 1
+                continue
 
-        if not (allowed_t1 or allowed_t2):
-            stats["skipped_not_allowed"] += 1
-            continue
+            t1 = normalize_team(team1_raw)
+            t2 = normalize_team(team2_raw)
 
-        event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
+            allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
+            allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
 
-        event_uid = build_stable_uid(
-            game_key=game_key,
-            event_summary=event_summary,
-            match_time_utc=match_time_utc,
-            tournament_desc=description,
-            organizer_name=organizer_name,
-            match_url=match_url,
-        )
+            if not (allowed_t1 or allowed_t2):
+                stats["skipped_not_allowed"] += 1
+                continue
 
-        if event_uid in existing_uids:
-            continue
+            event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
 
-        event_description = (
-            f"🏆 {description}\n"
-            f"📍 {organizer_name}\n"
-            f"🌐 {match_url}\n"
-            f"{SOURCE_MARKER}"
-        )
+            event_uid = build_stable_uid(
+                game_key=game_key,
+                event_summary=event_summary,
+                match_time_utc=match_time_utc,
+                tournament_desc=description,
+                organizer_name=organizer_name,
+                match_url=match_url,
+            )
 
-        e = Event()
-        e.add('summary', event_summary)
-        e.add('dtstart', normalize_event_datetime_utc(match_time_utc))
-        e.add('dtend', normalize_event_datetime_utc(match_time_utc) + timedelta(hours=2))
-        e.add('description', event_description)
-        e.add('uid', event_uid)
-        e.add('dtstamp', datetime.now(pytz.utc))
+            if event_uid in existing_uids:
+                continue
 
-        alarm = Alarm()
-        alarm.add('action', 'DISPLAY')
-        alarm.add('trigger', timedelta(minutes=-15))
-        alarm.add('description', f'Lembrete: {event_summary}')
-        e.add_component(alarm)
+            event_description = (
+                f"🏆 {description}\n"
+                f"📍 {organizer_name}\n"
+                f"🌐 {match_url}\n"
+                f"{SOURCE_MARKER}"
+            )
 
-        new_events.append(e)
-        existing_uids.add(event_uid)
-        stats["added"] += 1
-        log(f"      ✅ ADICIONADO: {event_summary}")
+            e = Event()
+            e.add('summary', event_summary)
+            e.add('dtstart', normalize_event_datetime_utc(match_time_utc))
+            e.add('dtend', normalize_event_datetime_utc(match_time_utc) + timedelta(hours=2))
+            e.add('description', event_description)
+            e.add('uid', event_uid)
+            e.add('dtstamp', datetime.now(pytz.utc))
+
+            alarm = Alarm()
+            alarm.add('action', 'DISPLAY')
+            alarm.add('trigger', timedelta(minutes=-15))
+            alarm.add('description', f'Lembrete: {event_summary}')
+            e.add_component(alarm)
+
+            new_events.append(e)
+            existing_uids.add(event_uid)
+            stats["added"] += 1
+            log(f"      ✅ ADICIONADO: {event_summary}")
 
     return new_events, stats
 
 
 # -------------------- Execução --------------------
 log("🔄 Iniciando execução (cursor rotativo)...")
+
+if SCRAPE_DO_API_KEY:
+    log("✅ Scrape.do configurado")
+else:
+    log("⚠️ Scrape.do não configurado")
 
 cal = load_calendar(CALENDAR_FILENAME)
 
@@ -637,12 +513,10 @@ total_added = 0
 ran_ok = False
 
 try:
-    scraper = setup_scraper()
-
     for game_key, cfg in GAMES.items():
         log(f"🌐 Raspando {game_key} em {target_day.strftime('%d/%m/%Y')}")
 
-        new_events, stats = scrape_one_day_for_game(scraper, game_key, cfg, target_day, existing_uids)
+        new_events, stats = scrape_one_day_for_game(game_key, cfg, target_day, existing_uids)
 
         for ev in new_events:
             cal.add_component(ev)
