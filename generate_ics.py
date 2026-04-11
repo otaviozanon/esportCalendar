@@ -35,7 +35,7 @@ GAMES = {
     "CS2": {
         "prefix": "[CS2] ",
         "base_path": "https://tips.gg/csgo/matches/",
-        "days_to_scrape": 30,  # Raspa 30 dias por execução
+        "days_to_scrape": 1,  # Raspa 30 dias por execução
         "once_per_day": False,  # Roda toda vez
         "teams": {"FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo", "RED Canids", "Legacy", "ODDIK", "Imperial Esports", "Gaimin Gladiators"},
         "exclusions": {
