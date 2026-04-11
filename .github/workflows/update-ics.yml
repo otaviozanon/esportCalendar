@@ -2,7 +2,7 @@ name: Atualizar Calendário E-sports
 
 on:
   schedule:
-    - cron: "0,48 * * * *"  # A cada 48 minutos
+    - cron: "*/48 * * * *"  # A cada 48 minutos
   workflow_dispatch:
 
 permissions:
