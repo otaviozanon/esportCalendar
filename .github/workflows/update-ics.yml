@@ -36,11 +36,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 5) Executa o script Python
+      # 5) Instala Playwright browsers (necessário para Scrapling)
+      - name: Instalar Playwright browsers
+        run: |
+          playwright install chromium
+
+      # 6) Executa o script Python
       - name: Executar script Python
         run: python generate_ics.py
 
-      # 6) Commita calendar.ics E state.json (persistência do cursor)
+      # 7) Commita calendar.ics E state.json (persistência do cursor)
       - name: Commit e Push do calendário e estado (se houver mudanças)
         run: |
           git config --global user.name "github-actions"
