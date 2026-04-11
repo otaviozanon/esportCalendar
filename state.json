@@ -1,1 +1,9 @@
-{"cursor_date": "2026-04-15"}
+{
+  "cursor_date": "2026-04-15",
+  "games_run_today": {
+    "VAL": true,
+    "RL": true,
+    "LOL": true
+  },
+  "last_run_date": "2026-04-11"
+}
