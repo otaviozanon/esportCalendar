@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, date
 import pytz
 from bs4 import BeautifulSoup
 from icalendar import Calendar, Event, Alarm
-from curl_cffi import requests
+import cloudscraper
 
 
 # -------------------- Configurações Globais --------------------
@@ -286,40 +286,24 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
     return removed
 
 
-# -------------------- HTTP com curl_cffi --------------------
-def fetch_page(url: str) -> str:
+# -------------------- Cloudscraper --------------------
+def setup_scraper():
+    log("⚙️ Configurando Cloudscraper...")
+    scraper = cloudscraper.create_scraper()
+    log("✅ Cloudscraper configurado com sucesso")
+    return scraper
+
+
+def fetch_page(scraper, url: str) -> str:
     log(f"  📡 GET {url}")
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Accept-Encoding": "gzip, deflate, br",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "Sec-Fetch-User": "?1",
-            "Cache-Control": "max-age=0",
-        }
-
-        response = requests.get(
-            url, 
-            headers=headers, 
-            timeout=15, 
-            impersonate="chrome120",
-            allow_redirects=True
-        )
-
+        response = scraper.get(url, timeout=15)
         log(f"  ✅ Status: {response.status_code}")
 
         if response.status_code == 200:
             return response.text
         else:
             log(f"  ⚠️ Status {response.status_code}")
-            log(f"  📋 Headers da resposta: {dict(response.headers)}")
             return ""
     except Exception as e:
         log(f"  ❌ Erro ao buscar: {e}")
@@ -356,6 +340,7 @@ def match_url_absolute(match_url: str) -> str:
 
 
 def scrape_one_day_for_game(
+    scraper,
     game_key: str,
     game_cfg: dict,
     target_day: date,
@@ -377,7 +362,7 @@ def scrape_one_day_for_game(
     }
 
     url = stats["url"]
-    html_content = fetch_page(url)
+    html_content = fetch_page(scraper, url)
 
     if not html_content:
         log(f"  ❌ Nenhum conteúdo retornado")
@@ -546,10 +531,12 @@ total_added = 0
 ran_ok = False
 
 try:
+    scraper = setup_scraper()
+
     for game_key, cfg in GAMES.items():
         log(f"🌐 Raspando {game_key} em {target_day.strftime('%d/%m/%Y')}")
 
-        new_events, stats = scrape_one_day_for_game(game_key, cfg, target_day, existing_uids)
+        new_events, stats = scrape_one_day_for_game(scraper, game_key, cfg, target_day, existing_uids)
 
         for ev in new_events:
             cal.add_component(ev)
