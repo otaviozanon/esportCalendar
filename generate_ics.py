@@ -403,9 +403,18 @@ def scrape_one_day_for_game(
     stats["scripts_total"] = len(scripts)
     log(f"  📊 Total de scripts JSON-LD encontrados: {stats['scripts_total']}")
 
+    # 🔍 DEBUG: Ver o HTML
+    log(f"  🔍 Primeiros 1000 caracteres do HTML:")
+    html_preview = driver.page_source[:1000]
+    log(f"  {html_preview}")
+
+    # 🔍 DEBUG: Ver se há algum script na página
+    all_scripts = soup.find_all("script")
+    log(f"  📋 Total de scripts na página: {len(all_scripts)}")
+
     now_utc = datetime.now(pytz.utc)
     new_events = []
-
+    
     teams_norm = game_cfg["teams_norm"]
     exclusions_norm = game_cfg["exclusions_norm"]
     prefix = game_cfg["prefix"]
