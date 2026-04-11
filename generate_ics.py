@@ -35,8 +35,8 @@ GAMES = {
     "CS2": {
         "prefix": "[CS2] ",
         "base_path": "https://tips.gg/csgo/matches/",
-        "days_to_scrape": 1,  # Raspa 30 dias por execução
-        "once_per_day": False,  # Roda toda vez
+        "days_to_scrape": 1,
+        "once_per_day": False,
         "teams": {"FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo", "RED Canids", "Legacy", "ODDIK", "Imperial Esports", "Gaimin Gladiators"},
         "exclusions": {
             "Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A",
@@ -49,7 +49,7 @@ GAMES = {
         "prefix": "[V] ",
         "base_path": "https://tips.gg/valorant/matches/",
         "days_to_scrape": 1,
-        "once_per_day": True,  # Apenas 1x por dia
+        "once_per_day": True,
         "teams": {"LOUD", "FURIA", "MIBR"},
         "exclusions": set(),
     },
@@ -57,7 +57,7 @@ GAMES = {
         "prefix": "[RL] ",
         "base_path": "https://tips.gg/rl/matches/",
         "days_to_scrape": 1,
-        "once_per_day": True,  # Apenas 1x por dia
+        "once_per_day": True,
         "teams": {"FURIA", "Team Secret"},
         "exclusions": set(),
     },
@@ -65,7 +65,7 @@ GAMES = {
         "prefix": "[LOL] ",
         "base_path": "https://tips.gg/lol/matches/",
         "days_to_scrape": 1,
-        "once_per_day": True,  # Apenas 1x por dia
+        "once_per_day": True,
         "teams": {"paiN Gaming", "LOUD", "Vivo Keyd Stars", "RED Canids"},
         "exclusions": set(),
     },
@@ -168,7 +168,11 @@ def load_state() -> dict:
 
     try:
         with open(STATE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            state = json.load(f)
+            # Garante que games_run_today existe
+            if "games_run_today" not in state:
+                state["games_run_today"] = {}
+            return state
     except Exception:
         return {
             "last_run_date": None,
@@ -207,6 +211,11 @@ def should_run_game(game_key: str, cfg: dict, today: date, state: dict) -> bool:
 def mark_game_as_run(game_key: str, today: date, state: dict):
     """Marca jogo como executado hoje"""
     state["last_run_date"] = today.isoformat()
+
+    # Garante que games_run_today existe
+    if "games_run_today" not in state:
+        state["games_run_today"] = {}
+
     state["games_run_today"][game_key] = True
     save_state(state)
 
@@ -343,7 +352,7 @@ def fetch_page_scrape_do(url: str) -> str:
         params = {
             "apikey": SCRAPE_DO_API_KEY,
             "url": url,
-            "render": "false",
+            "render": "true",
         }
 
         response = requests.get(SCRAPE_DO_URL, params=params, timeout=30)
