@@ -1,12 +1,15 @@
 import os
 import json
 import hashlib
+import time
+import random
 from datetime import datetime, timedelta, date
 
 import pytz
 from bs4 import BeautifulSoup
 from icalendar import Calendar, Event, Alarm
 import cloudscraper
+import requests
 
 
 # -------------------- Configurações Globais --------------------
@@ -20,6 +23,64 @@ DELETE_OLDER_THAN_DAYS = 7
 
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
+
+# ScraperAPI (opcional, como fallback)
+SCRAPER_API_KEY = os.getenv("SCRAPER_API_KEY", "")
+
+# Lista de proxies gratuitos
+PROXIES = [
+    "http://195.154.33.211:3128",
+    "http://200.174.198.86:8080",
+    "http://200.195.169.226:8080",
+    "http://201.20.100.142:8080",
+    "http://201.20.106.230:8080",
+    "http://201.20.110.38:8080",
+    "http://201.20.116.134:8080",
+    "http://201.20.118.8:8080",
+    "http://201.20.119.98:8080",
+    "http://201.20.120.142:8080",
+    "http://201.20.120.248:8080",
+    "http://201.20.122.226:8080",
+    "http://201.20.123.206:8080",
+    "http://201.20.124.170:8080",
+    "http://201.20.124.226:8080",
+    "http://201.20.125.98:8080",
+    "http://201.20.126.226:8080",
+    "http://201.20.127.226:8080",
+    "http://201.20.128.226:8080",
+    "http://201.20.129.226:8080",
+    "http://201.20.130.226:8080",
+    "http://201.20.131.226:8080",
+    "http://201.20.132.226:8080",
+    "http://201.20.133.226:8080",
+    "http://201.20.134.226:8080",
+    "http://201.20.135.226:8080",
+    "http://201.20.136.226:8080",
+    "http://201.20.137.226:8080",
+    "http://201.20.138.226:8080",
+    "http://201.20.139.226:8080",
+    "http://201.20.140.226:8080",
+    "http://201.20.141.226:8080",
+    "http://201.20.142.226:8080",
+    "http://201.20.143.226:8080",
+    "http://201.20.144.226:8080",
+    "http://201.20.145.226:8080",
+    "http://201.20.146.226:8080",
+    "http://201.20.147.226:8080",
+    "http://201.20.148.226:8080",
+    "http://201.20.149.226:8080",
+    "http://201.20.150.226:8080",
+    "http://201.20.151.226:8080",
+    "http://201.20.152.226:8080",
+    "http://201.20.153.226:8080",
+    "http://201.20.154.226:8080",
+    "http://201.20.155.226:8080",
+    "http://201.20.156.226:8080",
+    "http://201.20.157.226:8080",
+    "http://201.20.158.226:8080",
+    "http://201.20.159.226:8080",
+    "http://201.20.160.226:8080",
+]
 
 
 # -------------------- Jogos / Times --------------------
@@ -286,7 +347,7 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
     return removed
 
 
-# -------------------- Cloudscraper --------------------
+# -------------------- HTTP com Proxies e ScraperAPI --------------------
 def setup_scraper():
     log("⚙️ Configurando Cloudscraper...")
     scraper = cloudscraper.create_scraper()
@@ -294,20 +355,80 @@ def setup_scraper():
     return scraper
 
 
-def fetch_page(scraper, url: str) -> str:
-    log(f"  📡 GET {url}")
+def fetch_page_with_proxy(scraper, url: str) -> str:
+    """Tenta com proxies gratuitos"""
+    log(f"  📡 GET {url} (tentando com proxies gratuitos)")
+
+    proxies_shuffled = random.sample(PROXIES, len(PROXIES))
+
+    for attempt, proxy in enumerate(proxies_shuffled[:5], 1):  # Tenta 5 proxies diferentes
+        try:
+            log(f"  🔀 Tentativa {attempt}/5 com proxy: {proxy}")
+
+            proxies = {
+                "http": proxy,
+                "https": proxy,
+            }
+
+            response = scraper.get(url, timeout=10, proxies=proxies)
+
+            if response.status_code == 200:
+                log(f"  ✅ Sucesso com proxy!")
+                return response.text
+            else:
+                log(f"  ⚠️ Status {response.status_code}, tentando próximo proxy...")
+                time.sleep(1)
+
+        except Exception as e:
+            log(f"  ❌ Erro com proxy {proxy}: {str(e)[:50]}")
+            time.sleep(1)
+
+    return ""
+
+
+def fetch_page_with_scraper_api(url: str) -> str:
+    """Fallback para ScraperAPI"""
+    if not SCRAPER_API_KEY:
+        log(f"  ⚠️ ScraperAPI não configurado (SCRAPER_API_KEY vazio)")
+        return ""
+
+    log(f"  📡 GET {url} (via ScraperAPI)")
     try:
-        response = scraper.get(url, timeout=15)
-        log(f"  ✅ Status: {response.status_code}")
+        payload = {
+            'api_key': SCRAPER_API_KEY,
+            'url': url,
+            'render': 'false'
+        }
+        response = requests.get('http://api.scraperapi.com', params=payload, timeout=15)
 
         if response.status_code == 200:
+            log(f"  ✅ Sucesso com ScraperAPI!")
             return response.text
         else:
-            log(f"  ⚠️ Status {response.status_code}")
+            log(f"  ⚠️ ScraperAPI Status {response.status_code}")
             return ""
     except Exception as e:
-        log(f"  ❌ Erro ao buscar: {e}")
+        log(f"  ❌ Erro ScraperAPI: {e}")
         return ""
+
+
+def fetch_page(scraper, url: str) -> str:
+    """Tenta proxies primeiro, depois ScraperAPI"""
+
+    # Tenta com proxies gratuitos
+    html = fetch_page_with_proxy(scraper, url)
+    if html:
+        return html
+
+    log(f"  ⚠️ Proxies falharam, tentando ScraperAPI...")
+
+    # Fallback para ScraperAPI
+    html = fetch_page_with_scraper_api(url)
+    if html:
+        return html
+
+    log(f"  ❌ Todas as tentativas falharam")
+    return ""
 
 
 def build_stable_uid(
@@ -373,10 +494,9 @@ def scrape_one_day_for_game(
     stats["scripts_total"] = len(scripts)
     log(f"  📊 Total de scripts JSON-LD encontrados: {stats['scripts_total']}")
 
-    # 🔍 DEBUG: Ver TODO o HTML para CS2
     if game_key == "CS2":
-        log(f"  🔍 HTML COMPLETO (primeiros 2000 caracteres):")
-        html_preview = html_content[:2000]
+        log(f"  🔍 HTML (primeiros 1500 caracteres):")
+        html_preview = html_content[:1500]
         log(f"{html_preview}")
 
     all_scripts = soup.find_all("script")
@@ -392,22 +512,18 @@ def scrape_one_day_for_game(
     for idx, script in enumerate(scripts, 1):
         raw = (script.string or "").strip()
         if not raw:
-            log(f"    ⚠️ Script {idx}: vazio, pulando")
             continue
 
         try:
             event_data = json.loads(raw)
         except json.JSONDecodeError as e:
             stats["json_decode_errors"] += 1
-            log(f"    ❌ Script {idx}: erro JSON - {e}")
             continue
 
         if event_data.get("@type") != "SportsEvent":
-            log(f"    ⏭️ Script {idx}: tipo '{event_data.get('@type')}' (não é SportsEvent)")
             continue
 
         stats["sports_events"] += 1
-        log(f"    ✅ Script {idx}: SportsEvent detectado")
 
         start_date_str = event_data.get("startDate", "") or ""
         description = event_data.get("description", "") or ""
@@ -417,16 +533,13 @@ def scrape_one_day_for_game(
         competitors = event_data.get("competitor", []) or []
         if len(competitors) < 2:
             stats["skipped_no_competitors"] += 1
-            log(f"      ⏭️ Pulado: menos de 2 competidores ({len(competitors)})")
             continue
 
         team1_raw = competitors[0].get("name", "TBD")
         team2_raw = competitors[1].get("name", "TBD")
-        log(f"      👥 Times: '{team1_raw}' vs '{team2_raw}'")
 
         if team1_raw == "TBD" or team2_raw == "TBD":
             stats["skipped_tbd"] += 1
-            log(f"      ⏭️ Pulado: TBD detectado")
             continue
 
         try:
@@ -434,15 +547,12 @@ def scrape_one_day_for_game(
             if match_time_utc.tzinfo is None:
                 match_time_utc = pytz.utc.localize(match_time_utc)
             match_time_utc = match_time_utc.astimezone(pytz.utc)
-            log(f"      ⏰ Horário: {match_time_utc.isoformat()}")
-        except Exception as e:
+        except Exception:
             stats["skipped_bad_date"] += 1
-            log(f"      ❌ Pulado: erro ao parsear data '{start_date_str}' - {e}")
             continue
 
         if match_time_utc < now_utc:
             stats["skipped_past"] += 1
-            log(f"      ⏭️ Pulado: evento no passado")
             continue
 
         t1 = normalize_team(team1_raw)
@@ -451,11 +561,8 @@ def scrape_one_day_for_game(
         allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
         allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
 
-        log(f"      🔍 Validação de times: t1_allowed={allowed_t1}, t2_allowed={allowed_t2}")
-
         if not (allowed_t1 or allowed_t2):
             stats["skipped_not_allowed"] += 1
-            log(f"      ⏭️ Pulado: nenhum time na lista permitida")
             continue
 
         event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
@@ -470,7 +577,6 @@ def scrape_one_day_for_game(
         )
 
         if event_uid in existing_uids:
-            log(f"      ⏭️ Pulado: UID já existe no calendário")
             continue
 
         event_description = (
@@ -509,11 +615,11 @@ cal = load_calendar(CALENDAR_FILENAME)
 
 deduped_initial = dedupe_calendar_events(cal)
 if deduped_initial:
-    log(f"🧼 Deduplicação inicial: removidos {deduped_initial} eventos duplicados (tips.gg).")
+    log(f"🧼 Deduplicação inicial: removidos {deduped_initial} eventos duplicados.")
 
 deduped_by_url_initial = dedupe_by_url_keep_latest(cal)
 if deduped_by_url_initial:
-    log(f"🧼 Dedup por URL (inicial): removidos {deduped_by_url_initial} eventos (mantido último horário).")
+    log(f"🧼 Dedup por URL (inicial): removidos {deduped_by_url_initial} eventos.")
 
 existing_uids = get_existing_uids(cal)
 
@@ -522,7 +628,7 @@ future_limit = today + timedelta(days=FUTURE_LIMIT_DAYS)
 
 cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
 removed = prune_older_than(cal, cutoff)
-log(f"🧹 Limpeza: removidos {removed} eventos do script com data < {cutoff.strftime('%d/%m/%Y')}")
+log(f"🧹 Limpeza: removidos {removed} eventos com data < {cutoff.strftime('%d/%m/%Y')}")
 
 target_day = load_cursor(today, future_limit)
 log(f"📌 Cursor atual: {target_day.strftime('%d/%m/%Y')} (range: {today.strftime('%d/%m/%Y')}..{future_limit.strftime('%d/%m/%Y')})")
@@ -545,19 +651,15 @@ try:
 
         log(f"🧾 RESUMO {game_key} - {stats['date']}")
         log(f"  scripts={stats['scripts_total']} sports={stats['sports_events']} added={stats['added']}")
-        log(
-            f"  skipped: tbd={stats['skipped_tbd']} past={stats['skipped_past']} "
-            f"not_allowed={stats['skipped_not_allowed']} bad_date={stats['skipped_bad_date']}"
-        )
-        log(f"  json_err={stats['json_decode_errors']}")
+        log(f"  skipped: tbd={stats['skipped_tbd']} past={stats['skipped_past']} not_allowed={stats['skipped_not_allowed']}")
 
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final:
-        log(f"🧼 Deduplicação final: removidos {deduped_final} eventos duplicados (tips.gg).")
+        log(f"🧼 Deduplicação final: removidos {deduped_final} eventos.")
 
     deduped_by_url_final = dedupe_by_url_keep_latest(cal)
     if deduped_by_url_final:
-        log(f"🧼 Dedup por URL (final): removidos {deduped_by_url_final} eventos (mantido último horário).")
+        log(f"🧼 Dedup por URL (final): removidos {deduped_by_url_final} eventos.")
 
     existing_uids = get_existing_uids(cal)
     ran_ok = True
@@ -570,9 +672,9 @@ except Exception as e:
 log(f"💾 Salvando arquivo: {CALENDAR_FILENAME}")
 try:
     save_calendar(cal, CALENDAR_FILENAME)
-    log(f"✅ Salvo. Total adicionados nesta execução: {total_added}")
+    log(f"✅ Salvo. Total adicionados: {total_added}")
 except Exception as e:
-    log(f"❌ Erro ao salvar {CALENDAR_FILENAME}: {e}")
+    log(f"❌ Erro ao salvar: {e}")
 
 if ran_ok:
     next_day = target_day + timedelta(days=1)
@@ -581,4 +683,4 @@ if ran_ok:
     save_cursor(next_day)
     log(f"🔁 Cursor atualizado: próximo alvo {next_day.strftime('%d/%m/%Y')}")
 else:
-    log("⏸️ Cursor NÃO avançou porque a execução falhou (boa sorte na próxima).")
+    log("⏸️ Cursor NÃO avançou - execução falhou.")
