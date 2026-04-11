@@ -17,13 +17,17 @@ try:
     fetcher = DynamicFetcher()
     response = fetcher.fetch(test_url)
 
-    print(f"✅ Status: {response.status_code}")
-    print(f"📄 Tamanho do conteúdo: {len(response.text)} caracteres\n")
+    # Verificar atributos disponíveis
+    print(f"📋 Atributos do response: {dir(response)}\n")
+
+    # Tentar acessar o conteúdo
+    html = response.text if hasattr(response, 'text') else str(response)
+
+    print(f"📄 Tamanho do conteúdo: {len(html)} caracteres\n")
 
     # Procurar scripts JSON-LD
     print("🔎 Procurando scripts JSON-LD...\n")
 
-    html = response.text
     json_ld_scripts = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.DOTALL)
 
     print(f"📊 Scripts JSON-LD encontrados: {len(json_ld_scripts)}\n")
