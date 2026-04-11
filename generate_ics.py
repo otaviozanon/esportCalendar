@@ -291,15 +291,35 @@ def fetch_page(url: str) -> str:
     log(f"  📡 GET {url}")
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Accept-Encoding": "gzip, deflate, br",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1",
+            "Cache-Control": "max-age=0",
         }
-        response = requests.get(url, headers=headers, timeout=15, impersonate="chrome")
+
+        response = requests.get(
+            url, 
+            headers=headers, 
+            timeout=15, 
+            impersonate="chrome120",
+            allow_redirects=True
+        )
+
         log(f"  ✅ Status: {response.status_code}")
 
         if response.status_code == 200:
             return response.text
         else:
             log(f"  ⚠️ Status {response.status_code}")
+            log(f"  📋 Headers da resposta: {dict(response.headers)}")
             return ""
     except Exception as e:
         log(f"  ❌ Erro ao buscar: {e}")
