@@ -7,15 +7,7 @@ import pytz
 from bs4 import BeautifulSoup
 from icalendar import Calendar, Event, Alarm
 
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException
-
-from webdriver_manager.chrome import ChromeDriverManager
+from playwright.sync_api import sync_playwright
 
 
 # -------------------- Configurações Globais --------------------
@@ -40,11 +32,10 @@ def normalize_team(name: str) -> str:
 
 
 GAMES = {
-    # CS2 (no tips.gg continua sendo /csgo/)
     "CS2": {
         "prefix": "[CS2] ",
         "base_path": "https://tips.gg/csgo/matches/",
-        "teams": {"FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo", "RED Canids", "Legacy", "ODDIK", "Imperial Esports", "Gaimin Gladiators" },
+        "teams": {"FURIA", "paiN Gaming", "MIBR", "Imperial", "Fluxo", "RED Canids", "Legacy", "ODDIK", "Imperial Esports", "Gaimin Gladiators"},
         "exclusions": {
             "Imperial.A", "Imperial Fe", "MIBR.A", "paiN.A", "ODDIK.A",
             "Imperial Academy", "Imperial.Acd", "Imperial Female",
@@ -86,7 +77,6 @@ def log(msg: str):
 
 def build_url_for_day(base_path: str, target_date: date) -> str:
     date_str = target_date.strftime("%d-%m-%Y")
-    # base_path já termina com /matches/
     return f"{base_path}{date_str}/"
 
 
@@ -300,25 +290,17 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
     return removed
 
 
-# -------------------- Selenium --------------------
-def setup_driver() -> webdriver.Chrome:
-    log("⚙️ Configurando Selenium...")
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_argument("--log-level=3")
-    chrome_options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+# -------------------- Playwright --------------------
+def setup_playwright():
+    log("⚙️ Configurando Playwright (Firefox)...")
+    playwright = sync_playwright().start()
+    browser = playwright.firefox.launch(headless=True)
+    context = browser.new_context(
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     )
-
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.set_page_load_timeout(PAGE_LOAD_TIMEOUT_SECONDS)
-    log("✅ Selenium configurado com sucesso")
-    return driver
+    page = context.new_page()
+    log("✅ Playwright (Firefox) configurado com sucesso")
+    return page, playwright, browser, context
 
 
 def build_stable_uid(
@@ -351,7 +333,7 @@ def match_url_absolute(match_url: str) -> str:
 
 
 def scrape_one_day_for_game(
-    driver: webdriver.Chrome,
+    page,
     game_key: str,
     game_cfg: dict,
     target_day: date,
@@ -378,44 +360,39 @@ def scrape_one_day_for_game(
     log(f"  📡 GET {url}")
 
     try:
-        driver.get(url)
+        page.goto(url, wait_until="networkidle", timeout=PAGE_LOAD_TIMEOUT_SECONDS * 1000)
         log(f"  ✅ Página carregada com sucesso")
-    except TimeoutException:
+    except Exception as e:
         stats["timeouts_load"] += 1
-        log(f"  ⏱️ TIMEOUT ao carregar página (continuando...)")
-        try:
-            driver.execute_script("window.stop();")
-        except Exception:
-            pass
+        log(f"  ⏱️ Erro ao carregar página: {e}")
 
     log(f"  ⏳ Aguardando scripts JSON-LD ({JSONLD_WAIT_SECONDS}s)...")
     try:
-        WebDriverWait(driver, JSONLD_WAIT_SECONDS).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, 'script[type="application/ld+json"]'))
-        )
+        page.wait_for_selector('script[type="application/ld+json"]', timeout=JSONLD_WAIT_SECONDS * 1000)
         log(f"  ✅ Scripts JSON-LD encontrados")
-    except TimeoutException:
+    except Exception:
         stats["timeouts_jsonld"] += 1
         log(f"  ⏱️ TIMEOUT aguardando JSON-LD (continuando...)")
 
-    soup = BeautifulSoup(driver.page_source, "html.parser")
+    html_content = page.content()
+    soup = BeautifulSoup(html_content, "html.parser")
     scripts = soup.find_all("script", type="application/ld+json")
     stats["scripts_total"] = len(scripts)
     log(f"  📊 Total de scripts JSON-LD encontrados: {stats['scripts_total']}")
 
-    # 🔍 DEBUG: Ver TODO o HTML
-    if game_key == "CS2":  # Só para CS2
+    # 🔍 DEBUG: Ver TODO o HTML para CS2
+    if game_key == "CS2":
         log(f"  🔍 HTML COMPLETO (primeiros 5000 caracteres):")
-        html_full = driver.page_source[:5000]
-        log(f"{html_full}")
+        html_preview = html_content[:5000]
+        log(f"{html_preview}")
 
     # 🔍 DEBUG: Ver se há algum script na página
     all_scripts = soup.find_all("script")
     log(f"  📋 Total de scripts na página: {len(all_scripts)}")
-    
+
     now_utc = datetime.now(pytz.utc)
     new_events = []
-    
+
     teams_norm = game_cfg["teams_norm"]
     exclusions_norm = game_cfg["exclusions_norm"]
     prefix = game_cfg["prefix"]
@@ -479,7 +456,6 @@ def scrape_one_day_for_game(
         t1 = normalize_team(team1_raw)
         t2 = normalize_team(team2_raw)
 
-        # Regra: pelo menos um time precisa estar na lista permitida, e não pode ser "exclusion"
         allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
         allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
 
@@ -559,19 +535,20 @@ log(f"🧹 Limpeza: removidos {removed} eventos do script com data < {cutoff.str
 target_day = load_cursor(today, future_limit)
 log(f"📌 Cursor atual: {target_day.strftime('%d/%m/%Y')} (range: {today.strftime('%d/%m/%Y')}..{future_limit.strftime('%d/%m/%Y')})")
 
-driver = None
+page = None
+playwright = None
+browser = None
+context = None
 total_added = 0
 ran_ok = False
 
 try:
-    driver = setup_driver()
+    page, playwright, browser, context = setup_playwright()
 
-    # Agora: roda TODOS os jogos no mesmo dia do cursor
     for game_key, cfg in GAMES.items():
-        url = build_url_for_day(cfg["base_path"], target_day)
         log(f"🌐 Raspando {game_key} em {target_day.strftime('%d/%m/%Y')}")
 
-        new_events, stats = scrape_one_day_for_game(driver, game_key, cfg, target_day, existing_uids)
+        new_events, stats = scrape_one_day_for_game(page, game_key, cfg, target_day, existing_uids)
 
         for ev in new_events:
             cal.add_component(ev)
@@ -589,7 +566,6 @@ try:
             f"json_err={stats['json_decode_errors']}"
         )
 
-    # Deduplicação final
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final:
         log(f"🧼 Deduplicação final: removidos {deduped_final} eventos duplicados (tips.gg).")
@@ -601,19 +577,20 @@ try:
     existing_uids = get_existing_uids(cal)
     ran_ok = True
 
-except WebDriverException as e:
-    log(f"❌ WebDriverException: {e}")
 except Exception as e:
     log(f"❌ Erro geral: {e}")
     import traceback
     log(f"📋 Traceback: {traceback.format_exc()}")
 finally:
-    if driver:
-        try:
-            driver.quit()
-        except Exception:
-            pass
-        log("⚙️ Selenium fechado.")
+    if page:
+        page.close()
+    if context:
+        context.close()
+    if browser:
+        browser.close()
+    if playwright:
+        playwright.stop()
+    log("⚙️ Playwright (Firefox) fechado.")
 
 log(f"💾 Salvando arquivo: {CALENDAR_FILENAME}")
 try:
