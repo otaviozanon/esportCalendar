@@ -2,11 +2,11 @@ name: Atualizar Calendário E-sports
 
 on:
   schedule:
-    - cron: "*/10 * * * *" # Executa a cada 10 minutos
-  workflow_dispatch: # Permite execução manual
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
 
 permissions:
-  contents: write   # Necessário para commit/push
+  contents: write
   actions: read
 
 jobs:
@@ -14,44 +14,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Checkout do repositório
       - name: Checkout código
         uses: actions/checkout@v4
 
-      # 2) Configura Python
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # 3) Instala dependências Python
       - name: Instalar dependências Python
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 4) Instala Playwright browsers (Firefox)
-      - name: Instalar Playwright Firefox
-        run: |
-          playwright install firefox
-
-      # 5) Executa o script Python
       - name: Executar script Python
         run: python generate_ics.py
 
-      # 6) Commita calendar.ics E state.json (persistência do cursor)
-      - name: Commit e Push do calendário e estado (se houver mudanças)
+      - name: Commit e Push
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-
-          # Adiciona os arquivos gerados/persistidos
           git add calendar.ics state.json
-
           if git diff --cached --quiet; then
-            echo "✅ Nenhuma mudança detectada - commit ignorado"
+            echo "✅ Nenhuma mudança detectada"
           else
             git commit -m "Atualizar ICS - $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
             git push
-            echo "✅ Mudanças detectadas e commitadas com sucesso"
+            echo "✅ Mudanças commitadas"
           fi
