@@ -210,17 +210,16 @@ def mark_game_as_run(game_key: str, state: dict):
 
 
 def get_cs2_target_days(today: date, state: dict) -> list:
-    """Retorna lista de dias para CS2 baseado no offset rotativo"""
+    """Retorna lista com o dia alvo do CS2 baseado no offset"""
     offset = state.get("cs2_day_offset", 0)
-    target_days = [today + timedelta(days=offset)]
-    return target_days
+    target_day = today + timedelta(days=offset)
+    return [target_day]
 
 
 def advance_cs2_offset(state: dict):
     """Avança o offset do CS2 (0 -> 1 -> 2 -> 3 -> 0)"""
     offset = state.get("cs2_day_offset", 0)
-    offset = (offset + 1) % 4
-    state["cs2_day_offset"] = offset
+    state["cs2_day_offset"] = (offset + 1) % 4
     save_state(state)
 
 
@@ -253,40 +252,38 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
             continue
 
         desc = str(component.get('description', ''))
-        lines = desc.split('\n')
         url = None
-        for line in lines:
+        for line in desc.split('\n'):
             if line.startswith('🌐 '):
-                url = line[4:].strip()
+                url = line.replace('🌐 ', '').strip()
                 break
 
         if not url:
             continue
 
-        dtstamp = component.get('dtstamp')
         if url not in url_map:
-            url_map[url] = (component, dtstamp)
+            url_map[url] = component
         else:
-            existing_comp, existing_dtstamp = url_map[url]
-            if dtstamp and existing_dtstamp and dtstamp > existing_dtstamp:
-                url_map[url] = (component, dtstamp)
+            existing = url_map[url]
+            existing_time = existing.get('dtstart').dt
+            new_time = component.get('dtstart').dt
+
+            if new_time > existing_time:
+                url_map[url] = component
 
     to_remove = []
-    kept_urls = {url: comp for url, (comp, _) in url_map.items()}
-
     for component in list(cal.walk('VEVENT')):
         if not is_ours(component):
             continue
 
         desc = str(component.get('description', ''))
-        lines = desc.split('\n')
         url = None
-        for line in lines:
+        for line in desc.split('\n'):
             if line.startswith('🌐 '):
-                url = line[4:].strip()
+                url = line.replace('🌐 ', '').strip()
                 break
 
-        if url and url in kept_urls and kept_urls[url] != component:
+        if url and url_map.get(url) != component:
             to_remove.append(component)
 
     for comp in to_remove:
@@ -295,18 +292,15 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
     return len(to_remove)
 
 
-def build_stable_uid(game_key: str, event_summary: str, match_time_utc: datetime,
-                     tournament_desc: str, organizer_name: str, match_url: str) -> str:
-    """Cria UID estável baseado nos dados do evento"""
+def build_stable_uid(game_key: str, event_summary: str, match_time_utc: datetime, tournament_desc: str, organizer_name: str, match_url: str) -> str:
+    """Cria UID estável baseado em dados do evento"""
     data = f"{game_key}|{event_summary}|{match_time_utc.isoformat()}|{tournament_desc}|{organizer_name}|{match_url}"
     hash_obj = hashlib.sha256(data.encode())
-    return hash_obj.hexdigest()[:16]
+    return f"{hash_obj.hexdigest()}@tips.gg"
 
 
 def fetch_page_scrape_do(url: str) -> str:
     """Busca página usando Scrape.do com render JS"""
-    log(f"  📡 GET {url}")
-
     if not SCRAPE_DO_API_KEY:
         log(f"  ⚠️ Scrape.do não configurado")
         return ""
@@ -326,7 +320,6 @@ def fetch_page_scrape_do(url: str) -> str:
                 data = response.json()
                 if data.get("statusCode") == 200:
                     content = data.get("content", "")
-                    log(f"  ✅ Sucesso (Scrape.do)")
                     return content
                 else:
                     log(f"  ⚠️ Status Scrape.do: {data.get('statusCode')}")
@@ -335,21 +328,18 @@ def fetch_page_scrape_do(url: str) -> str:
                 log(f"  ⚠️ Erro ao decodificar JSON")
                 return ""
         else:
-            log(f"  ⚠️ HTTP Status {response.status_code}")
+            log(f"  ⚠️ Status HTTP: {response.status_code}")
             return ""
 
-    except requests.Timeout:
-        log(f"  ❌ Timeout (>30s)")
-        return ""
     except Exception as e:
-        log(f"  ❌ Erro: {str(e)[:80]}")
+        log(f"  ❌ Erro Scrape.do: {str(e)[:80]}")
         return ""
 
 
 def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: list, existing_uids: set) -> tuple:
     """Raspa múltiplos dias para um jogo"""
     new_events = []
-    stats = {
+    total_stats = {
         "days_scraped": 0,
         "scripts_total": 0,
         "sports_events": 0,
@@ -359,25 +349,26 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
         "skipped_not_allowed": 0,
     }
 
-    prefix = cfg["prefix"]
-    base_path = cfg["base_path"]
-    teams_norm = cfg["teams_norm"]
-    exclusions_norm = cfg["exclusions_norm"]
+    prefix = cfg.get("prefix", "")
+    base_path = cfg.get("base_path", "")
+    teams_norm = cfg.get("teams_norm", set())
+    exclusions_norm = cfg.get("exclusions_norm", set())
 
-    now_utc = datetime.now(pytz.utc)
-
-    for target_date in target_days:
-        url = build_url_for_day(base_path, target_date)
+    for target_day in target_days:
+        url = build_url_for_day(base_path, target_day)
         html = fetch_page_scrape_do(url)
 
         if not html:
+            log(f"  ⚠️ Falha ao buscar {target_day.strftime('%d/%m/%Y')}")
             continue
 
-        stats["days_scraped"] += 1
+        soup = BeautifulSoup(html, 'html.parser')
+        scripts = soup.find_all('script', {'type': 'application/ld+json'})
 
-        soup = BeautifulSoup(html, "html.parser")
-        scripts = soup.find_all("script", {"type": "application/ld+json"})
-        stats["scripts_total"] += len(scripts)
+        total_stats["days_scraped"] += 1
+        total_stats["scripts_total"] += len(scripts)
+
+        now_utc = datetime.now(pytz.utc)
 
         for script in scripts:
             try:
@@ -389,97 +380,98 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                 continue
 
             events = data.get("@graph", [])
-            if not isinstance(events, list):
+            if not events:
                 events = [data]
 
+            total_stats["sports_events"] += len(events)
+
             for event in events:
-                if event.get("@type") != "SportsEvent":
-                    continue
-
-                stats["sports_events"] += 1
-
-                team1_raw = event.get("competitor", [{}])[0].get("name", "")
-                team2_raw = event.get("competitor", [{}])[1].get("name", "") if len(event.get("competitor", [])) > 1 else ""
-
-                if not team1_raw or not team2_raw:
-                    stats["skipped_tbd"] += 1
-                    continue
-
-                description = event.get("name", "")
-                organizer_name = event.get("organizer", {}).get("name", "")
-                match_url = event.get("url", "")
-
                 try:
-                    match_time_str = event.get("startDate", "")
-                    match_time_utc = datetime.fromisoformat(match_time_str.replace("Z", "+00:00"))
-                    if match_time_utc.tzinfo is None:
-                        match_time_utc = pytz.utc.localize(match_time_utc)
-                    match_time_utc = match_time_utc.astimezone(pytz.utc)
-                except Exception:
-                    continue
+                    if event.get("@type") != "SportsEvent":
+                        continue
 
-                if match_time_utc < now_utc:
-                    stats["skipped_past"] += 1
-                    continue
+                    team1_raw = event.get("competitor", [{}])[0].get("name", "")
+                    team2_raw = event.get("competitor", [{}])[1].get("name", "") if len(event.get("competitor", [])) > 1 else ""
 
-                t1 = normalize_team(team1_raw)
-                t2 = normalize_team(team2_raw)
+                    if not team1_raw or not team2_raw:
+                        continue
 
-                allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
-                allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
+                    description = event.get("name", "")
+                    organizer_name = event.get("organizer", {}).get("name", "")
 
-                if not (allowed_t1 or allowed_t2):
-                    stats["skipped_not_allowed"] += 1
-                    continue
+                    if "TBD" in team1_raw or "TBD" in team2_raw:
+                        total_stats["skipped_tbd"] += 1
+                        continue
 
-                event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
+                    match_url = event.get("url", "")
 
-                event_uid = build_stable_uid(
-                    game_key=game_key,
-                    event_summary=event_summary,
-                    match_time_utc=match_time_utc,
-                    tournament_desc=description,
-                    organizer_name=organizer_name,
-                    match_url=match_url,
-                )
+                    try:
+                        match_time_str = event.get("startDate", "")
+                        match_time_utc = datetime.fromisoformat(match_time_str.replace("Z", "+00:00"))
+                        if match_time_utc.tzinfo is None:
+                            match_time_utc = pytz.utc.localize(match_time_utc)
+                        match_time_utc = match_time_utc.astimezone(pytz.utc)
+                    except Exception:
+                        continue
 
-                if event_uid in existing_uids:
-                    continue
+                    if match_time_utc < now_utc:
+                        total_stats["skipped_past"] += 1
+                        continue
 
-                event_description = (
-                    f"🏆 {description}\n"
-                    f"📍 {organizer_name}\n"
-                    f"🌐 {match_url}\n"
-                    f"{SOURCE_MARKER}"
-                )
+                    t1 = normalize_team(team1_raw)
+                    t2 = normalize_team(team2_raw)
 
-                e = Event()
-                e.add('summary', event_summary)
-                e.add('dtstart', normalize_event_datetime_utc(match_time_utc))
-                e.add('dtend', normalize_event_datetime_utc(match_time_utc) + timedelta(hours=2))
-                e.add('description', event_description)
-                e.add('uid', event_uid)
-                e.add('dtstamp', datetime.now(pytz.utc))
+                    allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
+                    allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
 
-                alarm = Alarm()
-                alarm.add('action', 'DISPLAY')
-                alarm.add('trigger', timedelta(minutes=-15))
-                alarm.add('description', f'Lembrete: {event_summary}')
-                e.add_component(alarm)
+                    if not (allowed_t1 or allowed_t2):
+                        total_stats["skipped_not_allowed"] += 1
+                        continue
 
-                new_events.append(e)
-                existing_uids.add(event_uid)
-                stats["added"] += 1
+                    event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
 
-                try:
+                    event_uid = build_stable_uid(
+                        game_key=game_key,
+                        event_summary=event_summary,
+                        match_time_utc=match_time_utc,
+                        tournament_desc=description,
+                        organizer_name=organizer_name,
+                        match_url=match_url,
+                    )
+
+                    if event_uid in existing_uids:
+                        continue
+
+                    event_description = (
+                        f"🏆 {description}\n"
+                        f"📍 {organizer_name}\n"
+                        f"🌐 {match_url}\n"
+                        f"{SOURCE_MARKER}"
+                    )
+
+                    e = Event()
+                    e.add('summary', event_summary)
+                    e.add('dtstart', normalize_event_datetime_utc(match_time_utc))
+                    e.add('dtend', normalize_event_datetime_utc(match_time_utc) + timedelta(hours=2))
+                    e.add('description', event_description)
+                    e.add('uid', event_uid)
+                    e.add('dtstamp', datetime.now(pytz.utc))
+
+                    alarm = Alarm()
+                    alarm.add('action', 'DISPLAY')
+                    alarm.add('trigger', timedelta(minutes=-15))
+                    alarm.add('description', f'Lembrete: {event_summary}')
+                    e.add_component(alarm)
+
+                    new_events.append(e)
+                    existing_uids.add(event_uid)
+                    total_stats["added"] += 1
                     log(f"      ✅ ADICIONADO: {event_summary}")
+
                 except Exception:
-                    pass
+                    continue
 
-            except Exception:
-                continue
-
-    return new_events, stats
+    return new_events, total_stats
 
 
 # -------------------- Execução --------------------
