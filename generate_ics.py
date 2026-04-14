@@ -311,6 +311,7 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
         "skipped_tbd": 0,
         "skipped_past": 0,
         "skipped_not_allowed": 0,
+        "matches": [],  # Nova lista para armazenar detalhes dos jogos
     }
 
     prefix = cfg.get("prefix", "")
@@ -412,6 +413,13 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                     if event_uid in existing_uids:
                         continue
 
+                    # Armazena detalhes do jogo
+                    match_time_br = match_time_utc.astimezone(BR_TZ)
+                    stats["matches"].append({
+                        "teams": f"{team1_raw} | {team2_raw}",
+                        "time": match_time_br.strftime("%H:%M")
+                    })
+
                     event_description = (
                         f"🏆 {description}\n"
                         f"📍 {organizer_name}\n"
@@ -436,7 +444,6 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                     new_events.append(e)
                     existing_uids.add(event_uid)
                     stats["added"] += 1
-                    log(f"  ✅ {event_summary} em {match_time_utc.astimezone(BR_TZ).strftime('%d/%m %H:%M')}")
 
                 except Exception as e:
                     log(f"❌ Erro ao processar evento: {type(e).__name__}: {e}")
@@ -447,7 +454,7 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
 
 # -------------------- Execução --------------------
 log("=" * 60)
-log("🚀 INICIANDO RASPAGEM")
+log("🚀 INICIANDO LIMPEZA DE DADOS")
 log("=" * 60)
 
 cal = load_calendar(CALENDAR_FILENAME)
@@ -482,11 +489,13 @@ try:
             continue
 
         if game_key == "CS2":
+            current_offset = state.get("cs2_day_offset", 0)
             target_days = get_cs2_target_days(today, state)
-            log(f"\n📅 {game_key} (offset={state.get('cs2_day_offset', 0)}) → {target_days[0].strftime('%d/%m/%Y')}")
+            next_offset = (current_offset + 1) % 3
+            log(f"📅 {game_key} offset {current_offset}→{next_offset} | LIMPANDO {target_days[0].strftime('%d/%m/%Y')}")
         else:
             target_days = [today]
-            log(f"\n📅 {game_key} → {today.strftime('%d/%m/%Y')}")
+            log(f"📅 {game_key} | LIMPANDO {today.strftime('%d/%m/%Y')}")
 
         new_events, stats = scrape_days_for_game(game_key, cfg, today, target_days, existing_uids)
 
@@ -495,36 +504,37 @@ try:
 
         total_added += stats["added"]
 
-        # Resumo compacto
-        summary = f"scripts={stats['scripts_total']} | adicionados={stats['added']}"
-        if stats["skipped_tbd"] > 0:
-            summary += f" | TBD={stats['skipped_tbd']}"
-        if stats["skipped_past"] > 0:
-            summary += f" | passados={stats['skipped_past']}"
-        if stats["skipped_not_allowed"] > 0:
-            summary += f" | não-permitidos={stats['skipped_not_allowed']}"
+        # Resumo com contadores
+        log(f"- ENCONTRADOS ( {stats['scripts_total']} ) | NÃO PERMITIDOS ( {stats['skipped_not_allowed']} ) | ADICIONADOS ( {stats['added']} )")
 
-        log(f"  {summary}")
+        # Exibe jogos encontrados
+        if stats["matches"]:
+            matches_str = " x ".join([f"{m['teams']} - {m['time']}" for m in stats["matches"]])
+            log(f"- JOGOS {target_days[0].strftime('%d/%m/%Y')} | {matches_str}")
+
+        log("-" * 60)
 
         if cfg.get("once_per_day", False):
             mark_game_as_run(game_key, state)
 
         if game_key == "CS2":
-            advance_cs2_offset(state)
+            current, next_offset = advance_cs2_offset(state)
+            next_day = today + timedelta(days=next_offset)
+            log(f"CS2 próximo offset: {next_offset} ({next_day.strftime('%d/%m/%Y')})")
+            log("-" * 60)
 
     # Dedup final
     deduped_final = dedupe_calendar_events(cal)
     if deduped_final > 0:
-        log(f"\n🗑️  Removidos {deduped_final} eventos duplicados (final)")
+        log(f"🗑️  Removidos {deduped_final} eventos duplicados (final)")
 
 except Exception as e:
-    log(f"\n❌ ERRO GERAL: {type(e).__name__}: {e}")
+    log(f"❌ ERRO GERAL: {type(e).__name__}: {e}")
     import traceback
     log(f"📍 Stack trace:\n{traceback.format_exc()}")
 
 # Salva
-log(f"\n💾 Salvando {CALENDAR_FILENAME}...")
+log(f"💾 Salvando {CALENDAR_FILENAME}...")
 save_calendar(cal, CALENDAR_FILENAME)
-
 log(f"✅ Concluído | Total adicionados: {total_added}")
 log("=" * 60)
