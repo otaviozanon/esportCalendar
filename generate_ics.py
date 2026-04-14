@@ -93,23 +93,32 @@ def build_url_for_day(base_path: str, target_date: date) -> str:
 def fetch_page_scrape_do(url: str) -> str:
     """Busca página usando Scrape.do"""
     if not SCRAPE_DO_API_KEY:
+        log(f"  ⚠️ API key vazia")
         return ""
+
+    log(f"  🔍 Buscando: {url}")
+    log(f"  🔑 API key: {SCRAPE_DO_API_KEY[:10]}...")
 
     try:
         params = {
             "apikey": SCRAPE_DO_API_KEY,
             "url": url,
         }
+        log(f"  📤 Enviando params: apikey={SCRAPE_DO_API_KEY[:10]}..., url={url}")
+
         response = requests.get(SCRAPE_DO_URL, params=params, timeout=60)
+        log(f"  📥 Status: {response.status_code}")
+
         response.raise_for_status()
+        log(f"  ✅ HTML recebido: {len(response.text)} bytes")
         return response.text
     except requests.exceptions.HTTPError as e:
-        log(f"  ❌ HTTP {e.response.status_code}: {url}")
+        log(f"  ❌ HTTP {e.response.status_code}")
+        log(f"  📋 Response: {e.response.text[:200]}")
         return ""
     except Exception as e:
-        log(f"  ❌ Erro: {str(e)[:100]}")
+        log(f"  ❌ Erro: {type(e).__name__}: {str(e)}")
         return ""
-
 
 def load_calendar(path: str) -> Calendar:
     if os.path.exists(path):
