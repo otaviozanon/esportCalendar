@@ -309,14 +309,17 @@ def fetch_page_scrape_do(url: str) -> str:
         params = {
             "apikey": SCRAPE_DO_API_KEY,
             "url": url,
-            "render": "false"
+            "render": "true",
+            "country": "BR"
         }
 
-        response = requests.get(SCRAPE_DO_URL, params=params, timeout=30)
+        response = requests.get(SCRAPE_DO_URL, params=params, timeout=60)
         response.raise_for_status()
-
         return response.text
 
+    except requests.exceptions.HTTPError as e:
+        log(f"  ❌ HTTP {e.response.status_code}: {url}")
+        return ""
     except Exception as e:
         log(f"  ❌ Erro Scrape.do: {str(e)[:100]}")
         return ""
