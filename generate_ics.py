@@ -509,7 +509,7 @@ try:
 
         # Exibe jogos encontrados
         if stats["matches"]:
-            matches_str = " x ".join([f"{m['teams']} - {m['time']}" for m in stats["matches"]])
+            matches_str = " | ".join([f"{m['teams'].replace(' | ', ' x ')} - {m['time']}" for m in stats["matches"]])
             log(f"- JOGOS {target_days[0].strftime('%d/%m/%Y')} | {matches_str}")
 
         log("-" * 60)
