@@ -541,17 +541,17 @@ def main():
         for game_key, cfg in GAMES_CONFIG.items():
             if not should_run_game(game_key, cfg, now, state):
                 next_run_date = today if now.hour < cfg.run_at_hour else today + timedelta(days=1)
-                log(f"⏭️  {game_key} próxima execução: {cfg.run_at_hour:02d}:00 ({next_run_date.strftime('%d/%m/%Y')})")
+                log(f"⏭️  {game_key.value} próxima execução: {cfg.run_at_hour:02d}:00 ({next_run_date.strftime('%d/%m/%Y')})")
                 continue
 
             if game_key == GameKey.CS2:
                 current_offset = state.get("cs2_day_offset", 0)
                 target_days = get_cs2_target_days(today, state)
                 next_offset = (current_offset + 1) % 3
-                log(f"📅 {game_key} offset {current_offset}→{next_offset} | LIMPANDO {target_days[0].strftime('%d/%m/%Y')}")
+                log(f"📅 {game_key.value} offset {current_offset}→{next_offset} | LIMPANDO {target_days[0].strftime('%d/%m/%Y')}")
             else:
                 target_days = [today]
-                log(f"📅 {game_key} | LIMPANDO {today.strftime('%d/%m/%Y')}")
+                log(f"📅 {game_key.value} | LIMPANDO {today.strftime('%d/%m/%Y')}")
 
             new_events, stats = scrape_days_for_game(game_key, cfg, today, target_days, existing_uids)
 
