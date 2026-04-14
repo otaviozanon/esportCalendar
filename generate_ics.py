@@ -243,11 +243,12 @@ def get_cs2_target_days(today: date, state: dict) -> list:
 
 
 def advance_cs2_offset(state: dict):
-    """Avança offset de CS2 (0→1→2→0)."""
-    state["cs2_day_offset"] = state.get("cs2_day_offset", 0) + 1
-    if state["cs2_day_offset"] >= 3:
-        state["cs2_day_offset"] = 0
+    """Avança offset de CS2 (0→1→2→0). Retorna (current, next)."""
+    current = state.get("cs2_day_offset", 0)
+    next_offset = (current + 1) % 3
+    state["cs2_day_offset"] = next_offset
     save_state(state)
+    return current, next_offset
 
 
 def dedupe_calendar_events(cal: Calendar) -> int:
