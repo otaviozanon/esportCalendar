@@ -312,12 +312,12 @@ def fetch_page_scrape_do(url: str) -> str | None:
     if not SCRAPE_DO_API_KEY:
         return None
 
-    params = {
-        "apikey": SCRAPE_DO_API_KEY,
-        "url": url,
-    }
-
     try:
+        params = {
+            "apikey": SCRAPE_DO_API_KEY,
+            "url": url,
+            "render": "false"
+        }
         response = requests.get(SCRAPE_DO_URL, params=params, timeout=30)
         response.raise_for_status()
         return response.text
