@@ -100,7 +100,7 @@ def fetch_page_scrape_do(url: str) -> str:
         params = {
             "apikey": SCRAPE_DO_API_KEY,
             "url": url,
-            "render": "true",
+            "render": "false",
             "country": "BR",
         }
         response = requests.get(SCRAPE_DO_URL, params=params, timeout=60)
