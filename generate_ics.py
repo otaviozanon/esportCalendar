@@ -14,19 +14,18 @@ CALENDAR_FILENAME = "calendar.ics"
 STATE_FILE = "state.json"
 
 BR_TZ = pytz.timezone("America/Sao_Paulo")
-
 DELETE_OLDER_THAN_DAYS = 7
 
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
 
-# Scrape.do API
 SCRAPE_DO_API_KEY = os.getenv("SCRAPE_DO_API_KEY", "")
 SCRAPE_DO_URL = "https://api.scrape.do"
 
 
 # -------------------- Jogos / Times --------------------
 def normalize_team(name: str) -> str:
+    """Normaliza nome do time para comparação."""
     return (name or "").lower().strip()
 
 
@@ -73,7 +72,7 @@ GAMES = {
     },
 }
 
-# Pre-normaliza
+# Normaliza times e exclusões na inicialização
 for k, cfg in GAMES.items():
     cfg["teams_norm"] = {normalize_team(t) for t in cfg["teams"]}
     cfg["exclusions_norm"] = {normalize_team(t) for t in cfg["exclusions"]}
@@ -81,52 +80,47 @@ for k, cfg in GAMES.items():
 
 # -------------------- Helpers --------------------
 def log(msg: str):
+    """Log com timestamp."""
     now = datetime.now(BR_TZ).strftime("%H:%M:%S")
     print(f"[{now}] {msg}")
 
 
 def build_url_for_day(base_path: str, target_date: date) -> str:
+    """Constrói URL para data específica."""
     date_str = target_date.strftime("%d-%m-%Y")
     return f"{base_path}{date_str}/"
 
 
 def fetch_page_scrape_do(url: str) -> str:
-    """Busca página usando Scrape.do"""
+    """Busca página usando Scrape.do. Retorna HTML ou string vazia."""
     if not SCRAPE_DO_API_KEY:
-        log(f"  ⚠️ API key vazia")
+        log(f"❌ ERRO: API key Scrape.do não configurada")
         return ""
-
-    log(f"  🔍 Buscando: {url}")
-    log(f"  🔑 Token: {SCRAPE_DO_API_KEY[:10]}...")
 
     try:
-        params = {
-            "token": SCRAPE_DO_API_KEY,
-            "url": url,
-        }
-        log(f"  📤 Enviando params: token={SCRAPE_DO_API_KEY[:10]}..., url={url}")
-
+        params = {"token": SCRAPE_DO_API_KEY, "url": url}
         response = requests.get(SCRAPE_DO_URL, params=params, timeout=60)
-        log(f"  📥 Status: {response.status_code}")
-
         response.raise_for_status()
-        log(f"  ✅ HTML recebido: {len(response.text)} bytes")
         return response.text
     except requests.exceptions.HTTPError as e:
-        log(f"  ❌ HTTP {e.response.status_code}")
-        log(f"  📋 Response: {e.response.text[:200]}")
+        log(f"❌ HTTP {e.response.status_code} ao buscar {url}")
+        return ""
+    except requests.exceptions.Timeout:
+        log(f"❌ Timeout (60s) ao buscar {url}")
         return ""
     except Exception as e:
-        log(f"  ❌ Erro: {type(e).__name__}: {str(e)}")
+        log(f"❌ Erro ao buscar {url}: {type(e).__name__}: {str(e)}")
         return ""
 
+
 def load_calendar(path: str) -> Calendar:
+    """Carrega ou cria calendário."""
     if os.path.exists(path):
         try:
             with open(path, "rb") as f:
                 return Calendar.from_ical(f.read())
         except Exception as e:
-            log(f"⚠️ Falha ao ler {path}: {e}. Criando calendário novo.")
+            log(f"⚠️ Falha ao ler {path}: {e}. Criando novo.")
 
     cal = Calendar()
     cal.add('prodid', '-//Esport Calendar BR//tips.gg//')
@@ -135,11 +129,17 @@ def load_calendar(path: str) -> Calendar:
 
 
 def save_calendar(cal: Calendar, path: str):
-    with open(path, "wb") as f:
-        f.write(cal.to_ical())
+    """Salva calendário em arquivo."""
+    try:
+        with open(path, "wb") as f:
+            f.write(cal.to_ical())
+    except Exception as e:
+        log(f"❌ Erro ao salvar {path}: {e}")
+        raise
 
 
 def get_existing_uids(cal: Calendar) -> set:
+    """Retorna UIDs existentes no calendário."""
     uids = set()
     for component in cal.walk('VEVENT'):
         uid = component.get('uid')
@@ -149,18 +149,20 @@ def get_existing_uids(cal: Calendar) -> set:
 
 
 def normalize_event_datetime_utc(dt: datetime) -> datetime:
+    """Normaliza datetime para UTC sem microsegundos."""
     if dt.tzinfo is None:
         dt = pytz.utc.localize(dt)
-    dt = dt.astimezone(pytz.utc).replace(microsecond=0, second=0)
-    return dt
+    return dt.astimezone(pytz.utc).replace(microsecond=0, second=0)
 
 
 def is_ours(component) -> bool:
+    """Verifica se evento foi criado por este script."""
     desc = str(component.get('description', ''))
     return (SOURCE_MARKER in desc) or (TIPS_URL_HINT in desc)
 
 
 def event_start_date_local(component) -> date | None:
+    """Extrai data local do evento."""
     try:
         dt = component.get('dtstart').dt
         if isinstance(dt, datetime):
@@ -169,12 +171,13 @@ def event_start_date_local(component) -> date | None:
             return dt.astimezone(BR_TZ).date()
         elif isinstance(dt, date):
             return dt
-    except:
+    except Exception:
         pass
     return None
 
 
 def prune_older_than(cal: Calendar, cutoff_date: date) -> int:
+    """Remove eventos nossos com data anterior a cutoff. Retorna quantidade removida."""
     to_remove = []
     for component in list(cal.walk('VEVENT')):
         if not is_ours(component):
@@ -182,39 +185,51 @@ def prune_older_than(cal: Calendar, cutoff_date: date) -> int:
         event_date = event_start_date_local(component)
         if event_date and event_date < cutoff_date:
             to_remove.append(component)
+
     for comp in to_remove:
         cal.subcomponents.remove(comp)
+
     return len(to_remove)
 
 
 def load_state() -> dict:
+    """Carrega estado ou cria novo."""
     if os.path.exists(STATE_FILE):
         try:
             with open(STATE_FILE, "r") as f:
                 return json.load(f)
-        except:
+        except Exception:
             pass
     return {"last_run": {}, "cs2_day_offset": 0}
 
 
 def save_state(state: dict):
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2)
+    """Salva estado."""
+    try:
+        with open(STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        log(f"❌ Erro ao salvar state.json: {e}")
 
 
 def should_run_game(game_key: str, cfg: dict, now: datetime, state: dict) -> bool:
+    """Verifica se jogo deve ser raspado agora."""
     if not cfg.get("once_per_day", False):
         return True
+
     run_at = cfg.get("run_at_hour", 0)
     if now.hour < run_at:
         return False
+
     last = state.get("last_run", {}).get(game_key)
     if last == now.strftime("%Y-%m-%d"):
         return False
+
     return True
 
 
 def mark_game_as_run(game_key: str, state: dict):
+    """Marca jogo como executado hoje."""
     if "last_run" not in state:
         state["last_run"] = {}
     state["last_run"][game_key] = datetime.now(BR_TZ).strftime("%Y-%m-%d")
@@ -222,11 +237,13 @@ def mark_game_as_run(game_key: str, state: dict):
 
 
 def get_cs2_target_days(today: date, state: dict) -> list:
+    """Retorna dia alvo para CS2 baseado em offset."""
     offset = state.get("cs2_day_offset", 0)
     return [today + timedelta(days=offset)]
 
 
 def advance_cs2_offset(state: dict):
+    """Avança offset de CS2 (0→1→2→0)."""
     state["cs2_day_offset"] = state.get("cs2_day_offset", 0) + 1
     if state["cs2_day_offset"] >= 3:
         state["cs2_day_offset"] = 0
@@ -234,6 +251,7 @@ def advance_cs2_offset(state: dict):
 
 
 def dedupe_calendar_events(cal: Calendar) -> int:
+    """Remove eventos duplicados (mesmo UID). Retorna quantidade removida."""
     seen = {}
     to_remove = []
     for component in list(cal.walk('VEVENT')):
@@ -244,12 +262,15 @@ def dedupe_calendar_events(cal: Calendar) -> int:
             to_remove.append(component)
         else:
             seen[uid] = component
+
     for comp in to_remove:
         cal.subcomponents.remove(comp)
+
     return len(to_remove)
 
 
 def dedupe_by_url_keep_latest(cal: Calendar) -> int:
+    """Remove eventos duplicados por URL (mantém primeiro). Retorna quantidade removida."""
     url_map = {}
     to_remove = []
     for component in list(cal.walk('VEVENT')):
@@ -266,19 +287,23 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
                 url_map[url] = component
             else:
                 to_remove.append(component)
+
     for comp in to_remove:
         cal.subcomponents.remove(comp)
+
     return len(to_remove)
 
 
 def build_stable_uid(game_key: str, event_summary: str, match_time_utc: datetime, tournament_desc: str, organizer_name: str, match_url: str) -> str:
+    """Gera UID estável baseado em dados do evento."""
     data = f"{game_key}|{event_summary}|{match_time_utc.isoformat()}|{tournament_desc}|{organizer_name}|{match_url}"
     return hashlib.sha256(data.encode()).hexdigest()
 
 
 def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: list, existing_uids: set) -> tuple:
+    """Raspa dias para jogo. Retorna (lista_eventos, stats)."""
     new_events = []
-    total_stats = {
+    stats = {
         "days_scraped": 0,
         "scripts_total": 0,
         "sports_events": 0,
@@ -298,65 +323,66 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
         html = fetch_page_scrape_do(url)
 
         if not html:
-            log(f"  ⚠️ Falha ao buscar {target_day.strftime('%d/%m/%Y')}")
             continue
 
-        soup = BeautifulSoup(html, 'html.parser')
-        scripts = soup.find_all('script', {'type': 'application/ld+json'})
+        try:
+            soup = BeautifulSoup(html, 'html.parser')
+            scripts = soup.find_all('script', {'type': 'application/ld+json'})
+        except Exception as e:
+            log(f"❌ Erro ao parsear HTML de {target_day.strftime('%d/%m/%Y')}: {e}")
+            continue
 
-        total_stats["days_scraped"] += 1
-        total_stats["scripts_total"] += len(scripts)
+        stats["days_scraped"] += 1
+        stats["scripts_total"] += len(scripts)
 
         now_utc = datetime.now(pytz.utc)
 
         for script in scripts:
             try:
                 data = json.loads(script.string)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                log(f"❌ JSON inválido em script: {e}")
                 continue
 
             if not isinstance(data, dict):
                 continue
 
-            events = data.get("@graph", [])
-            if not events:
-                events = [data]
-
-            total_stats["sports_events"] += len(events)
+            events = data.get("@graph", []) or [data]
 
             for event in events:
                 try:
                     if event.get("@type") != "SportsEvent":
                         continue
 
-                    team1_raw = event.get("competitor", [{}])[0].get("name", "")
-                    team2_raw = event.get("competitor", [{}])[1].get("name", "") if len(event.get("competitor", [])) > 1 else ""
+                    competitors = event.get("competitor", [])
+                    team1_raw = competitors[0].get("name", "") if len(competitors) > 0 else ""
+                    team2_raw = competitors[1].get("name", "") if len(competitors) > 1 else ""
 
                     if not team1_raw or not team2_raw:
                         continue
 
-                    description = event.get("name", "")
-                    organizer_name = event.get("organizer", {}).get("name", "")
-
+                    # TBD check
                     if "TBD" in team1_raw or "TBD" in team2_raw:
-                        total_stats["skipped_tbd"] += 1
+                        stats["skipped_tbd"] += 1
                         continue
 
-                    match_url = event.get("url", "")
-
+                    # Parse data/hora
                     try:
                         match_time_str = event.get("startDate", "")
                         match_time_utc = datetime.fromisoformat(match_time_str.replace("Z", "+00:00"))
                         if match_time_utc.tzinfo is None:
                             match_time_utc = pytz.utc.localize(match_time_utc)
                         match_time_utc = match_time_utc.astimezone(pytz.utc)
-                    except Exception:
+                    except Exception as e:
+                        log(f"❌ Erro ao parsear data '{match_time_str}': {e}")
                         continue
 
+                    # Evento no passado
                     if match_time_utc < now_utc:
-                        total_stats["skipped_past"] += 1
+                        stats["skipped_past"] += 1
                         continue
 
+                    # Verifica times permitidos
                     t1 = normalize_team(team1_raw)
                     t2 = normalize_team(team2_raw)
 
@@ -364,10 +390,14 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                     allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
 
                     if not (allowed_t1 or allowed_t2):
-                        total_stats["skipped_not_allowed"] += 1
+                        stats["skipped_not_allowed"] += 1
                         continue
 
+                    # Monta evento
                     event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
+                    description = event.get("name", "")
+                    organizer_name = event.get("organizer", {}).get("name", "")
+                    match_url = event.get("url", "")
 
                     event_uid = build_stable_uid(
                         game_key=game_key,
@@ -378,6 +408,7 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                         match_url=match_url,
                     )
 
+                    # Já existe
                     if event_uid in existing_uids:
                         continue
 
@@ -404,41 +435,42 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
 
                     new_events.append(e)
                     existing_uids.add(event_uid)
-                    total_stats["added"] += 1
-                    log(f"      ✅ ADICIONADO: {event_summary}")
+                    stats["added"] += 1
+                    log(f"  ✅ {event_summary} em {match_time_utc.astimezone(BR_TZ).strftime('%d/%m %H:%M')}")
 
-                except Exception:
+                except Exception as e:
+                    log(f"❌ Erro ao processar evento: {type(e).__name__}: {e}")
                     continue
 
-    return new_events, total_stats
+    return new_events, stats
 
 
 # -------------------- Execução --------------------
-log("🔄 Iniciando execução...")
-
-if SCRAPE_DO_API_KEY:
-    log("✅ Scrape.do configurado")
-else:
-    log("⚠️ Scrape.do não configurado")
+log("=" * 60)
+log("🚀 INICIANDO RASPAGEM")
+log("=" * 60)
 
 cal = load_calendar(CALENDAR_FILENAME)
 state = load_state()
 now = datetime.now(BR_TZ)
 today = now.date()
 
-deduped_initial = dedupe_calendar_events(cal)
-if deduped_initial:
-    log(f"🧼 Deduplicação inicial: removidos {deduped_initial} eventos duplicados.")
+# Limpeza inicial
+deduped = dedupe_calendar_events(cal)
+if deduped > 0:
+    log(f"🗑️  Removidos {deduped} eventos duplicados (UID)")
 
-deduped_by_url_initial = dedupe_by_url_keep_latest(cal)
-if deduped_by_url_initial:
-    log(f"🧼 Dedup por URL (inicial): removidos {deduped_by_url_initial} eventos.")
+deduped_url = dedupe_by_url_keep_latest(cal)
+if deduped_url > 0:
+    log(f"🗑️  Removidos {deduped_url} eventos duplicados (URL)")
 
 existing_uids = get_existing_uids(cal)
 
+# Prune antigos
 cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
 removed = prune_older_than(cal, cutoff)
-log(f"🧹 Limpeza: removidos {removed} eventos com data < {cutoff.strftime('%d/%m/%Y')}")
+if removed > 0:
+    log(f"🗑️  Removidos {removed} eventos anteriores a {cutoff.strftime('%d/%m/%Y')}")
 
 total_added = 0
 
@@ -446,15 +478,15 @@ try:
     for game_key, cfg in GAMES.items():
         if not should_run_game(game_key, cfg, now, state):
             run_at = cfg.get("run_at_hour", 0)
-            log(f"⏭️  {game_key} aguardando {run_at:02d}:00 (agora são {now.hour:02d}:{now.minute:02d})")
+            log(f"⏭️  {game_key} próxima execução: {run_at:02d}:00")
             continue
 
         if game_key == "CS2":
             target_days = get_cs2_target_days(today, state)
-            log(f"🌐 Raspando {game_key} (offset={state.get('cs2_day_offset', 0)}) -> {target_days[0].strftime('%d/%m/%Y')}")
+            log(f"\n📅 {game_key} (offset={state.get('cs2_day_offset', 0)}) → {target_days[0].strftime('%d/%m/%Y')}")
         else:
             target_days = [today]
-            log(f"🌐 Raspando {game_key} (dia atual) -> {today.strftime('%d/%m/%Y')}")
+            log(f"\n📅 {game_key} → {today.strftime('%d/%m/%Y')}")
 
         new_events, stats = scrape_days_for_game(game_key, cfg, today, target_days, existing_uids)
 
@@ -463,9 +495,16 @@ try:
 
         total_added += stats["added"]
 
-        log(f"🧾 RESUMO {game_key}")
-        log(f"  dias={stats['days_scraped']} scripts={stats['scripts_total']} sports={stats['sports_events']} added={stats['added']}")
-        log(f"  skipped: tbd={stats['skipped_tbd']} past={stats['skipped_past']} not_allowed={stats['skipped_not_allowed']}")
+        # Resumo compacto
+        summary = f"scripts={stats['scripts_total']} | adicionados={stats['added']}"
+        if stats["skipped_tbd"] > 0:
+            summary += f" | TBD={stats['skipped_tbd']}"
+        if stats["skipped_past"] > 0:
+            summary += f" | passados={stats['skipped_past']}"
+        if stats["skipped_not_allowed"] > 0:
+            summary += f" | não-permitidos={stats['skipped_not_allowed']}"
+
+        log(f"  {summary}")
 
         if cfg.get("once_per_day", False):
             mark_game_as_run(game_key, state)
@@ -473,24 +512,19 @@ try:
         if game_key == "CS2":
             advance_cs2_offset(state)
 
+    # Dedup final
     deduped_final = dedupe_calendar_events(cal)
-    if deduped_final:
-        log(f"🧼 Deduplicação final: removidos {deduped_final} eventos.")
-
-    deduped_by_url_final = dedupe_by_url_keep_latest(cal)
-    if deduped_by_url_final:
-        log(f"🧼 Dedup por URL (final): removidos {deduped_by_url_final} eventos.")
+    if deduped_final > 0:
+        log(f"\n🗑️  Removidos {deduped_final} eventos duplicados (final)")
 
 except Exception as e:
-    log(f"❌ Erro geral: {e}")
+    log(f"\n❌ ERRO GERAL: {type(e).__name__}: {e}")
     import traceback
-    log(f"📋 Traceback: {traceback.format_exc()}")
+    log(f"📍 Stack trace:\n{traceback.format_exc()}")
 
-log(f"💾 Salvando arquivo: {CALENDAR_FILENAME}")
-try:
-    save_calendar(cal, CALENDAR_FILENAME)
-    log(f"✅ Salvo. Total adicionados: {total_added}")
-except Exception as e:
-    log(f"❌ Erro ao salvar: {e}")
+# Salva
+log(f"\n💾 Salvando {CALENDAR_FILENAME}...")
+save_calendar(cal, CALENDAR_FILENAME)
 
-log("✅ Execução concluída!")
+log(f"✅ Concluído | Total adicionados: {total_added}")
+log("=" * 60)
