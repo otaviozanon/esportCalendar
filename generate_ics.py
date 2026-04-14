@@ -495,7 +495,7 @@ try:
             continue
 
         if game_key == "CS2":
-            current_offset = state.get("cs2_day_offset", 0)
+            current_offset = [today]
             target_days = get_cs2_target_days(today, state)
             next_offset = (current_offset + 1) % 3
             log(f"📅 {game_key} offset {current_offset}→{next_offset} | LIMPANDO {target_days[0].strftime('%d/%m/%Y')}")
