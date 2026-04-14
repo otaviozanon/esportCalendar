@@ -396,10 +396,14 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                         continue
 
                     # Monta evento
-                    event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
+                   event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
                     description = event.get("name", "")
                     organizer_name = event.get("organizer", {}).get("name", "")
                     match_url = event.get("url", "")
+
+                    # Garante URL completa
+                    if match_url and not match_url.startswith("http"):
+                        match_url = f"https://tips.gg{match_url}"
 
                     event_uid = build_stable_uid(
                         game_key=game_key,
@@ -486,7 +490,8 @@ try:
     for game_key, cfg in GAMES.items():
         if not should_run_game(game_key, cfg, now, state):
             run_at = cfg.get("run_at_hour", 0)
-            log(f"⏭️  {game_key} próxima execução: {run_at:02d}:00")
+            next_run_date = today if now.hour < run_at else today + timedelta(days=1)
+            log(f"⏭️  {game_key} próxima execução: {run_at:02d}:00 ({next_run_date.strftime('%d/%m/%Y')})")
             continue
 
         if game_key == "CS2":
