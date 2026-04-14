@@ -395,13 +395,13 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                         stats["skipped_not_allowed"] += 1
                         continue
 
-                    # Monta evento
+                                        # Monta evento
                     event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
                     description = event.get("name", "")
                     organizer_name = event.get("organizer", {}).get("name", "")
                     match_url = event.get("url", "")
 
-                    # Garante URL completa
+                    # Normaliza URL ANTES de gerar UID
                     if match_url and not match_url.startswith("http"):
                         match_url = f"https://tips.gg{match_url}"
 
@@ -411,7 +411,7 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                         match_time_utc=match_time_utc,
                         tournament_desc=description,
                         organizer_name=organizer_name,
-                        match_url=match_url,
+                        match_url=match_url,  # URL já normalizada aqui
                     )
 
                     # Já existe
