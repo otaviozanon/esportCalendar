@@ -32,9 +32,14 @@ TIPS_URL_HINT = "https://tips.gg/matches/"
 SCRAPE_DO_API_KEY = os.getenv("SCRAPE_DO_API_KEY", "")
 SCRAPE_DO_URL = "https://api.scrape.do"
 
-# Retry config
 MAX_RETRIES = 3
-RETRY_BACKOFF = 1.5  # exponential backoff multiplier
+RETRY_BACKOFF = 1.5
+
+
+# -------------------- Helpers (ANTES de Enums/Types) --------------------
+def normalize_team(name: str) -> str:
+    """Normaliza nome do time para comparação."""
+    return (name or "").lower().strip()
 
 
 # -------------------- Enums & Types --------------------
@@ -155,12 +160,7 @@ GAMES_CONFIG: Dict[str, GameConfig] = {
 }
 
 
-# -------------------- Helpers --------------------
-def normalize_team(name: str) -> str:
-    """Normaliza nome do time para comparação."""
-    return (name or "").lower().strip()
-
-
+# -------------------- Helpers (continuação) --------------------
 def build_url_for_day(base_path: str, target_date: date) -> str:
     """Constrói URL para data específica."""
     date_str = target_date.strftime("%d-%m-%Y")
@@ -168,16 +168,7 @@ def build_url_for_day(base_path: str, target_date: date) -> str:
 
 
 def fetch_with_retry(url: str, max_retries: int = MAX_RETRIES) -> Optional[str]:
-    """
-    Busca URL com retry exponencial.
-
-    Args:
-        url: URL a buscar
-        max_retries: Número máximo de tentativas
-
-    Returns:
-        HTML ou None se falhar
-    """
+    """Busca URL com retry exponencial."""
     if not SCRAPE_DO_API_KEY:
         log("❌ API key Scrape.do não configurada")
         return None
@@ -220,12 +211,7 @@ def load_calendar(path: str) -> Calendar:
 
 
 def save_calendar(cal: Calendar, path: str) -> bool:
-    """
-    Salva calendário em arquivo.
-
-    Returns:
-        True se sucesso, False se falhar
-    """
+    """Salva calendário em arquivo."""
     try:
         with open(path, "wb") as f:
             f.write(cal.to_ical())
@@ -381,6 +367,7 @@ def build_stable_uid(game_key: str, event_summary: str, match_time_utc: datetime
 def scrape_days_for_game(game_key: str, cfg: GameConfig, today: date, target_days: List[date], existing_uids: Set[str]) -> Tuple[List[Event], ScrapStats]:
     """Raspa dias para jogo. Retorna (lista_eventos, stats)."""
     stats = ScrapStats()
+    new_events = []
 
     for target_day in target_days:
         url = build_url_for_day(cfg.base_path, target_day)
@@ -400,7 +387,6 @@ def scrape_days_for_game(game_key: str, cfg: GameConfig, today: date, target_day
         stats.scripts_total += len(scripts)
 
         now_utc = datetime.now(pytz.utc)
-        new_events = []
 
         for script in scripts:
             try:
@@ -517,8 +503,7 @@ def scrape_days_for_game(game_key: str, cfg: GameConfig, today: date, target_day
                     log(f"❌ Erro ao processar evento: {type(e).__name__}: {e}")
                     continue
 
-        for ev in new_events:
-            yield ev
+    return new_events, stats
 
 
 # -------------------- Execução --------------------
@@ -568,9 +553,9 @@ def main():
                 target_days = [today]
                 log(f"📅 {game_key} | LIMPANDO {today.strftime('%d/%m/%Y')}")
 
-            new_events_gen, stats = scrape_days_for_game(game_key, cfg, today, target_days, existing_uids)
+            new_events, stats = scrape_days_for_game(game_key, cfg, today, target_days, existing_uids)
 
-            for ev in new_events_gen:
+            for ev in new_events:
                 cal.add_component(ev)
 
             total_added += stats.added
