@@ -97,14 +97,14 @@ def fetch_page_scrape_do(url: str) -> str:
         return ""
 
     log(f"  🔍 Buscando: {url}")
-    log(f"  🔑 API key: {SCRAPE_DO_API_KEY[:10]}...")
+    log(f"  🔑 Token: {SCRAPE_DO_API_KEY[:10]}...")
 
     try:
         params = {
-            "apikey": SCRAPE_DO_API_KEY,
+            "token": SCRAPE_DO_API_KEY,
             "url": url,
         }
-        log(f"  📤 Enviando params: apikey={SCRAPE_DO_API_KEY[:10]}..., url={url}")
+        log(f"  📤 Enviando params: token={SCRAPE_DO_API_KEY[:10]}..., url={url}")
 
         response = requests.get(SCRAPE_DO_URL, params=params, timeout=60)
         log(f"  📥 Status: {response.status_code}")
