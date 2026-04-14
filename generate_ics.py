@@ -396,7 +396,7 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                         continue
 
                     # Monta evento
-                   event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
+                    event_summary = f"{prefix}{team1_raw} vs {team2_raw}"
                     description = event.get("name", "")
                     organizer_name = event.get("organizer", {}).get("name", "")
                     match_url = event.get("url", "")
