@@ -261,17 +261,17 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
         if not url:
             continue
 
+        dtstamp = component.get('dtstamp')
         if url not in url_map:
-            url_map[url] = component
+            url_map[url] = (component, dtstamp)
         else:
-            existing = url_map[url]
-            existing_time = existing.get('dtstart').dt
-            new_time = component.get('dtstart').dt
+            existing_comp, existing_dtstamp = url_map[url]
+            if dtstamp and existing_dtstamp and dtstamp > existing_dtstamp:
+                url_map[url] = (component, dtstamp)
 
-            if new_time > existing_time:
-                url_map[url] = component
-
+    seen_urls = set()
     to_remove = []
+
     for component in list(cal.walk('VEVENT')):
         if not is_ours(component):
             continue
@@ -283,8 +283,16 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
                 url = line.replace('🌐 ', '').strip()
                 break
 
-        if url and url_map.get(url) != component:
+        if not url:
+            continue
+
+        if url in seen_urls:
             to_remove.append(component)
+        else:
+            if url_map[url][0] == component:
+                seen_urls.add(url)
+            else:
+                to_remove.append(component)
 
     for comp in to_remove:
         cal.subcomponents.remove(comp)
@@ -293,51 +301,38 @@ def dedupe_by_url_keep_latest(cal: Calendar) -> int:
 
 
 def build_stable_uid(game_key: str, event_summary: str, match_time_utc: datetime, tournament_desc: str, organizer_name: str, match_url: str) -> str:
-    """Cria UID estável baseado em dados do evento"""
-    data = f"{game_key}|{event_summary}|{match_time_utc.isoformat()}|{tournament_desc}|{organizer_name}|{match_url}"
-    hash_obj = hashlib.sha256(data.encode())
+    """Cria UID estável baseado em hash"""
+    content = f"{game_key}|{event_summary}|{match_time_utc.isoformat()}|{tournament_desc}|{organizer_name}|{match_url}"
+    hash_obj = hashlib.sha256(content.encode())
     return f"{hash_obj.hexdigest()}@tips.gg"
 
 
-def fetch_page_scrape_do(url: str) -> str:
-    """Busca página usando Scrape.do com render JS"""
+def fetch_page_scrape_do(url: str) -> str | None:
+    """Busca página usando Scrape.do"""
     if not SCRAPE_DO_API_KEY:
-        log(f"  ⚠️ Scrape.do não configurado")
-        return ""
+        return None
 
     params = {
-        "token": SCRAPE_DO_API_KEY,
+        "apikey": SCRAPE_DO_API_KEY,
         "url": url,
-        "render": "true",
-        "returnJSON": "true",
     }
 
     try:
         response = requests.get(SCRAPE_DO_URL, params=params, timeout=30)
-
-        if response.status_code == 200:
-            try:
-                data = response.json()
-                if data.get("statusCode") == 200:
-                    content = data.get("content", "")
-                    return content
-                else:
-                    log(f"  ⚠️ Status Scrape.do: {data.get('statusCode')}")
-                    return ""
-            except json.JSONDecodeError:
-                log(f"  ⚠️ Erro ao decodificar JSON")
-                return ""
-        else:
-            log(f"  ⚠️ Status HTTP: {response.status_code}")
-            return ""
-
+        response.raise_for_status()
+        return response.text
     except Exception as e:
-        log(f"  ❌ Erro Scrape.do: {str(e)[:80]}")
-        return ""
+        log(f"  ❌ Erro ao buscar {url}: {e}")
+        return None
 
 
 def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: list, existing_uids: set) -> tuple:
-    """Raspa múltiplos dias para um jogo"""
+    """Raspa dias específicos para um jogo"""
+    prefix = cfg.get("prefix", "")
+    base_path = cfg.get("base_path", "")
+    teams_norm = cfg.get("teams_norm", set())
+    exclusions_norm = cfg.get("exclusions_norm", set())
+
     new_events = []
     total_stats = {
         "days_scraped": 0,
@@ -348,11 +343,6 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
         "skipped_past": 0,
         "skipped_not_allowed": 0,
     }
-
-    prefix = cfg.get("prefix", "")
-    base_path = cfg.get("base_path", "")
-    teams_norm = cfg.get("teams_norm", set())
-    exclusions_norm = cfg.get("exclusions_norm", set())
 
     for target_day in target_days:
         url = build_url_for_day(base_path, target_day)
@@ -424,6 +414,9 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                     allowed_t1 = (t1 in teams_norm) and (t1 not in exclusions_norm)
                     allowed_t2 = (t2 in teams_norm) and (t2 not in exclusions_norm)
 
+                    # DEBUG
+                    log(f"    DEBUG: '{team1_raw}' ({t1}) vs '{team2_raw}' ({t2}) | allowed: {allowed_t1}/{allowed_t2}")
+
                     if not (allowed_t1 or allowed_t2):
                         total_stats["skipped_not_allowed"] += 1
                         continue
@@ -468,7 +461,8 @@ def scrape_days_for_game(game_key: str, cfg: dict, today: date, target_days: lis
                     total_stats["added"] += 1
                     log(f"      ✅ ADICIONADO: {event_summary}")
 
-                except Exception:
+                except Exception as e:
+                    log(f"      ❌ Erro ao processar evento: {e}")
                     continue
 
     return new_events, total_stats
@@ -511,7 +505,7 @@ try:
             continue
 
         if game_key == "CS2":
-            target_days = get_cs2_target_days(today, state)
+            target_days = [today]
             log(f"🌐 Raspando {game_key} (offset={state.get('cs2_day_offset', 0)}) -> {target_days[0].strftime('%d/%m/%Y')}")
         else:
             target_days = [today]
