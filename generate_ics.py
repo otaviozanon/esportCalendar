@@ -497,7 +497,7 @@ try:
             continue
 
         if game_key == "CS2":
-            target_days = get_cs2_target_days(today, state)
+            target_days = [today]
             log(f"🌐 Raspando {game_key} (offset={state.get('cs2_day_offset', 0)}) -&gt; {target_days[0].strftime('%d/%m/%Y')}")
         else:
             target_days = [today]
