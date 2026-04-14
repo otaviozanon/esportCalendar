@@ -93,15 +93,12 @@ def build_url_for_day(base_path: str, target_date: date) -> str:
 def fetch_page_scrape_do(url: str) -> str:
     """Busca página usando Scrape.do"""
     if not SCRAPE_DO_API_KEY:
-        log(f"  ⚠️ Scrape.do não configurado")
         return ""
 
     try:
         params = {
             "apikey": SCRAPE_DO_API_KEY,
             "url": url,
-            "render": "false",
-            "country": "BR",
         }
         response = requests.get(SCRAPE_DO_URL, params=params, timeout=60)
         response.raise_for_status()
@@ -110,7 +107,7 @@ def fetch_page_scrape_do(url: str) -> str:
         log(f"  ❌ HTTP {e.response.status_code}: {url}")
         return ""
     except Exception as e:
-        log(f"  ❌ Erro Scrape.do: {str(e)[:100]}")
+        log(f"  ❌ Erro: {str(e)[:100]}")
         return ""
 
 
