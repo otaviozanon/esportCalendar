@@ -236,4 +236,20 @@ DESCRIPTION:Lembrete: [CS2] FaZe Clan vs FURIA
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] Imperial vs Galorys
+DTSTART:20260501T210000Z
+DTEND:20260501T230000Z
+DTSTAMP:20260430T100514Z
+UID:82cce5adcc181ed4c097ec13da3a517469ce040d60a9b843df42991a74128f67
+DESCRIPTION:🏆 Imperial vs Galorys\, ESL Challenger League Season 51 Sou
+ th America\n📍 ESL Challenger League Season 51 South America\n🌐 https
+ ://tips.gg/matches/counter-strike/01-05-2026/imperial-vs-galorys/10-00/\nX
+ -SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] Imperial vs Galorys
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
 END:VCALENDAR
