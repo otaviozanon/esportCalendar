@@ -250,4 +250,20 @@ DESCRIPTION:Lembrete: [LOL] LOUD vs Keyd Stars
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] Imperial vs Bounty Hunters Esports
+DTSTART:20260503T210000Z
+DTEND:20260503T230000Z
+DTSTAMP:20260503T090812Z
+UID:d2140462775436bc03a9a7fb08430fbfef32a4bb7e2f49eb95f6a5dbde3cf9e5
+DESCRIPTION:🏆 Imperial vs Bounty Hunters Esports\, ESL Challenger Leagu
+ e Season 51 South America\n📍 ESL Challenger League Season 51 South Amer
+ ica\n🌐 https://tips.gg/matches/counter-strike/03-05-2026/imperial-vs-bo
+ unty-hunters-esports/10-00/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] Imperial vs Bounty Hunters Esports
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
 END:VCALENDAR
