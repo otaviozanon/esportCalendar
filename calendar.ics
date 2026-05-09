@@ -184,4 +184,20 @@ DESCRIPTION:Lembrete: [CS2] FURIA vs Heroic
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] Yawara Esports vs Imperial
+DTSTART:20260509T220000Z
+DTEND:20260510T000000Z
+DTSTAMP:20260509T202925Z
+UID:7ee8690f1f5c53d07fabdc6eb03bc034a0dacea3af566d350d1074f770a9cb04
+DESCRIPTION:🏆 Yawara Esports vs Imperial\, CCT South America 2026 Serie
+ s #1\n📍 CCT South America 2026 Series #1\n🌐 https://tips.gg/matches/
+ counter-strike/09-05-2026/yawara-esports-vs-imperial/02-00/\nX-SETT-SOURCE
+ :TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] Yawara Esports vs Imperial
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
 END:VCALENDAR
