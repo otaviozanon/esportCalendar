@@ -184,4 +184,20 @@ DESCRIPTION:Lembrete: [CS2] FURIA vs Heroic
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] largadosypelados vs Imperial
+DTSTART:20260510T150000Z
+DTEND:20260510T170000Z
+DTSTAMP:20260510T012614Z
+UID:db0974fb02bb82b8712272447e189618a6ed95f0c1a117ad22216b96e0ff906b
+DESCRIPTION:🏆 largadosypelados vs Imperial\, CCT South America 2026 Ser
+ ies #1\n📍 CCT South America 2026 Series #1\n🌐 https://tips.gg/matche
+ s/counter-strike/10-05-2026/largadosypelados-vs-imperial/04-00/\nX-SETT-SO
+ URCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] largadosypelados vs Imperial
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
 END:VCALENDAR
