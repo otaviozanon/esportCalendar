@@ -201,20 +201,4 @@ DESCRIPTION:Lembrete: [LOL] Keyd Stars vs LOUD
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
-BEGIN:VEVENT
-SUMMARY:[CS2] largadosypelados vs Imperial
-DTSTART:20260510T180000Z
-DTEND:20260510T200000Z
-DTSTAMP:20260510T113752Z
-UID:bc47e4bf039675bece63c9c11116ee518bb8d2cde0d1a25d585f632c94c43fa7
-DESCRIPTION:🏆 largadosypelados vs Imperial\, CCT South America 2026 Ser
- ies #1\n📍 CCT South America 2026 Series #1\n🌐 https://tips.gg/matche
- s/counter-strike/10-05-2026/largadosypelados-vs-imperial/04-00/\nX-SETT-SO
- URCE:TIPSGG
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Lembrete: [CS2] largadosypelados vs Imperial
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
 END:VCALENDAR
