@@ -202,17 +202,18 @@ TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-SUMMARY:[CS2] Legacy vs M80
-DTSTART:20260511T230000Z
-DTEND:20260512T010000Z
-DTSTAMP:20260510T140942Z
-UID:8f912d60069c606f8b0e9c6d2d7fed4894500625dc3a43f9a98feefa8d4e0bd2
-DESCRIPTION:🏆 Legacy vs M80\, IEM Atlanta 2026\n📍 IEM Atlanta 2026\n
- 🌐 https://tips.gg/matches/counter-strike/11-05-2026/legacy-vs-m80/04-30
- /\nX-SETT-SOURCE:TIPSGG
+SUMMARY:[CS2] largadosypelados vs Imperial
+DTSTART:20260510T180000Z
+DTEND:20260510T200000Z
+DTSTAMP:20260510T153743Z
+UID:bc47e4bf039675bece63c9c11116ee518bb8d2cde0d1a25d585f632c94c43fa7
+DESCRIPTION:🏆 largadosypelados vs Imperial\, CCT South America 2026 Ser
+ ies #1\n📍 CCT South America 2026 Series #1\n🌐 https://tips.gg/matche
+ s/counter-strike/10-05-2026/largadosypelados-vs-imperial/04-00/\nX-SETT-SO
+ URCE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Lembrete: [CS2] Legacy vs M80
+DESCRIPTION:Lembrete: [CS2] largadosypelados vs Imperial
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
