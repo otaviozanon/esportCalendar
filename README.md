@@ -34,6 +34,7 @@ This will generate a `calendar.ics` file that you can import into your calendar.
 ## 📦 Installation
 
 ### Prerequisites
+
 - Python 3.8+
 - pip
 - [Scrape.do](https://scrape.do) account (API key)
@@ -79,19 +80,18 @@ SCRAPE_DO_API_KEY  # Your Scrape.do API key (required)
 
 ### Customizing Teams
 
-Edit the `GAMES_CONFIG` dictionary in `generate_ics.py` to add or remove teams:
+Edit the `GAMES` dictionary in `generate_ics.py` to add or remove teams:
 
 ```python
-GAMES_CONFIG: Dict[GameKey, GameConfig] = {
-    GameKey.CS2: GameConfig(
-        prefix="[CS2] ",
-        base_path="https://tips.gg/csgo/matches/",
-        days_to_scrape=3,
-        once_per_day=False,
-        run_at_hour=0,
-        teams={"FURIA", "paiN Gaming", ...},
-        exclusions={"Imperial.A", ...},
-    ),
+GAMES = {
+    "CS2": {
+        "prefix": "[CS2] ",
+        "base_path": "https://tips.gg/csgo/matches/",
+        "days_to_scrape": 3,
+        "once_per_day": False,
+        "teams": {"FURIA", "paiN Gaming", "MIBR", ...},
+        "exclusions": {"Imperial.A", "Imperial Fe", ...},
+    },
     # ... other esports
 }
 ```
@@ -99,6 +99,7 @@ GAMES_CONFIG: Dict[GameKey, GameConfig] = {
 ## 📊 Output
 
 The `calendar.ics` file contains:
+
 - ✅ Event name (ex: `[CS2] FURIA vs MIBR`)
 - ✅ Date and time (São Paulo timezone)
 - ✅ Description with tournament and link
@@ -108,11 +109,13 @@ The `calendar.ics` file contains:
 ## 🎯 Execution Logic
 
 ### CS2
+
 - Scrapes the next 3 days
 - Runs every time the script executes
 - Rotative: day 1 → day 2 → day 3 → day 1
 
 ### Valorant, LOL, RL
+
 - Scrapes only the current day
 - Runs only 1x per day (starting at 00:00)
 - Stores execution state in `state.json`
