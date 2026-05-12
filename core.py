@@ -199,7 +199,8 @@ class CalendarManager:
 
     def _is_ours(self, component) -> bool:
         desc = str(component.get('description', ''))
-        return SOURCE_MARKER in desc or TIPS_URL_HINT in component.get('url', '') or TIPS_URL_HINT in desc
+        url = str(component.get('url', ''))
+        return SOURCE_MARKER in desc or TIPS_URL_HINT in url or TIPS_URL_HINT in desc
 
 # -------------------- Utils --------------------
 def build_stable_uid(game_key: str, summary: str, match_time_utc: datetime, url: str) -> str:

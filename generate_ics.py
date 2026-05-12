@@ -218,8 +218,9 @@ async def main():
 
     existing_uids = cm.get_uids()
     total_added = 0
+    changed = (removed_dupes > 0 or removed_old > 0)
 
-    async with httpx.AsyncClient(http2=True) as client:
+    async with httpx.AsyncClient() as client:
         tasks = []
         for game_key, cfg in GAMES_CONFIG.items():
             if not sm.should_run(game_key, cfg, now):
@@ -244,6 +245,8 @@ async def main():
                 for ev in events:
                     cm.add_event(ev)
                 total_added += stats.added
+                if stats.added > 0:
+                    changed = True
                 
                 logger.info(f"✅ {game_key.value}: Scripts({stats.scripts_total}) | Add({stats.added}) | Skip({stats.skipped_not_allowed})")
                 if stats.matches:
@@ -257,12 +260,13 @@ async def main():
                     next_offset = sm.advance_cs2_offset()
                     logger.info(f"   Próximo offset CS2: {next_offset}")
 
-    if total_added > 0:
-        cm.dedupe()
+    if changed:
+        if total_added > 0:
+            cm.dedupe() # Final safety dedupe
         cm.save()
-        logger.info(f"💾 Calendário salvo com {total_added} novos eventos.")
+        logger.info(f"💾 Calendário salvo (Total novos: {total_added}).")
     else:
-        logger.info("ℹ️  Nenhum evento novo adicionado.")
+        logger.info("ℹ️  Nenhuma mudança detectada no calendário.")
 
     logger.info("=" * 60)
     logger.info("✅ FIM DA EXECUÇÃO")
