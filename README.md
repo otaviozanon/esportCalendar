@@ -79,18 +79,19 @@ SCRAPE_DO_API_KEY  # Your Scrape.do API key (required)
 
 ### Customizing Teams
 
-Edit the `GAMES` dictionary in `generate_ics.py` to add or remove teams:
+Edit the `GAMES_CONFIG` dictionary in `generate_ics.py` to add or remove teams:
 
 ```python
-GAMES = {
-    "CS2": {
-        "prefix": "[CS2] ",
-        "base_path": "https://tips.gg/csgo/matches/",
-        "days_to_scrape": 3,
-        "once_per_day": False,
-        "teams": {"FURIA", "paiN Gaming", "MIBR", ...},
-        "exclusions": {"Imperial.A", "Imperial Fe", ...},
-    },
+GAMES_CONFIG: Dict[GameKey, GameConfig] = {
+    GameKey.CS2: GameConfig(
+        prefix="[CS2] ",
+        base_path="https://tips.gg/csgo/matches/",
+        days_to_scrape=3,
+        once_per_day=False,
+        run_at_hour=0,
+        teams={"FURIA", "paiN Gaming", ...},
+        exclusions={"Imperial.A", ...},
+    ),
     # ... other esports
 }
 ```
