@@ -8,12 +8,13 @@ const translations = {
     nav_games: "Jogos",
     nav_features: "Recursos",
     nav_howto: "Como Usar",
-    
+
     // Hero
     hero_badge: "Atualizado a cada 48 minutos",
     hero_title_1: "Nunca mais perca",
     hero_title_2: "uma partida",
-    hero_subtitle: "Calendário automático dos melhores times brasileiros de esports.",
+    hero_subtitle:
+      "Calendário automático dos melhores times brasileiros de esports.",
     hero_games: "Counter Strike 2, Valorant, League of Legends e Rocket League",
     hero_download: "Baixar Calendário",
     hero_add: "Adicionar ao Calendário",
@@ -23,7 +24,7 @@ const translations = {
     hero_stat2_desc: "15 minutos antes da partida",
     hero_stat3_title: "Sempre Atualizado",
     hero_stat3_desc: "Atualização a cada 48 minutos",
-    
+
     // Games
     games_title: "Jogos Suportados",
     games_subtitle: "Acompanhe os melhores times brasileiros",
@@ -36,7 +37,7 @@ const translations = {
     games_rocket: "Rocket League",
     games_rocket_desc: "Partidas do dia atual",
     games_teams_supported: "Times suportados",
-    
+
     // Features
     features_title: "Por que usar?",
     features_subtitle: "Recursos principais do calendário",
@@ -48,7 +49,7 @@ const translations = {
     feature3_desc: "Google Calendar, Outlook e Apple Calendar",
     feature4_title: "Limpeza Automática",
     feature4_desc: "Remove partidas antigas automaticamente",
-    
+
     // How-to
     howto_title: "Como Adicionar",
     howto_subtitle: "Escolha sua plataforma",
@@ -66,8 +67,8 @@ const translations = {
     howto_step3_apple: "Cole e Assinar",
     howto_step4_outlook: "Salvar",
     howto_step4_outlook_desc: '"Salvar & Fechar"',
-    howto_download_btn: "Botão "Baixar Calendário"",
-    
+    howto_download_btn: 'Botão "Baixar Calendário"',
+
     // Footer
     footer_tagline: "Feito com ❤️ para a comunidade brasileira de esports",
     footer_opensource: "Open Source",
@@ -76,19 +77,20 @@ const translations = {
     footer_last_update: "Última atualização:",
     footer_copyright: "Otavio Zanon - 2026",
   },
-  
+
   en: {
     // Navbar
     nav_games: "Games",
     nav_features: "Features",
     nav_howto: "How to Use",
-    
+
     // Hero
     hero_badge: "Updated every 48 minutes",
     hero_title_1: "Never miss",
     hero_title_2: "a match again",
     hero_subtitle: "Automatic calendar for the best Brazilian esports teams.",
-    hero_games: "Counter Strike 2, Valorant, League of Legends and Rocket League",
+    hero_games:
+      "Counter Strike 2, Valorant, League of Legends and Rocket League",
     hero_download: "Download Calendar",
     hero_add: "Add to Calendar",
     hero_stat1_title: "Brazilian Teams",
@@ -97,7 +99,7 @@ const translations = {
     hero_stat2_desc: "15 minutes before match",
     hero_stat3_title: "Always Updated",
     hero_stat3_desc: "Updates every 48 minutes",
-    
+
     // Games
     games_title: "Supported Games",
     games_subtitle: "Follow the best Brazilian teams",
@@ -110,7 +112,7 @@ const translations = {
     games_rocket: "Rocket League",
     games_rocket_desc: "Current day matches",
     games_teams_supported: "Supported teams",
-    
+
     // Features
     features_title: "Why use it?",
     features_subtitle: "Main calendar features",
@@ -122,7 +124,7 @@ const translations = {
     feature3_desc: "Google Calendar, Outlook and Apple Calendar",
     feature4_title: "Auto Cleanup",
     feature4_desc: "Removes old matches automatically",
-    
+
     // How-to
     howto_title: "How to Add",
     howto_subtitle: "Choose your platform",
@@ -149,16 +151,16 @@ const translations = {
     footer_contribute: "Contribute to the project",
     footer_last_update: "Last update:",
     footer_copyright: "Otavio Zanon - 2026",
-  }
+  },
 };
 
 // Estado atual do idioma (default: pt)
-let currentLang = localStorage.getItem('language') || 'pt';
+let currentLang = localStorage.getItem("language") || "pt";
 
 // Função para trocar idioma
 function setLanguage(lang) {
   currentLang = lang;
-  localStorage.setItem('language', lang);
+  localStorage.setItem("language", lang);
 }
 
 // Função para pegar tradução
@@ -173,7 +175,17 @@ const gamesData = [
     icon: "crosshair",
     name: "Counter-Strike 2",
     desc: "Partida do dia atual e 3 dias à frente",
-    teams: ["FURIA", "paiN", "Imperial", "Legacy", "MIBR", "9z", "Fluxo", "Case", "Solid"],
+    teams: [
+      "FURIA",
+      "paiN",
+      "Imperial",
+      "Legacy",
+      "MIBR",
+      "9z",
+      "Fluxo",
+      "Case",
+      "Solid",
+    ],
   },
   {
     id: "valorant",
@@ -187,7 +199,17 @@ const gamesData = [
     icon: "swords",
     name: "League of Legends",
     desc: "Partidas do dia atual",
-    teams: ["paiN", "LOUD", "FURIA", "RED", "Fluxo", "Vivo", "INTZ", "Kabum", "Liberty"],
+    teams: [
+      "paiN",
+      "LOUD",
+      "FURIA",
+      "RED",
+      "Fluxo",
+      "Vivo",
+      "INTZ",
+      "Kabum",
+      "Liberty",
+    ],
   },
   {
     id: "rocket",
@@ -222,7 +244,8 @@ async function loadCalendarData() {
 
 async function loadLastUpdate() {
   try {
-    const apiUrl = "https://api.github.com/repos/otaviozanon/esportCalendar/commits?path=calendar.ics&page=1&per_page=1";
+    const apiUrl =
+      "https://api.github.com/repos/otaviozanon/esportCalendar/commits?path=calendar.ics&page=1&per_page=1";
     const res = await fetch(apiUrl);
     if (res.ok) {
       const commits = await res.json();
@@ -232,7 +255,11 @@ async function loadLastUpdate() {
         const el = document.getElementById("last-update");
         if (el) {
           el.textContent = date.toLocaleString("pt-BR", {
-            day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
           });
         }
         return;
@@ -272,11 +299,17 @@ function initAnimations() {
     gsap.registerPlugin(ScrollTrigger);
     gsap.from(".group.glass", {
       scrollTrigger: { trigger: "#games", start: "top 80%" },
-      y: 50, opacity: 0, duration: 0.8, stagger: 0.1,
+      y: 50,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.1,
     });
     gsap.from("#features .glass", {
       scrollTrigger: { trigger: "#features", start: "top 80%" },
-      y: 50, opacity: 0, duration: 0.8, stagger: 0.1,
+      y: 50,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.1,
     });
   }
 }
@@ -284,7 +317,10 @@ function initAnimations() {
 function initMouseGlow() {
   const mouseGlow = document.getElementById("mouse-glow");
   if (!mouseGlow) return;
-  let mouseX = 0, mouseY = 0, glowX = 0, glowY = 0;
+  let mouseX = 0,
+    mouseY = 0,
+    glowX = 0,
+    glowY = 0;
   document.addEventListener("mousemove", (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
@@ -335,7 +371,9 @@ function setupEventListeners() {
         list.classList.remove("open");
         card.classList.remove("active");
         btn.setAttribute("aria-expanded", "false");
-        setTimeout(() => { list.style.display = "none"; }, 600);
+        setTimeout(() => {
+          list.style.display = "none";
+        }, 600);
       } else {
         list.style.display = "flex";
         card.classList.add("active");
@@ -353,7 +391,9 @@ function setupEventListeners() {
         b.classList.remove("active", "border-[#ea580c]", "text-white");
         b.classList.add("border-transparent", "text-[#737373]");
       });
-      document.querySelectorAll(".tab-content").forEach((c) => c.classList.add("hidden"));
+      document
+        .querySelectorAll(".tab-content")
+        .forEach((c) => c.classList.add("hidden"));
       btn.classList.add("active", "border-[#ea580c]", "text-white");
       btn.classList.remove("border-transparent", "text-[#737373]");
       const content = document.querySelector(`.tab-content[data-tab="${tab}"]`);
@@ -405,7 +445,7 @@ function renderNavbar() {
             <a href="#games" class="text-sm text-[#a3a3a3] hover:text-white transition-colors" data-i18n="nav_games">${t("nav_games")}</a>
             <a href="#features" class="text-sm text-[#a3a3a3] hover:text-white transition-colors" data-i18n="nav_features">${t("nav_features")}</a>
             <a href="#howto" class="text-sm text-[#a3a3a3] hover:text-white transition-colors" data-i18n="nav_howto">${t("nav_howto")}</a>
-            <button id="lang-toggle" class="px-3 py-1.5 text-xs border border-[#404040] hover:border-[#525252] rounded transition-colors">${currentLang === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN'}</button>
+            <button id="lang-toggle" class="px-3 py-1.5 text-xs border border-[#404040] hover:border-[#525252] rounded transition-colors">${currentLang === "pt" ? "🇧🇷 PT" : "🇺🇸 EN"}</button>
           </div>
           <button id="mobile-menu-btn" class="md:hidden p-2"><i data-lucide="menu" class="w-5 h-5"></i></button>
         </div>
@@ -415,7 +455,7 @@ function renderNavbar() {
           <a href="#games" class="block py-2 text-sm text-[#a3a3a3]" data-i18n="nav_games">${t("nav_games")}</a>
           <a href="#features" class="block py-2 text-sm text-[#a3a3a3]" data-i18n="nav_features">${t("nav_features")}</a>
           <a href="#howto" class="block py-2 text-sm text-[#a3a3a3]" data-i18n="nav_howto">${t("nav_howto")}</a>
-          <button id="lang-toggle-mobile" class="w-full px-3 py-2 text-xs border border-[#404040] rounded">${currentLang === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN'}</button>
+          <button id="lang-toggle-mobile" class="w-full px-3 py-2 text-xs border border-[#404040] rounded">${currentLang === "pt" ? "🇧🇷 PT" : "🇺🇸 EN"}</button>
         </div>
       </div>
     </nav>
@@ -478,7 +518,9 @@ function renderHero() {
 
 // ==================== COMPONENTS: GAMES ====================
 function renderGames() {
-  const cards = gamesData.map(g => `
+  const cards = gamesData
+    .map(
+      (g) => `
     <div class="game-card border border-[#404040] rounded-lg p-6 transition-all duration-300" data-game="${g.id}">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-10 h-10 rounded-lg bg-[#262626] flex items-center justify-center">
@@ -492,10 +534,12 @@ function renderGames() {
         <i data-lucide="chevron-down" class="w-4 h-4 text-[#737373]"></i>
       </button>
       <div class="teams-list mt-3" data-game="${g.id}" style="display: none;">
-        ${g.teams.map(team => `<span class="inline-block px-2 py-1 rounded border border-[#404040] text-xs text-[#a3a3a3] hover:border-[#ea580c] hover:text-[#ea580c] transition-colors cursor-pointer">${team}</span>`).join("")}
+        ${g.teams.map((team) => `<span class="inline-block px-2 py-1 rounded border border-[#404040] text-xs text-[#a3a3a3] hover:border-[#ea580c] hover:text-[#ea580c] transition-colors cursor-pointer">${team}</span>`).join("")}
       </div>
     </div>
-  `).join("");
+  `,
+    )
+    .join("");
 
   document.getElementById("games").innerHTML = `
     <div id="games" class="py-20 px-4">
@@ -512,7 +556,9 @@ function renderGames() {
 
 // ==================== COMPONENTS: FEATURES ====================
 function renderFeatures() {
-  const cards = features.map(f => `
+  const cards = features
+    .map(
+      (f) => `
     <div class="border border-[#404040] rounded-lg p-6 hover:border-[#525252] hover:shadow-lg transition-all duration-300">
       <div class="w-10 h-10 rounded-lg bg-[#262626] flex items-center justify-center mb-4">
         <i data-lucide="${f.icon}" class="w-5 h-5 text-[#ea580c]"></i>
@@ -520,7 +566,9 @@ function renderFeatures() {
       <h3 class="text-base font-semibold mb-2" data-i18n="${f.id}_title">${t(`${f.id}_title`)}</h3>
       <p class="text-sm text-[#737373]" data-i18n="${f.id}_desc">${t(`${f.id}_desc`)}</p>
     </div>
-  `).join("");
+  `,
+    )
+    .join("");
 
   document.getElementById("features").innerHTML = `
     <div class="py-20 px-4 border-t border-[#404040]">
