@@ -1,0 +1,196 @@
+/* ==================== PROFESSIONAL MINIMAL DARK ====================  */
+:root {
+  --primary: #ea580c;
+  --primary-hover: #c2410c;
+  --accent: #f97316;
+  --success: #10b981;
+  --bg: #0d0d0d;
+  --bg-elevated: #151515;
+  --bg-card: #1a1a1a;
+  --bg-hover: #202020;
+  --border: #404040;
+  --border-hover: #525252;
+  --text: #fff;
+  --text-secondary: #a3a3a3;
+  --text-muted: #737373;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  font-family:
+    "Inter",
+    -apple-system,
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+#bg-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(234, 88, 12, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(234, 88, 12, 0.03) 1px, transparent 1px);
+  background-size: 100px 100px;
+  opacity: 0.4;
+}
+.glow-orb {
+  display: none;
+}
+
+/* Mouse glow effect */
+#mouse-glow {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(234, 88, 12, 0.08) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.glass {
+  background: rgba(38, 38, 38, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ==================== CURSOR EFFECTS ==================== */
+* {
+  cursor: default;
+}
+
+a,
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"] {
+  cursor: pointer;
+}
+
+button:hover,
+a:hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
+}
+
+/* ==================== DROPDOWN ANIMATION ==================== */
+.teams-list {
+  max-height: 0;
+  overflow: hidden;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  transition:
+    max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.teams-list.open {
+  max-height: 500px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Game card states */
+.game-card:hover:not(.active) {
+  border-color: #4a4a4a;
+}
+
+.game-card.active {
+  border-color: #525252 !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+}
+
+/* Dropdown chevron rotation */
+.teams-toggle[aria-expanded="true"] i,
+.teams-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.teams-toggle i,
+.teams-toggle svg {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #333;
+}

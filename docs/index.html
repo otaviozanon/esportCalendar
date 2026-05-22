@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR" class="dark scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Esport Calendar BR 🎮 - Calendário Profissional</title>
+    <meta
+      name="description"
+      content="Calendário automático dos melhores times brasileiros de esports"
+    />
+    <meta name="theme-color" content="#00f0ff" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Background Effects -->
+    <div id="bg-effects">
+      <div class="grid-bg"></div>
+      <div id="mouse-glow"></div>
+      <div class="glow-orb glow-orb-1"></div>
+      <div class="glow-orb glow-orb-2"></div>
+      <div class="glow-orb glow-orb-3"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar"></nav>
+
+    <!-- Hero Section -->
+    <section id="hero"></section>
+
+    <!-- Games Section -->
+    <section id="games"></section>
+
+    <!-- Features Section -->
+    <section id="features"></section>
+
+    <!-- How-to Section -->
+    <section id="howto"></section>
+
+    <!-- Footer -->
+    <footer id="footer"></footer>
+
+    <!-- Main Script (ES6 Module) -->
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
