@@ -19,8 +19,8 @@ import requests
 
 
 # -------------------- Configurações --------------------
-CALENDAR_FILENAME = "calendar.ics"
-STATE_FILE = "state.json"
+CALENDAR_FILENAME = "../calendar.ics"
+STATE_FILE = "data/state.json"
 LOG_LEVEL = logging.INFO
 
 BR_TZ = pytz.timezone("America/Sao_Paulo")

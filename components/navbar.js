@@ -1,5 +1,5 @@
 // ==================== NAVBAR COMPONENT ====================
-import { t, currentLang } from "../data/translations.js";
+import { t, currentLang } from "./data/translations.js";
 
 export function renderNavbar() {
   document.getElementById("navbar").innerHTML = `

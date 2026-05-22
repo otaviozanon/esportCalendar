@@ -14,8 +14,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install -r requirements.txt
-      - run: python delete_cs2.py
+      - run: pip install -r scripts/requirements.txt
+      - run: python scripts/delete_cs2.py
       - run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"

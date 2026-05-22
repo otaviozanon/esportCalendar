@@ -1,5 +1,5 @@
 // ==================== HERO COMPONENT ====================
-import { t } from "../data/translations.js";
+import { t } from "./data/translations.js";
 
 export function renderHero() {
   document.getElementById("hero").innerHTML = `
@@ -20,7 +20,7 @@ export function renderHero() {
         </p>
 
         <div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-16">
-          <a href="../calendar.ics" download class="flex items-center gap-2 px-6 py-3 bg-[#ea580c] hover:bg-[#c2410c] rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105">
+          <a href="./calendar.ics" download class="flex items-center gap-2 px-6 py-3 bg-[#ea580c] hover:bg-[#c2410c] rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105">
             <i data-lucide="download" class="w-4 h-4"></i>
             <span data-i18n="hero_download">${t("hero_download")}</span>
           </a>

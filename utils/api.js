@@ -3,7 +3,7 @@
 // Carrega dados do calendário
 export async function loadCalendarData() {
   try {
-    const res = await fetch("../calendar.ics");
+    const res = await fetch("./calendar.ics");
     const text = await res.text();
     const count = (text.match(/BEGIN:VEVENT/g) || []).length;
     const el = document.getElementById("events-count");
@@ -43,7 +43,7 @@ export async function loadLastUpdate() {
     }
 
     // Fallback: tenta state.json
-    const stateRes = await fetch("../state.json");
+    const stateRes = await fetch("./scripts/data/state.json");
     const state = await stateRes.json();
     const dates = Object.values(state.last_run || {});
     if (dates.length > 0) {

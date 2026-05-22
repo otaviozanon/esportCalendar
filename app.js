@@ -1,5 +1,5 @@
-ï»¿// ==================== PROFESSIONAL MODULAR STRUCTURE ====================
-// Este arquivo Ã© o ponto de entrada principal que orquestra todos os componentes
+// ==================== PROFESSIONAL MODULAR STRUCTURE ====================
+// Este arquivo é o ponto de entrada principal que orquestra todos os componentes
 
 // Importa componentes
 import { renderNavbar } from "./components/navbar.js";
@@ -9,7 +9,7 @@ import { renderFeatures } from "./components/features.js";
 import { renderHowto } from "./components/howto.js";
 import { renderFooter } from "./components/footer.js";
 
-// Importa utilitÃ¡rios
+// Importa utilitários
 import { loadCalendarData, loadLastUpdate } from "./utils/api.js";
 import { initAnimations, initMouseGlow } from "./utils/effects.js";
 import { setupEventListeners } from "./utils/events.js";
@@ -17,7 +17,7 @@ import { setupLanguageToggle } from "./utils/i18n.js";
 
 // ==================== RENDER ALL COMPONENTS ====================
 function renderAll() {
-  console.log("ðŸš€ Starting render...");
+  console.log("?? Starting render...");
 
   // Renderiza todos os componentes
   renderNavbar();
@@ -27,19 +27,19 @@ function renderAll() {
   renderHowto();
   renderFooter();
 
-  // Inicializa Ã­cones Lucide
+  // Inicializa ícones Lucide
   setTimeout(() => {
     if (typeof lucide !== "undefined") {
       lucide.createIcons();
-      console.log("âœ… Icons initialized");
+      console.log("? Icons initialized");
 
-      // Debug: verifica Ã­cones chevron
+      // Debug: verifica ícones chevron
       const chevrons = document.querySelectorAll(
         '[data-lucide="chevron-down"]',
       );
-      console.log(`ðŸ“Œ Found ${chevrons.length} chevron icons`);
+      console.log(`?? Found ${chevrons.length} chevron icons`);
     } else {
-      console.error("âŒ Lucide not loaded");
+      console.error("? Lucide not loaded");
     }
   }, 100);
 
@@ -53,7 +53,7 @@ function renderAll() {
     setupLanguageToggle();
   }, 200);
 
-  // Inicializa animaÃ§Ãµes
+  // Inicializa animações
   setTimeout(() => {
     initAnimations();
   }, 300);

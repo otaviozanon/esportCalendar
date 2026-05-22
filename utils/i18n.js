@@ -1,11 +1,11 @@
 // ==================== I18N UTILITIES ====================
-import { setLanguage, currentLang } from "../data/translations.js";
-import { renderNavbar } from "../components/navbar.js";
-import { renderHero } from "../components/hero.js";
-import { renderGames } from "../components/games.js";
-import { renderFeatures } from "../components/features.js";
-import { renderHowto } from "../components/howto.js";
-import { renderFooter } from "../components/footer.js";
+import { setLanguage, currentLang } from "./data/translations.js";
+import { renderNavbar } from "./components/navbar.js";
+import { renderHero } from "./components/hero.js";
+import { renderGames } from "./components/games.js";
+import { renderFeatures } from "./components/features.js";
+import { renderHowto } from "./components/howto.js";
+import { renderFooter } from "./components/footer.js";
 
 // Função para alternar idioma
 export function toggleLanguage() {
