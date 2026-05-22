@@ -8,30 +8,6 @@ Automatic esports calendar generator in iCalendar format (.ics). Tracks matches 
 
 **📅 Calendário direto (.ics):** [https://is.gd/EsportCalendar](https://is.gd/EsportCalendar)
 
-## 📁 Project Structure
-
-```
-esportCalendar/
-├── .github/
-│   └── workflows/
-│       ├── update-ics.yml           # 🔄 Auto-update calendar every 48min
-│       └── delete-cs2-ics.yml       # 🗑️ Clean old CS2 events
-├── components/                      # 🧱 Modular UI components
-├── data/                            # 📊 Translations and game data
-├── utils/                           # 🛠️ JS utilities (API, Effects, Events)
-├── scripts/                         # 🐍 Automation and Logic
-│   ├── data/
-│   │   └── state.json               # 💾 Execution state
-│   ├── generate_ics.py              # 🏎️ Main scraper and generator
-│   ├── delete_cs2.py                # 🧹 Utility to clean CS2 events
-│   └── requirements.txt             # 📦 Python dependencies
-├── index.html                       # 🌐 Main website entry point
-├── app.js                           # 🚀 Frontend orchestrator
-├── styles.css                       # 🎨 Modern styles
-├── calendar.ics                     # 📅 Generated calendar product
-└── README.md                        # 📖 This file
-```
-
 ## 📖 About
 
 `esportCalendar` is a Python script that automates the creation of iCalendar (.ics) files for esports events. It solves the challenge of manually tracking tournaments and esports matches across different platforms, simplifying the process by scraping data from [tips.gg](https://tips.gg) and generating a calendar file compatible with Google Calendar, Outlook, and Apple Calendar.
