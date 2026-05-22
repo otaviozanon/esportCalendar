@@ -8,8 +8,6 @@ Automatic esports calendar generator in iCalendar format (.ics). Tracks matches 
 
 **📅 Calendário direto (.ics):** [https://is.gd/EsportCalendar](https://is.gd/EsportCalendar)
 
-> O frontend oferece uma experiência moderna com animações 3D, estatísticas em tempo real e instruções passo-a-passo para adicionar o calendário.
-
 ## 📁 Project Structure
 
 ```
