@@ -1,5 +1,5 @@
 // ==================== HOW-TO COMPONENT ====================
-import { t } from "./data/translations.js";
+import { t } from "../data/translations.js";
 
 export function renderHowto() {
   document.getElementById("howto").innerHTML = `

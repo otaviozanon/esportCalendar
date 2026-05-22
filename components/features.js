@@ -1,6 +1,6 @@
 // ==================== FEATURES COMPONENT ====================
-import { features } from "./data/games.js";
-import { t } from "./data/translations.js";
+import { features } from "../data/games.js";
+import { t } from "../data/translations.js";
 
 export function renderFeatures() {
   const cards = features

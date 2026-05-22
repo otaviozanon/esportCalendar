@@ -1,6 +1,6 @@
 // ==================== GAMES COMPONENT ====================
-import { gamesData } from "./data/games.js";
-import { t } from "./data/translations.js";
+import { gamesData } from "../data/games.js";
+import { t } from "../data/translations.js";
 
 export function renderGames() {
   const cards = gamesData

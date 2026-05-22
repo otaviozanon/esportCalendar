@@ -1,5 +1,5 @@
 // ==================== HERO COMPONENT ====================
-import { t } from "./data/translations.js";
+import { t } from "../data/translations.js";
 
 export function renderHero() {
   document.getElementById("hero").innerHTML = `

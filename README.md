@@ -2,6 +2,38 @@
 
 Automatic esports calendar generator in iCalendar format (.ics). Tracks matches from CS2, Valorant, League of Legends, and Rocket League from Brazilian teams.
 
+## 🌐 Live Website
+
+**🔗 Frontend Interativo:** [https://otaviozanon.github.io/esportCalendar/](https://otaviozanon.github.io/esportCalendar/)
+
+**📅 Calendário direto (.ics):** [https://is.gd/EsportCalendar](https://is.gd/EsportCalendar)
+
+> O frontend oferece uma experiência moderna com animações 3D, estatísticas em tempo real e instruções passo-a-passo para adicionar o calendário.
+
+## 📁 Project Structure
+
+```
+esportCalendar/
+├── .github/
+│   └── workflows/
+│       ├── update-ics.yml           # 🔄 Auto-update calendar every 48min
+│       └── delete-cs2-ics.yml       # 🗑️ Clean old CS2 events
+├── components/                      # 🧱 Modular UI components
+├── data/                            # 📊 Translations and game data
+├── utils/                           # 🛠️ JS utilities (API, Effects, Events)
+├── scripts/                         # 🐍 Automation and Logic
+│   ├── data/
+│   │   └── state.json               # 💾 Execution state
+│   ├── generate_ics.py              # 🏎️ Main scraper and generator
+│   ├── delete_cs2.py                # 🧹 Utility to clean CS2 events
+│   └── requirements.txt             # 📦 Python dependencies
+├── index.html                       # 🌐 Main website entry point
+├── app.js                           # 🚀 Frontend orchestrator
+├── styles.css                       # 🎨 Modern styles
+├── calendar.ics                     # 📅 Generated calendar product
+└── README.md                        # 📖 This file
+```
+
 ## 📖 About
 
 `esportCalendar` is a Python script that automates the creation of iCalendar (.ics) files for esports events. It solves the challenge of manually tracking tournaments and esports matches across different platforms, simplifying the process by scraping data from [tips.gg](https://tips.gg) and generating a calendar file compatible with Google Calendar, Outlook, and Apple Calendar.
@@ -25,8 +57,8 @@ Automatic esports calendar generator in iCalendar format (.ics). Tracks matches 
 ```bash
 git clone https://github.com/otaviozanon/esportCalendar.git
 cd esportCalendar
-pip install -r requirements.txt
-python generate_ics.py
+pip install -r scripts/requirements.txt
+python scripts/generate_ics.py
 ```
 
 This will generate a `calendar.ics` file that you can import into your calendar.
@@ -36,39 +68,37 @@ This will generate a `calendar.ics` file that you can import into your calendar.
 ### Prerequisites
 
 - Python 3.8+
-- pip
-- [Scrape.do](https://scrape.do) account (API key)
+- [Scrape.do](https://scrape.do) API Key
 
 ### Steps
 
 1. **Clone the repository:**
 
-```bash
-git clone https://github.com/otaviozanon/esportCalendar.git
-cd esportCalendar
-```
+   ```bash
+   git clone https://github.com/otaviozanon/esportCalendar.git
+   cd esportCalendar
+   ```
 
 2. **Install dependencies:**
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r scripts/requirements.txt
+   ```
 
 3. **Configure Scrape.do API key:**
 
-```bash
-export SCRAPE_DO_API_KEY="your_api_key_here"
-```
+   ```bash
+   export SCRAPE_DO_API_KEY="your_api_key_here"
+   ```
 
 4. **Run the script:**
 
-```bash
-python generate_ics.py
-```
+   ```bash
+   python scripts/generate_ics.py
+   ```
 
 5. **Import the calendar:**
-
-Open the generated `calendar.ics` file and import it into your favorite calendar application (Google Calendar, Outlook, Apple Calendar, etc).
+   Open the generated `calendar.ics` file and import it into your favorite calendar application (Google Calendar, Outlook, Apple Calendar, etc).
 
 ## ⚙️ Configuration
 
@@ -80,31 +110,25 @@ SCRAPE_DO_API_KEY  # Your Scrape.do API key (required)
 
 ### Customizing Teams
 
-Edit the `GAMES` dictionary in `generate_ics.py` to add or remove teams:
+Edit `scripts/generate_ics.py` to modify `GAMES_CONFIG`:
 
 ```python
-GAMES = {
-    "CS2": {
-        "prefix": "[CS2] ",
-        "base_path": "https://tips.gg/csgo/matches/",
-        "days_to_scrape": 3,
-        "once_per_day": False,
-        "teams": {"FURIA", "paiN Gaming", "MIBR", ...},
-        "exclusions": {"Imperial.A", "Imperial Fe", ...},
-    },
-    # ... other esports
+GAMES_CONFIG = {
+    "CS2": GameConfig(
+        teams={"FURIA", "paiN Gaming", ...},
+        # ...
+    ),
 }
 ```
 
-## 📊 Output
+## 🌐 Frontend
 
-The `calendar.ics` file contains:
+The dashboard is built with a modular architecture:
 
-- ✅ Event name (ex: `[CS2] FURIA vs MIBR`)
-- ✅ Date and time (São Paulo timezone)
-- ✅ Description with tournament and link
-- ✅ 15-minute reminder
-- ✅ Event URL
+- **GSAP**: High-performance animations.
+- **Lucide**: Modern icon set.
+- **Tailwind**: Utility-first styling.
+- **ES6 Modules**: Clean, component-based logic.
 
 ## 🎯 Execution Logic
 
@@ -118,7 +142,7 @@ The `calendar.ics` file contains:
 
 - Scrapes only the current day
 - Runs only 1x per day (starting at 00:00)
-- Stores execution state in `state.json`
+- Stores execution state in `scripts/data/state.json`
 
 ## ❓ FAQ
 
@@ -136,9 +160,6 @@ A: America/Sao_Paulo (BRT)
 
 **Q: How do I import the calendar?**
 A: Open the `calendar.ics` file and import it into your calendar (Google Calendar, Outlook, Apple Calendar, etc) || Or if wanna use this calendar, use subscribe calendar: `https://is.gd/EsportCalendar`
-
-**Q: Can I add more teams?**
-A: Yes, edit the `teams` list for each esport in the `GAMES` dictionary.
 
 ## 📝 License
 

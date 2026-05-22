@@ -1,5 +1,5 @@
 // ==================== FOOTER COMPONENT ====================
-import { t } from "./data/translations.js";
+import { t } from "../data/translations.js";
 
 export function renderFooter() {
   document.getElementById("footer").innerHTML = `
