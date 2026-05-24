@@ -202,9 +202,13 @@ class CalendarManager:
         """Remove eventos com summary iniciado por prefixo. Retorna quantidade removida."""
         return remove_events_by_prefix(self._calendar, prefix)
 
-    def save(self) -> None:
-        """Persiste calendario em disco."""
-        save_calendar(self._calendar, self._path)
+    def save(self) -> bool:
+        """Persiste calendario em disco. Retorna True se sucesso, False se erro."""
+        try:
+            save_calendar(self._calendar, self._path)
+            return True
+        except Exception:
+            return False
 
 
 def cleanup_cs2_events() -> bool:
