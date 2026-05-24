@@ -1,17 +1,21 @@
 """
-Script para deletar eventos [RL] (Rocket League) do calendario.
+Script para deletar eventos [CS2] do calendario.
 """
 
 import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from calendar_manager import CalendarManager
 from logger import setup_logger
 
-PREFIX = "[RL] "
-LABEL = "Rocket League"
+PREFIX = "[CS2] "
+LABEL = "CS2"
 
 
 def main():
-    logger = setup_logger("delete_rl")
+    logger = setup_logger("delete_cs2")
     logger.info("=" * 60)
     logger.info("\U0001f680 INICIANDO LIMPEZA DE EVENTOS %s" % LABEL)
     logger.info("=" * 60)

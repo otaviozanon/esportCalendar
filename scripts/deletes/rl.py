@@ -1,17 +1,21 @@
 """
-Script para deletar eventos [V] (Valorant) do calendario.
+Script para deletar eventos [RL] (Rocket League) do calendario.
 """
 
 import sys
+import os
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from calendar_manager import CalendarManager
 from logger import setup_logger
 
-PREFIX = "[V] "
-LABEL = "Valorant"
+PREFIX = "[RL] "
+LABEL = "Rocket League"
 
 
 def main():
-    logger = setup_logger("delete_valorant")
+    logger = setup_logger("delete_rl")
     logger.info("=" * 60)
     logger.info("\U0001f680 INICIANDO LIMPEZA DE EVENTOS %s" % LABEL)
     logger.info("=" * 60)
