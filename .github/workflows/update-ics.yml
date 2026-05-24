@@ -27,16 +27,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r scripts/requirements.txt
 
+      - name: Gerar teams.json para frontend
+        run: python scripts/data/generate_teams_json.py
+
       - name: Executar script Python
         env:
           SCRAPE_DO_API_KEY: ${{ secrets.SCRAPE_DO_API_KEY }}
-        run: python scripts/generate_ics.py
+        run: python scripts/core/generate_ics.py
 
       - name: Commit e Push
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git add calendar.ics scripts/data/state.json
+          git add calendar.ics scripts/data/state.json scripts/data/teams.json
           if git diff --cached --quiet; then
             echo "✅ Nenhuma mudança detectada"
           else

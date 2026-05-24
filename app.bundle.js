@@ -174,51 +174,49 @@ const gamesData = [
     id: "cs2",
     icon: "crosshair",
     name: "Counter-Strike 2",
-    desc: "Partida do dia atual e 3 dias à frente",
-    teams: [
-      "FURIA",
-      "paiN",
-      "Imperial",
-      "Legacy",
-      "MIBR",
-      "9z",
-      "Fluxo",
-      "Case",
-      "Solid",
-    ],
+    desc: "Partida do dia atual e 3 dias a frente",
+    teams: [],
   },
   {
     id: "valorant",
     icon: "sparkles",
     name: "Valorant",
     desc: "Partidas do dia atual",
-    teams: ["LOUD", "FURIA", "MIBR"],
+    teams: [],
   },
   {
     id: "lol",
     icon: "swords",
     name: "League of Legends",
     desc: "Partidas do dia atual",
-    teams: [
-      "paiN",
-      "LOUD",
-      "FURIA",
-      "RED",
-      "Fluxo",
-      "Vivo",
-      "INTZ",
-      "Kabum",
-      "Liberty",
-    ],
+    teams: [],
   },
   {
     id: "rocket",
     icon: "car",
     name: "Rocket League",
     desc: "Partidas do dia atual",
-    teams: ["FURIA", "Elevate", "Miners"],
+    teams: [],
   },
 ];
+
+async function loadTeamsData() {
+  try {
+    const res = await fetch("./scripts/data/teams.json");
+    if (!res.ok) {
+      console.warn("teams.json not available, using empty teams");
+      return;
+    }
+    const data = await res.json();
+    for (const game of gamesData) {
+      if (data[game.id]) {
+        game.teams = data[game.id];
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load teams.json:", err);
+  }
+}
 
 const features = [
   { id: "feature1", icon: "bot" },
@@ -760,12 +758,17 @@ function renderAll() {
 }
 
 // ==================== INIT ====================
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
+async function init() {
+  await loadTeamsData();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      renderAll();
+      initMouseGlow();
+    });
+  } else {
     renderAll();
     initMouseGlow();
-  });
-} else {
-  renderAll();
-  initMouseGlow();
+  }
 }
+
+init();
