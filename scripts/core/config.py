@@ -11,8 +11,8 @@ from typing import Optional, Dict, Set, List, Tuple
 
 # ==================== CONSTANTES ====================
 
-CALENDAR_FILENAME = "../calendar.ics"
-STATE_FILE = "data/state.json"
+CALENDAR_FILENAME = "calendar.ics"
+STATE_FILE = "scripts/data/state.json"
 LOG_LEVEL = "INFO"
 
 BR_TZ_NAME = "America/Sao_Paulo"
