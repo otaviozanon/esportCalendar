@@ -46,4 +46,20 @@ DESCRIPTION:Lembrete: [CS2] Fluxo vs Black Belt
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] ShindeN vs Imperial
+DTSTART:20260528T210000Z
+DTEND:20260528T230000Z
+DTSTAMP:20260526T190940Z
+UID:0c293ddc6f625a2a18b47cd06fe216687cb796ec379c0a7a2164fdfd54725ebf
+DESCRIPTION:🏆 ShindeN vs Imperial\, ESL Challenger League Season 51 Sou
+ th America\n📍 ESL Challenger League Season 51 South America\n🌐 https
+ ://tips.gg/matches/counter-strike/28-05-2026/shinden-vs-imperial/10-00/\nX
+ -SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] ShindeN vs Imperial
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
 END:VCALENDAR
