@@ -2,22 +2,6 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Esport Calendar BR//tips.gg//
 BEGIN:VEVENT
-SUMMARY:[V] la Masia vs Team Liquid Brazil
-DTSTART:20260529T200000Z
-DTEND:20260529T220000Z
-DTSTAMP:20260529T105918Z
-UID:08f4ddacbe5458c17b4e90679411a9165007de5498605a9516da1cf0b0093655
-DESCRIPTION:🏆 la Masia vs Team Liquid Brazil\, Valorant Champions Tour 
- Challengers 2026 Brazil: Stage 2\n📍 Valorant Champions Tour Challengers
-  2026 Brazil: Stage 2\n🌐 https://tips.gg/matches/valorant/29-05-2026/la
- -masia-vs-team-liquid-brazil/09-00/\nX-SETT-SOURCE:TIPSGG
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Lembrete: [V] la Masia vs Team Liquid Brazil
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:[CS2] Fluxo vs BESTIA
 DTSTART:20260530T170000Z
 DTEND:20260530T190000Z
