@@ -2,22 +2,6 @@ BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Esport Calendar BR//tips.gg//
 BEGIN:VEVENT
-SUMMARY:[CS2] Fluxo vs Keyd Stars
-DTSTART:20260627T220000Z
-DTEND:20260628T000000Z
-DTSTAMP:20260627T120229Z
-UID:e7436bd245bd4d268078a632f6852cb7d85be879cd76130c64f3dac8038d18aa
-DESCRIPTION:🏆 Fluxo vs Keyd Stars\, Thunderpick World Championship 2026
- : South America Series #1\n📍 Thunderpick World Championship 2026: South
-  America Series #1\n🌐 https://tips.gg/matches/counter-strike/27-06-2026
- /fluxo-vs-keyd-stars/11-00/\nX-SETT-SOURCE:TIPSGG
-BEGIN:VALARM
-ACTION:DISPLAY
-DESCRIPTION:Lembrete: [CS2] Fluxo vs Keyd Stars
-TRIGGER:-PT15M
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 SUMMARY:[CS2] UNO MILLE vs Fluxo
 DTSTART:20260628T210000Z
 DTEND:20260628T230000Z
