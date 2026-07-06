@@ -110,7 +110,7 @@ CS2_EXCLUSIONS = {
 VALORANT_TEAMS = {
     "LOUD",
     "FURIA Esports",
-    "MIBR",
+    "MIBR LOS",
     "Team Liquid Brazil",
 }
 
@@ -124,6 +124,7 @@ LOL_TEAMS = {
     "LOUD",
     "Vivo Keyd Stars",
     "RED Canids",
+    "FURIA"
 }
 
 
