@@ -2,7 +2,11 @@ name: Atualizar Calendário E-sports
 
 on:
   schedule:
-    - cron: "*/48 * * * *"  # A cada 48 minutos
+    # Executa a cada 10 minutos, mas o script controla internamente:
+    # - CS2: scrape a cada 50min (Bright Data limit: 5000 req/mês)
+    # - VAL/LOL/RL: scrape a cada 60min (Scrape.do fallback)
+    # O código verifica timestamps em state.json antes de fazer requisições
+    - cron: "*/10 * * * *" # A cada 10 minutos
   workflow_dispatch:
 
 permissions:
@@ -20,7 +24,7 @@ jobs:
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Instalar dependências Python
         run: |
@@ -33,13 +37,14 @@ jobs:
       - name: Executar script Python
         env:
           SCRAPE_DO_API_KEY: ${{ secrets.SCRAPE_DO_API_KEY }}
+          BRIGHT_DATA_API_KEY: ${{ secrets.BRIGHT_DATA_API_KEY }}
         run: python scripts/core/generate_ics.py
 
       - name: Commit e Push
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
-          git add calendar.ics scripts/data/state.json scripts/data/teams.json
+          git add calendar.ics scripts/data/state.json scripts/data/teams.json scripts/data/healthcheck.json
           if git diff --cached --quiet; then
             echo "✅ Nenhuma mudança detectada"
           else

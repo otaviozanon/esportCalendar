@@ -20,6 +20,8 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Removido ICAL.js - usando parser manual -->
+
     <!-- Google Fonts -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
@@ -54,10 +56,13 @@
     <!-- How-to Section -->
     <section id="howto"></section>
 
+    <!-- Live Calendar Section -->
+    <section id="live-calendar"></section>
+
     <!-- Footer -->
     <footer id="footer"></footer>
 
-    <!-- Main Script (Bundled) -->
-    <script src="app.bundle.js"></script>
+    <!-- Main Script (Bundled) - Includes manual ICS parser -->
+    <script src="app.bundle.js" defer></script>
   </body>
 </html>

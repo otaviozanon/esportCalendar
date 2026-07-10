@@ -10,7 +10,7 @@ const translations = {
     nav_howto: "Como Usar",
 
     // Hero
-    hero_badge: "Atualizado a cada 48 minutos",
+    hero_badge: "Atualizado a cada 50 minutos",
     hero_title_1: "Nunca mais perca",
     hero_title_2: "uma partida",
     hero_subtitle:
@@ -23,7 +23,7 @@ const translations = {
     hero_stat2_title: "Lembrete Automático",
     hero_stat2_desc: "15 minutos antes da partida",
     hero_stat3_title: "Sempre Atualizado",
-    hero_stat3_desc: "Atualização a cada 48 minutos",
+    hero_stat3_desc: "Atualização a cada 50 minutos",
 
     // Games
     games_title: "Jogos Suportados",
@@ -76,6 +76,13 @@ const translations = {
     footer_contribute: "Contribua com o projeto",
     footer_last_update: "Última atualização:",
     footer_copyright: "Otavio Zanon - 2026",
+
+    // Live Calendar
+    live_calendar_title: "Calendário",
+    live_calendar_subtitle: "Próximas partidas • Atualizado a cada 50 minutos",
+    live_calendar_today: "Hoje",
+    live_calendar_tomorrow: "Amanhã",
+    live_calendar_all: "Todos",
   },
 
   en: {
@@ -85,7 +92,7 @@ const translations = {
     nav_howto: "How to Use",
 
     // Hero
-    hero_badge: "Updated every 48 minutes",
+    hero_badge: "Updated every 50 minutes",
     hero_title_1: "Never miss",
     hero_title_2: "a match again",
     hero_subtitle: "Automatic calendar for the best Brazilian esports teams.",
@@ -98,7 +105,7 @@ const translations = {
     hero_stat2_title: "Auto Reminder",
     hero_stat2_desc: "15 minutes before match",
     hero_stat3_title: "Always Updated",
-    hero_stat3_desc: "Updates every 48 minutes",
+    hero_stat3_desc: "Updates every 50 minutes",
 
     // Games
     games_title: "Supported Games",
@@ -151,6 +158,13 @@ const translations = {
     footer_contribute: "Contribute to the project",
     footer_last_update: "Last update:",
     footer_copyright: "Otavio Zanon - 2026",
+
+    // Live Calendar
+    live_calendar_title: "Calendar",
+    live_calendar_subtitle: "Upcoming matches • Updated every 50 minutes",
+    live_calendar_today: "Today",
+    live_calendar_tomorrow: "Tomorrow",
+    live_calendar_all: "All",
   },
 };
 
@@ -733,6 +747,13 @@ function renderAll() {
   renderGames();
   renderFeatures();
   renderHowto();
+
+  // Inicializa Live Calendar (parser manual, sem dependência)
+  setTimeout(() => {
+    window.liveCalendar = new LiveCalendar("live-calendar");
+    console.log("✅ Live Calendar initialized (parser manual)");
+  }, 500);
+
   renderFooter();
 
   setTimeout(() => {
@@ -768,6 +789,419 @@ async function init() {
   } else {
     renderAll();
     initMouseGlow();
+  }
+}
+
+// ==================== ICS PARSER (UTILITY) ====================
+
+/**
+ * Parser leve de arquivos .ics (iCalendar)
+ * Extrai eventos (VEVENT) sem dependências externas
+ */
+class ICSParser {
+  /**
+   * Parse de texto .ics para array de eventos
+   * @param {string} icsText - Conteúdo do arquivo .ics
+   * @returns {Array} Array de eventos parseados
+   */
+  static parse(icsText) {
+    const events = [];
+    const lines = icsText.split(/\r?\n/);
+    let inEvent = false;
+    let currentEvent = {};
+    let lastKey = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i];
+
+      // Linhas continuadas começam com espaço ou tab
+      if (line.startsWith(" ") || line.startsWith("\t")) {
+        if (lastKey && currentEvent[lastKey]) {
+          currentEvent[lastKey] += line.trim();
+        }
+        continue;
+      }
+
+      line = line.trim();
+
+      if (line === "BEGIN:VEVENT") {
+        inEvent = true;
+        currentEvent = {};
+        lastKey = null;
+      } else if (line === "END:VEVENT") {
+        if (currentEvent.summary && currentEvent.dtstart) {
+          events.push({
+            summary: currentEvent.summary,
+            dtstart: currentEvent.dtstart,
+            description: currentEvent.description || "",
+          });
+        }
+        inEvent = false;
+        lastKey = null;
+      } else if (line === "BEGIN:VALARM") {
+        // Para de processar quando encontrar VALARM (evita pegar description do alarme)
+        inEvent = false;
+      } else if (inEvent) {
+        if (line.startsWith("SUMMARY:")) {
+          currentEvent.summary = line.substring(8);
+          lastKey = "summary";
+        } else if (line.startsWith("DTSTART:")) {
+          currentEvent.dtstart = line.substring(8);
+          lastKey = "dtstart";
+        } else if (line.startsWith("DESCRIPTION:")) {
+          currentEvent.description = line
+            .substring(12)
+            .replace(/\\n/g, "\n")
+            .replace(/\\,/g, ",");
+          lastKey = "description";
+        }
+      }
+    }
+
+    return events;
+  }
+
+  /**
+   * Converte string ICS de data para objeto Date
+   * @param {string} icsDate - Formato: 20260710T200000Z
+   * @returns {Date} Objeto Date UTC
+   */
+  static parseDate(icsDate) {
+    const year = parseInt(icsDate.substring(0, 4));
+    const month = parseInt(icsDate.substring(4, 6)) - 1;
+    const day = parseInt(icsDate.substring(6, 8));
+    const hour = parseInt(icsDate.substring(9, 11));
+    const minute = parseInt(icsDate.substring(11, 13));
+    const second = parseInt(icsDate.substring(13, 15));
+
+    return new Date(Date.UTC(year, month, day, hour, minute, second));
+  }
+}
+
+// ==================== LIVE CALENDAR COMPONENT ====================
+
+/**
+ * Componente de calendário ao vivo
+ * Exibe próximas partidas de esports com filtros e auto-refresh
+ */
+class LiveCalendar {
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+    this.events = [];
+    this.activeFilter = "ALL";
+    this.refreshInterval = 5 * 60 * 1000; // 5 minutos
+    this.init();
+  }
+
+  async init() {
+    this.render();
+    await this.loadCalendar();
+    this.startAutoRefresh();
+  }
+
+  render() {
+    this.container.innerHTML = `
+      <div class="py-20 px-4">
+        <div class="max-w-6xl mx-auto">
+
+          <div class="mb-8" data-animate="fade-up">
+            <div class="flex items-center gap-3 mb-3">
+              <i data-lucide="calendar-clock" class="w-8 h-8 text-orange-500"></i>
+              <div>
+                <h2 class="text-2xl md:text-3xl font-bold mb-1" data-i18n="live_calendar_title">${t("live_calendar_title")}</h2>
+                <p class="text-gray-400 text-xs" data-i18n="live_calendar_subtitle">${t("live_calendar_subtitle")}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Game Filter -->
+          <div class="flex gap-2 mb-6 flex-wrap" data-animate="fade-up" data-delay="100">
+          <button class="filter-btn active" data-filter="ALL">
+            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+            <span data-i18n="live_calendar_all">${t("live_calendar_all")}</span>
+          </button>
+          <button class="filter-btn" data-filter="CS2">
+            <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+            CS2
+          </button>
+          <button class="filter-btn" data-filter="VAL">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            Valorant
+          </button>
+          <button class="filter-btn" data-filter="LOL">
+            <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+            LoL
+          </button>
+          <button class="filter-btn" data-filter="RL">
+            <i data-lucide="car" class="w-3.5 h-3.5"></i>
+            Rocket League
+          </button>
+        </div>
+
+        <div id="calendar-grid" class="calendar-grid">
+          <div class="loading-state">
+            <i data-lucide="loader-2" class="w-8 h-8 animate-spin text-cyan-400"></i>
+            <p class="text-gray-400 mt-4">Carregando eventos...</p>
+          </div>
+        </div>
+
+        </div>
+      </div>
+    `;
+
+    lucide.createIcons();
+    this.attachEventListeners();
+  }
+
+  attachEventListeners() {
+    // Filter buttons
+    const filterBtns = this.container.querySelectorAll(".filter-btn");
+    filterBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        filterBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.activeFilter = btn.dataset.filter;
+        this.displayEvents();
+      });
+    });
+  }
+
+  async loadCalendar() {
+    try {
+      const response = await fetch("calendar.ics");
+      const icsText = await response.text();
+
+      // Parse usando ICSParser utility
+      const rawEvents = ICSParser.parse(icsText);
+
+      // Transforma em formato do LiveCalendar
+      this.events = rawEvents.map((event) => {
+        const game = this.extractGame(event.summary);
+        const tournament = this.extractTournament(event.description);
+
+        return {
+          summary: event.summary.replace(/^\[.*?\]\s*/, ""),
+          game: game,
+          start: ICSParser.parseDate(event.dtstart),
+          description: event.description,
+          tournament: tournament,
+        };
+      });
+
+      this.displayEvents();
+    } catch (error) {
+      console.error("Erro ao carregar calendar.ics:", error);
+      this.showError();
+    }
+  }
+
+  extractGame(summary) {
+    if (summary.includes("[CS2]") || summary.includes("[CS]")) return "CS2";
+    if (summary.includes("[V]") || summary.includes("[VAL]")) return "VAL";
+    if (summary.includes("[LOL]")) return "LOL";
+    if (summary.includes("[RL]")) return "RL";
+    return "OTHER";
+  }
+
+  extractTournament(description) {
+    // Split por quebra de linha (real ou literal \n)
+    const lines = description.split(/\\n|\n/);
+
+    // Encontra a linha com 🏆
+    const tournamentLine = lines.find((line) => line.includes("🏆"));
+
+    if (!tournamentLine) return "";
+
+    // Remove 🏆 e espaços
+    let tournament = tournamentLine.replace("🏆", "").trim();
+
+    // Se tiver vírgula, pega tudo depois dela (nome do torneio geralmente vem depois)
+    const commaIndex = tournament.indexOf(",");
+    if (commaIndex !== -1) {
+      tournament = tournament.substring(commaIndex + 1).trim();
+    }
+
+    return tournament;
+  }
+
+  displayEvents() {
+    const grid = this.container.querySelector("#calendar-grid");
+    const now = new Date();
+
+    let filtered = this.events
+      .filter((e) => e.start > now)
+      .filter(
+        (e) => this.activeFilter === "ALL" || e.game === this.activeFilter,
+      )
+      .sort((a, b) => a.start - b.start)
+      .slice(0, 12);
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <i data-lucide="calendar-x" class="w-16 h-16 text-gray-600"></i>
+          <p class="text-gray-400 mt-4">Nenhum evento encontrado</p>
+        </div>
+      `;
+      lucide.createIcons();
+      return;
+    }
+
+    // Renderiza Timeline
+    grid.innerHTML = this.renderTimelineLayout(filtered);
+
+    lucide.createIcons();
+    this.animateCards();
+  }
+
+  // ==================== TIMELINE LAYOUT ====================
+  renderTimelineLayout(events) {
+    const byDate = this.groupByDate(events);
+
+    return `
+      <div class="timeline-layout">
+        ${Object.entries(byDate)
+          .map(
+            ([date, dateEvents]) => `
+          <div class="timeline-day" data-animate="fade-up">
+            <div class="timeline-date">
+              <i data-lucide="calendar" class="w-4 h-4"></i>
+              ${date}
+            </div>
+            <div class="timeline-events">
+              ${dateEvents.map((event) => this.renderTimelineCard(event)).join("")}
+            </div>
+          </div>
+        `,
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  renderTimelineCard(event) {
+    const timeStr = this.formatTime(event.start);
+
+    return `
+      <div class="timeline-card">
+        <div class="timeline-time">${timeStr}</div>
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="flex items-center gap-2 mb-1">
+            ${this.getGameIcon(event.game)}
+            <span class="text-xs font-medium text-orange-500">${this.getGameName(event.game)}</span>
+          </div>
+          <p class="font-semibold text-sm">${event.summary}</p>
+          ${
+            event.tournament
+              ? `
+            <div class="flex items-center gap-1.5 mt-1">
+              <i data-lucide="trophy" class="w-3 h-3 text-gray-500"></i>
+              <p class="text-xs text-gray-400 line-clamp-1">${event.tournament}</p>
+            </div>
+          `
+              : ""
+          }
+        </div>
+      </div>
+    `;
+  }
+
+  // ==================== HELPERS ====================
+  groupByGame(events) {
+    return events.reduce((acc, event) => {
+      if (!acc[event.game]) acc[event.game] = [];
+      acc[event.game].push(event);
+      return acc;
+    }, {});
+  }
+
+  groupByDate(events) {
+    return events.reduce((acc, event) => {
+      const date = this.formatDate(event.start);
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(event);
+      return acc;
+    }, {});
+  }
+
+  formatTime(date) {
+    const locale = currentLang === "pt" ? "pt-BR" : "en-US";
+    return date.toLocaleTimeString(locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  formatDate(date) {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const isToday = date.toDateString() === now.toDateString();
+    const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+    if (isToday) return t("live_calendar_today");
+    if (isTomorrow) return t("live_calendar_tomorrow");
+
+    const locale = currentLang === "pt" ? "pt-BR" : "en-US";
+    return date.toLocaleDateString(locale, {
+      day: "2-digit",
+      month: "2-digit",
+    });
+  }
+
+  getGameIcon(game) {
+    const icons = {
+      CS2: '<i data-lucide="crosshair" class="w-4 h-4"></i>',
+      VAL: '<i data-lucide="zap" class="w-4 h-4"></i>',
+      LOL: '<i data-lucide="shield" class="w-4 h-4"></i>',
+      RL: '<i data-lucide="car" class="w-4 h-4"></i>',
+    };
+    return icons[game] || '<i data-lucide="gamepad-2" class="w-4 h-4"></i>';
+  }
+
+  getGameName(game) {
+    const names = {
+      CS2: "Counter-Strike 2",
+      VAL: "Valorant",
+      LOL: "League of Legends",
+      RL: "Rocket League",
+    };
+    return names[game] || game;
+  }
+
+  animateCards() {
+    if (typeof gsap !== "undefined") {
+      gsap.from(".event-card", {
+        opacity: 0,
+        y: 20,
+        duration: 0.4,
+        stagger: 0.05,
+        ease: "power2.out",
+      });
+    }
+  }
+
+  showError() {
+    const grid = this.container.querySelector("#calendar-grid");
+    grid.innerHTML = `
+      <div class="error-state">
+        <i data-lucide="alert-circle" class="w-16 h-16 text-red-400"></i>
+        <p class="text-gray-400 mt-4">Erro ao carregar calendário</p>
+        <button class="retry-btn mt-4" onclick="window.liveCalendar.loadCalendar()">
+          Tentar novamente
+        </button>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+
+  startAutoRefresh() {
+    setInterval(() => {
+      console.log("🔄 Auto-refresh: recarregando calendar.ics...");
+      this.loadCalendar();
+    }, this.refreshInterval);
   }
 }
 

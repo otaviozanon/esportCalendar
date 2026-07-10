@@ -8,6 +8,7 @@ Ponto de entrada principal. Delega orquestracao para os modulos especializados.
 import json
 import os
 import sys
+import time
 from datetime import datetime, timedelta, date
 from typing import List, Tuple
 
@@ -23,6 +24,10 @@ from config import (
     LOL_TEAMS,
     BR_TZ_NAME,
     STATE_FILE,
+    CS2_RUN_INTERVAL_MINUTES_BRIGHTDATA,
+    VAL_RL_LOL_RUN_HOURS_BRIGHTDATA,
+    CS2_RUN_HOURS_SCRAPEDO,
+    VAL_RL_LOL_RUN_HOURS_SCRAPEDO,
     GameConfig,
     GameKey,
 )
@@ -35,7 +40,8 @@ from calendar_manager import (
     dedupe_by_url,
     prune_older_than,
 )
-from scraper import scrape_days_for_game
+from scraper import scrape_days_for_game, get_active_api, ScraperAPI
+from healthcheck import save_healthcheck
 
 
 BR_TZ = pytz.timezone(BR_TZ_NAME)
@@ -82,45 +88,121 @@ GAMES_CONFIG = {
 
 # ==================== GERENCIAMENTO DE ESTADO ====================
 
+_state_cache: dict = None
+
 def load_state() -> dict:
-    """Carrega estado do arquivo state.json. Retorna dict vazio se inexistente."""
+    """Carrega estado do arquivo state.json. Retorna dict vazio se inexistente. Com cache em memoria."""
+    global _state_cache
+
+    if _state_cache is not None:
+        return _state_cache
+
     if os.path.exists(STATE_FILE):
         try:
-            with open(STATE_FILE, "r") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"last_run": {}, "cs2_day_offset": 0}
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                _state_cache = json.load(f)
+                return _state_cache
+        except (FileNotFoundError, json.JSONDecodeError, PermissionError) as e:
+            logger = setup_logger("state")
+            logger.warning(f"Falha ao carregar state.json: {e}")
+
+    _state_cache = {"last_run": {}, "cs2_day_offset": 0}
+    return _state_cache
 
 
 def save_state(state: dict) -> None:
-    """Persiste estado em state.json."""
+    """Persiste estado em state.json. Atualiza cache."""
+    global _state_cache
+
     try:
-        with open(STATE_FILE, "w") as f:
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
             json.dump(state, f, indent=2)
-    except Exception as e:
+        _state_cache = state
+    except (IOError, PermissionError) as e:
         raise IOError(f"Erro ao salvar state.json: {e}")
 
 
-def should_run_game(game_key: str, once_per_day: bool, run_at_hour: int) -> bool:
-    """Verifica se jogo deve rodar agora: controle de hora + execucao unica por dia."""
-    if not once_per_day:
-        return True
+def get_run_config():
+    """Retorna configuracao de frequencia baseada na API ativa."""
+    active_api = get_active_api()
 
+    if active_api == ScraperAPI.BRIGHT_DATA:
+        return {
+            "cs2_mode": "interval",  # A cada X minutos
+            "cs2_interval_min": CS2_RUN_INTERVAL_MINUTES_BRIGHTDATA,
+            "val_rl_lol_hours": VAL_RL_LOL_RUN_HOURS_BRIGHTDATA,
+        }
+    else:  # SCRAPE_DO
+        return {
+            "cs2_mode": "fixed_hours",  # Horarios fixos
+            "cs2_hours": CS2_RUN_HOURS_SCRAPEDO,
+            "val_rl_lol_hours": VAL_RL_LOL_RUN_HOURS_SCRAPEDO,
+        }
+
+
+def should_run_game(game_key: GameKey, once_per_day: bool, run_at_hour: int) -> bool:
+    """Verifica se jogo deve rodar agora baseado na API ativa."""
     now = datetime.now(BR_TZ)
-    if now.hour < run_at_hour:
+    config = get_run_config()
+    state = load_state()
+
+    # CS2: logica dinamica baseada na API
+    if game_key == GameKey.CS2:
+        last_run_str = state.get("last_run", {}).get(game_key)
+
+        if not last_run_str:
+            return True
+
+        try:
+            last_run = datetime.fromisoformat(last_run_str)
+
+            # Bright Data: a cada X minutos
+            if config["cs2_mode"] == "interval":
+                minutes_since = (now - last_run).total_seconds() / 60
+                return minutes_since >= config["cs2_interval_min"]
+
+            # Scrape.do: horarios fixos
+            else:
+                cs2_hours = config["cs2_hours"]
+                if now.hour not in cs2_hours:
+                    return False
+                return last_run.hour != now.hour or last_run.date() != now.date()
+
+        except (ValueError, TypeError):
+            return True
+
+    # VAL/RL/LOL: horarios fixos baseados na API
+    allowed_hours = config["val_rl_lol_hours"]
+
+    if now.hour not in allowed_hours:
         return False
 
-    state = load_state()
-    last = state.get("last_run", {}).get(game_key)
-    return last != now.strftime("%Y-%m-%d")
+    last_run_str = state.get("last_run", {}).get(game_key)
+    if not last_run_str:
+        return True
+
+    try:
+        last_run = datetime.fromisoformat(last_run_str)
+        # Permite se for horario diferente ou dia diferente
+        return last_run.hour != now.hour or last_run.date() != now.date()
+    except (ValueError, TypeError):
+        return True
 
 
-def mark_game_as_run(game_key: str) -> None:
-    """Marca jogo como executado hoje no estado."""
+def mark_game_as_run(game_key: GameKey) -> None:
+    """Marca jogo como executado. CS2 usa timestamp completo, outros jogos apenas data."""
     state = load_state()
     state.setdefault("last_run", {})
-    state["last_run"][game_key] = datetime.now(BR_TZ).strftime("%Y-%m-%d")
+
+    now = datetime.now(BR_TZ)
+
+    # CS2: salva timestamp completo (ISO) para controle de 4h
+    if game_key == GameKey.CS2:
+        state["last_run"][game_key] = now.isoformat()
+    else:
+        # Outros jogos: apenas data (controle diario)
+        state["last_run"][game_key] = now.strftime("%Y-%m-%d")
+
     save_state(state)
 
 
@@ -144,9 +226,15 @@ def advance_cs2_offset() -> Tuple[int, int]:
 def main() -> bool:
     """Orquestrador principal. Carrega calendario, raspa partidas, gera eventos ICS e salva. Retorna True se sucesso."""
     logger = setup_logger("generate_ics")
+    start_time = time.time()
+    errors = []
+    games_stats = {}
 
     logger.info("=" * 60)
     logger.info("\U0001f680 INICIANDO GERACAO DE CALENDARIO")
+    active_api = get_active_api()
+    api_name = "Bright Data (5k/mês)" if active_api == ScraperAPI.BRIGHT_DATA else "Scrape.do (1k/mês)"
+    logger.info(f"🌐 API ativa: {api_name}")
     logger.info("=" * 60)
 
     cal = load_calendar()
@@ -174,11 +262,58 @@ def main() -> bool:
     try:
         for game_key, cfg in GAMES_CONFIG.items():
             if not should_run_game(game_key, cfg.once_per_day, cfg.run_at_hour):
-                next_run_date = today if now.hour < cfg.run_at_hour else today + timedelta(days=1)
-                logger.info(
-                    f"\u23ed\ufe0f  {game_key.value} proxima execucao: "
-                    f"{cfg.run_at_hour:02d}:00 ({next_run_date.strftime('%d/%m/%Y')})"
-                )
+                config = get_run_config()
+
+                # CS2: mostra proximo horario baseado na API
+                if game_key == GameKey.CS2:
+                    state = load_state()
+                    last_run_str = state.get("last_run", {}).get(game_key)
+
+                    if config["cs2_mode"] == "interval":
+                        # Bright Data: mostra minutos restantes
+                        if last_run_str:
+                            try:
+                                last_run = datetime.fromisoformat(last_run_str)
+                                minutes_since = (now - last_run).total_seconds() / 60
+                                minutes_remaining = max(0, config["cs2_interval_min"] - minutes_since)
+                                logger.info(
+                                    f"\u23ed\ufe0f  CS2 proxima execucao em {minutes_remaining:.0f} min "
+                                    f"(a cada {config['cs2_interval_min']} min)"
+                                )
+                            except (ValueError, TypeError):
+                                pass
+                    else:
+                        # Scrape.do: mostra proximo horario fixo
+                        cs2_hours = config["cs2_hours"]
+                        next_hours = [h for h in cs2_hours if h > now.hour]
+                        if next_hours:
+                            next_hour = next_hours[0]
+                            next_run_date = today
+                        else:
+                            next_hour = cs2_hours[0]
+                            next_run_date = today + timedelta(days=1)
+
+                        logger.info(
+                            f"\u23ed\ufe0f  CS2 proxima execucao: "
+                            f"{next_hour:02d}:00 ({next_run_date.strftime('%d/%m/%Y')}) "
+                            f"(horarios: {', '.join([f'{h:02d}:00' for h in cs2_hours])})"
+                        )
+                else:
+                    # VAL/RL/LOL: mostra proximo horario
+                    allowed_hours = config["val_rl_lol_hours"]
+                    next_hours = [h for h in allowed_hours if h > now.hour]
+                    if next_hours:
+                        next_hour = next_hours[0]
+                        next_run_date = today
+                    else:
+                        next_hour = allowed_hours[0]
+                        next_run_date = today + timedelta(days=1)
+
+                    logger.info(
+                        f"\u23ed\ufe0f  {game_key.value} proxima execucao: "
+                        f"{next_hour:02d}:00 ({next_run_date.strftime('%d/%m/%Y')}) "
+                        f"(horarios: {', '.join([f'{h:02d}:00' for h in allowed_hours])})"
+                    )
                 continue
 
             if game_key == GameKey.CS2:
@@ -200,6 +335,15 @@ def main() -> bool:
 
             total_added += stats.added
 
+            # Coleta stats por jogo para healthcheck
+            games_stats[game_key.value] = {
+                "added": stats.added,
+                "scraped": stats.scripts_total,
+                "filtered": stats.skipped_not_allowed,
+                "skipped_tbd": stats.skipped_tbd,
+                "skipped_past": stats.skipped_past
+            }
+
             logger.info(
                 f"- ENCONTRADOS ( {stats.scripts_total} ) "
                 f"| NAO PERMITIDOS ( {stats.skipped_not_allowed} ) "
@@ -216,7 +360,8 @@ def main() -> bool:
 
             logger.info("-" * 60)
 
-            if cfg.once_per_day:
+            # Marca execucao (CS2 sempre marca timestamp, outros so se once_per_day)
+            if game_key == GameKey.CS2 or cfg.once_per_day:
                 mark_game_as_run(game_key)
 
             if game_key == GameKey.CS2:
@@ -230,9 +375,21 @@ def main() -> bool:
             logger.info(f"\U0001f5d1\ufe0f  Removidos {deduped_final} eventos duplicados (final)")
 
     except Exception as e:
-        logger.error(f"\u274c ERRO GERAL: {type(e).__name__}: {e}")
+        error_msg = f"{type(e).__name__}: {e}"
+        errors.append(error_msg)
+        logger.error(f"\u274c ERRO GERAL: {error_msg}")
         import traceback
         logger.error(f"Stack trace:\n{traceback.format_exc()}")
+
+        # Salva healthcheck mesmo com erro
+        execution_time = time.time() - start_time
+        save_healthcheck(
+            success=False,
+            total_added=total_added,
+            errors=errors,
+            execution_time_seconds=execution_time,
+            games_processed=games_stats
+        )
         return False
 
     logger.info(f"\U0001f4be Salvando {CALENDAR_FILENAME}...")
@@ -243,6 +400,21 @@ def main() -> bool:
         return False
 
     logger.info(f"\u2705 Concluido | Total adicionados: {total_added}")
+
+    # Salva healthcheck com sucesso
+    execution_time = time.time() - start_time
+    total_scraped = sum(g.get("scraped", 0) for g in games_stats.values())
+
+    save_healthcheck(
+        success=True,
+        total_added=total_added,
+        total_scraped=total_scraped,
+        errors=errors,
+        execution_time_seconds=execution_time,
+        games_processed=games_stats
+    )
+
+    logger.info(f"\u23f1\ufe0f  Tempo de execucao: {execution_time:.2f}s")
     logger.info("=" * 60)
     return True
 

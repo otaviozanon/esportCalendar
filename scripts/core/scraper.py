@@ -1,11 +1,13 @@
 """
-Web scraping de partidas via tips.gg usando Scrape.do como proxy.
+Web scraping de partidas via tips.gg com fallback automatico entre APIs.
+Primario: Bright Data (5k req/mes) | Fallback: Scrape.do (1k req/mes)
 """
 
 import json
 import time
 from datetime import datetime, date
 from typing import Optional, List, Tuple, Set
+from enum import Enum
 
 import pytz
 import requests
@@ -14,18 +16,49 @@ from bs4 import BeautifulSoup
 from config import (
     SCRAPE_DO_API_KEY,
     SCRAPE_DO_URL,
+    BRIGHT_DATA_API_KEY,
+    BRIGHT_DATA_URL,
+    BRIGHT_DATA_ZONE,
     MAX_RETRIES,
     RETRY_BACKOFF,
     SOURCE_MARKER,
     BR_TZ_NAME,
     match_has_allowed_team,
 )
+
+
+class ScraperAPI(str, Enum):
+    """APIs de scraping disponiveis."""
+    BRIGHT_DATA = "brightdata"
+    SCRAPE_DO = "scrapedo"
 from config import GameConfig, ScrapStats, ScrapedMatch, GameKey
 from calendar_manager import build_stable_uid, create_event
 from logger import setup_logger
 
 BR_TZ = pytz.timezone(BR_TZ_NAME)
 logger = setup_logger("scraper")
+
+# Session reutilizavel para keep-alive
+_session = requests.Session()
+_last_request_time = 0.0
+MIN_REQUEST_INTERVAL = 1.0
+
+# API ativa (comeca com BrightData, faz fallback para Scrape.do se falhar)
+_active_api: ScraperAPI = ScraperAPI.BRIGHT_DATA
+_brightdata_failed_count = 0
+_max_brightdata_failures = 3  # Apos 3 falhas consecutivas, usa Scrape.do
+
+
+def get_active_api() -> ScraperAPI:
+    """Retorna API ativa (com fallback automatico)."""
+    return _active_api
+
+
+def set_active_api(api: ScraperAPI) -> None:
+    """Define API ativa."""
+    global _active_api
+    _active_api = api
+    logger.info(f"🔄 API ativa: {api.value.upper()}")
 
 
 def build_url_for_day(base_path: str, target_date: date) -> str:
@@ -34,28 +67,111 @@ def build_url_for_day(base_path: str, target_date: date) -> str:
     return f"{base_path}{date_str}/"
 
 
-def fetch_with_retry(url: str, max_retries: int = MAX_RETRIES) -> Optional[str]:
-    """Busca pagina via Scrape.do com retry exponencial. Retorna HTML ou None se falhar."""
-    if not SCRAPE_DO_API_KEY:
-        logger.error("\u274c API key Scrape.do nao configurada")
+def _fetch_brightdata(url: str, timeout: int = 60) -> Optional[str]:
+    """Busca via Bright Data Web Unlocker API."""
+    if not BRIGHT_DATA_API_KEY:
+        logger.error("❌ Bright Data API key nao configurada")
         return None
+
+    headers = {
+        "Authorization": f"Bearer {BRIGHT_DATA_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "zone": BRIGHT_DATA_ZONE,
+        "url": url,
+        "format": "raw"
+    }
+
+    try:
+        response = _session.post(BRIGHT_DATA_URL, headers=headers, json=payload, timeout=timeout)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.HTTPError as e:
+        status = e.response.status_code
+        # Erros que indicam limite atingido ou necessidade de fallback
+        if status in [402, 429, 403]:
+            logger.warning(f"⚠️  Bright Data erro {status} (limite/bloqueio) - usando fallback")
+            return None
+        raise
+    except Exception:
+        raise
+
+
+def _fetch_scrapedo(url: str, timeout: int = 60) -> Optional[str]:
+    """Busca via Scrape.do."""
+    if not SCRAPE_DO_API_KEY:
+        logger.error("❌ Scrape.do API key nao configurada")
+        return None
+
+    params = {
+        "token": SCRAPE_DO_API_KEY,
+        "url": url,
+        "render": "true"
+    }
+
+    response = _session.get(SCRAPE_DO_URL, params=params, timeout=timeout)
+    response.raise_for_status()
+    return response.text
+
+
+def fetch_with_retry(url: str, max_retries: int = MAX_RETRIES) -> Optional[str]:
+    """
+    Busca pagina com retry e fallback automatico entre APIs.
+    Tenta Bright Data primeiro, faz fallback para Scrape.do se falhar.
+    """
+    global _last_request_time, _active_api, _brightdata_failed_count
 
     for attempt in range(max_retries):
         try:
-            params = {"token": SCRAPE_DO_API_KEY, "url": url}
-            response = requests.get(SCRAPE_DO_URL, params=params, timeout=60)
-            response.raise_for_status()
-            return response.text
+            # Rate limiting
+            elapsed = time.time() - _last_request_time
+            if elapsed < MIN_REQUEST_INTERVAL:
+                time.sleep(MIN_REQUEST_INTERVAL - elapsed)
+
+            timeout = 60 if attempt == 0 else 90
+
+            # Tenta API ativa
+            if _active_api == ScraperAPI.BRIGHT_DATA:
+                try:
+                    html = _fetch_brightdata(url, timeout)
+                    if html:
+                        _last_request_time = time.time()
+                        _brightdata_failed_count = 0  # Reset contador de falhas
+                        return html
+                    else:
+                        # Bright Data retornou None (limite atingido)
+                        _brightdata_failed_count += 1
+                        if _brightdata_failed_count >= _max_brightdata_failures:
+                            logger.warning(
+                                f"⚠️  Bright Data falhou {_brightdata_failed_count}x "
+                                f"- mudando para Scrape.do permanentemente"
+                            )
+                            set_active_api(ScraperAPI.SCRAPE_DO)
+                        # Tenta Scrape.do como fallback
+                        logger.info("🔄 Tentando Scrape.do como fallback...")
+                        html = _fetch_scrapedo(url, timeout)
+                except Exception as e:
+                    logger.warning(f"Bright Data erro: {type(e).__name__} - tentando Scrape.do")
+                    _brightdata_failed_count += 1
+                    html = _fetch_scrapedo(url, timeout)
+            else:
+                # Scrape.do como API principal
+                html = _fetch_scrapedo(url, timeout)
+
+            if html:
+                _last_request_time = time.time()
+                return html
+
         except requests.exceptions.HTTPError as e:
             logger.warning(
                 f"HTTP {e.response.status_code} ao buscar {url} "
                 f"(tentativa {attempt + 1}/{max_retries})"
             )
         except requests.exceptions.Timeout:
-            logger.warning(
-                f"Timeout ao buscar {url} (tentativa {attempt + 1}/{max_retries})"
-            )
-        except Exception as e:
+            logger.warning(f"Timeout ao buscar {url} (tentativa {attempt + 1}/{max_retries})")
+        except (requests.exceptions.RequestException, ConnectionError) as e:
             logger.warning(
                 f"Erro ao buscar {url}: {type(e).__name__} "
                 f"(tentativa {attempt + 1}/{max_retries})"
@@ -98,7 +214,12 @@ def scrape_days_for_game(
             continue
 
         try:
-            soup = BeautifulSoup(html, "html.parser")
+            # Usa lxml parser (2-3x mais rapido que html.parser) com fallback
+            try:
+                soup = BeautifulSoup(html, "lxml")
+            except Exception:
+                soup = BeautifulSoup(html, "html.parser")
+
             scripts = soup.find_all("script", {"type": "application/ld+json"})
         except Exception as e:
             logger.warning(
@@ -114,6 +235,9 @@ def scrape_days_for_game(
 
         for script in scripts:
             try:
+                # Validar se script.string existe antes de parsear
+                if not script.string:
+                    continue
                 data = json.loads(script.string)
             except json.JSONDecodeError:
                 continue
@@ -128,8 +252,13 @@ def scrape_days_for_game(
                     continue
 
                 competitors = event.get("competitor", [])
-                team1_raw = competitors[0].get("name", "") if len(competitors) > 0 else ""
-                team2_raw = competitors[1].get("name", "") if len(competitors) > 1 else ""
+
+                # Validar competitors antes de acessar
+                if not isinstance(competitors, list) or len(competitors) < 2:
+                    continue
+
+                team1_raw = competitors[0].get("name", "")
+                team2_raw = competitors[1].get("name", "")
 
                 if not team1_raw or not team2_raw:
                     continue

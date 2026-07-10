@@ -4,6 +4,7 @@ Operacoes de calendario ICS: carga, salvamento, deduplicacao e limpeza.
 
 import hashlib
 import os
+import re
 from datetime import datetime, date, timedelta
 from typing import Set, List
 
@@ -16,9 +17,14 @@ from config import (
     SOURCE_MARKER,
     TIPS_URL_HINT,
     DELETE_OLDER_THAN_DAYS,
+    EVENT_DURATION_HOURS,
+    ALARM_MINUTES_BEFORE,
 )
 
 BR_TZ = pytz.timezone(BR_TZ_NAME)
+
+# Regex compilado para extrair URL (3x mais rapido)
+URL_PATTERN = re.compile(r'\U0001f310\s*(.+)', re.MULTILINE)
 
 
 def load_calendar(path: str = CALENDAR_FILENAME) -> Calendar:
@@ -27,7 +33,7 @@ def load_calendar(path: str = CALENDAR_FILENAME) -> Calendar:
         try:
             with open(path, "rb") as f:
                 return Calendar.from_ical(f.read())
-        except Exception:
+        except (FileNotFoundError, ValueError, PermissionError):
             pass
 
     cal = Calendar()
@@ -42,7 +48,7 @@ def save_calendar(cal: Calendar, path: str = CALENDAR_FILENAME) -> bool:
         with open(path, "wb") as f:
             f.write(cal.to_ical())
         return True
-    except Exception as e:
+    except (IOError, PermissionError) as e:
         raise IOError(f"Erro ao salvar {path}: {e}")
 
 
@@ -71,66 +77,89 @@ def _event_start_date_local(component) -> date | None:
             return dt.astimezone(BR_TZ).date()
         elif isinstance(dt, date):
             return dt
-    except Exception:
+    except (AttributeError, ValueError, TypeError):
         pass
     return None
 
 
 def dedupe_by_uid(cal: Calendar) -> int:
     """Remove eventos duplicados por UID. Mantem primeira ocorrencia. Retorna qtd removida."""
-    seen = {}
-    to_remove = []
-    for comp in list(cal.walk("VEVENT")):
-        if not is_ours(comp):
-            continue
-        uid = str(comp.get("uid", ""))
-        if uid in seen:
-            to_remove.append(comp)
+    seen = set()
+    unique_components = []
+    removed = 0
+
+    # Coleta todos componentes, mantendo apenas eventos unicos
+    for comp in cal.subcomponents[:]:
+        if comp.name == 'VEVENT':
+            if not is_ours(comp):
+                unique_components.append(comp)
+                continue
+
+            uid = str(comp.get("uid", ""))
+            if uid not in seen:
+                seen.add(uid)
+                unique_components.append(comp)
+            else:
+                removed += 1
         else:
-            seen[uid] = comp
-    for comp in to_remove:
-        cal.subcomponents.remove(comp)
-    return len(to_remove)
+            unique_components.append(comp)
+
+    # Reconstroi subcomponents uma unica vez (O(n) ao inves de O(n²))
+    cal.subcomponents = unique_components
+    return removed
 
 
 def dedupe_by_url(cal: Calendar) -> int:
     """Remove eventos duplicados por URL (link da partida). Remove os duplicados, mantem o primeiro."""
-    url_map = {}
-    to_remove = []
-    for comp in list(cal.walk("VEVENT")):
-        if not is_ours(comp):
-            continue
-        desc = str(comp.get("description", ""))
-        url = next(
-            (
-                line.replace("\U0001f310 ", "").strip()
-                for line in desc.split("\n")
-                if line.startswith("\U0001f310")
-            ),
-            None,
-        )
-        if url:
-            if url not in url_map:
-                url_map[url] = comp
+    url_seen = set()
+    unique_components = []
+    removed = 0
+
+    for comp in cal.subcomponents[:]:
+        if comp.name == 'VEVENT':
+            if not is_ours(comp):
+                unique_components.append(comp)
+                continue
+
+            desc = str(comp.get("description", ""))
+
+            # Usa regex compilado (3x mais rapido)
+            match = URL_PATTERN.search(desc)
+            url = match.group(1).strip() if match else None
+
+            if url:
+                if url not in url_seen:
+                    url_seen.add(url)
+                    unique_components.append(comp)
+                else:
+                    removed += 1
             else:
-                to_remove.append(comp)
-    for comp in to_remove:
-        cal.subcomponents.remove(comp)
-    return len(to_remove)
+                unique_components.append(comp)
+        else:
+            unique_components.append(comp)
+
+    cal.subcomponents = unique_components
+    return removed
 
 
 def prune_older_than(cal: Calendar, cutoff_date: date) -> int:
     """Remove eventos cuja data de inicio eh anterior a data de corte."""
-    to_remove = [
-        comp
-        for comp in list(cal.walk("VEVENT"))
-        if is_ours(comp)
-        and (event_date := _event_start_date_local(comp))
-        and event_date < cutoff_date
-    ]
-    for comp in to_remove:
-        cal.subcomponents.remove(comp)
-    return len(to_remove)
+    unique_components = []
+    removed = 0
+
+    for comp in cal.subcomponents[:]:
+        if comp.name == 'VEVENT':
+            if is_ours(comp):
+                event_date = _event_start_date_local(comp)
+                if event_date and event_date < cutoff_date:
+                    removed += 1
+                    continue
+            unique_components.append(comp)
+        else:
+            unique_components.append(comp)
+
+    cal.subcomponents = unique_components
+    return removed
 
 
 def remove_events_by_prefix(cal: Calendar, prefix: str) -> int:
@@ -173,18 +202,18 @@ def create_event(
     description: str,
     uid: str,
 ) -> Event:
-    """Cria evento ICS com alarme de 15min, duracao 2h. Tudo em UTC."""
+    """Cria evento ICS com alarme e duracao configuravel. Tudo em UTC."""
     e = Event()
     e.add("summary", summary)
     e.add("dtstart", normalize_event_datetime_utc(start_utc))
-    e.add("dtend", normalize_event_datetime_utc(start_utc) + timedelta(hours=2))
+    e.add("dtend", normalize_event_datetime_utc(start_utc) + timedelta(hours=EVENT_DURATION_HOURS))
     e.add("description", description)
     e.add("uid", uid)
     e.add("dtstamp", datetime.now(pytz.utc))
 
     alarm = Alarm()
     alarm.add("action", "DISPLAY")
-    alarm.add("trigger", timedelta(minutes=-15))
+    alarm.add("trigger", timedelta(minutes=-ALARM_MINUTES_BEFORE))
     alarm.add("description", f"Lembrete: {summary}")
     e.add_component(alarm)
 

@@ -21,11 +21,35 @@ DELETE_OLDER_THAN_DAYS = 7
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
 
-SCRAPE_DO_API_KEY = os.getenv("SCRAPE_DO_API_KEY", "")
-SCRAPE_DO_URL = "https://api.scrape.do"
+# ==================== APIs DE SCRAPING ====================
 
-MAX_RETRIES = 3
+# Scrape.do (Fallback)
+SCRAPE_DO_API_KEY = os.getenv("SCRAPE_DO_API_KEY", "")
+SCRAPE_DO_URL = "https://api.scrape.do/"
+
+# Bright Data (Primario)
+BRIGHT_DATA_API_KEY = os.getenv("BRIGHT_DATA_API_KEY", "")
+BRIGHT_DATA_URL = "https://api.brightdata.com/request"
+BRIGHT_DATA_ZONE = "sport_calendar"
+
+# Configuracoes de retry
+MAX_RETRIES = 1  # Reduzido de 3 para 1 (economiza requisicoes)
 RETRY_BACKOFF = 1.5
+
+# Configuracoes de eventos ICS
+EVENT_DURATION_HOURS = 2
+ALARM_MINUTES_BEFORE = 15
+
+# Configuracoes de frequencia (dependem da API ativa)
+# Bright Data (primario): CS2 a cada 50min (~27x/dia), outros 2x/dia
+# Calculo: 5000 req/mes - (3 jogos × 2x/dia × 5 req × 30 dias) = 4100 req
+# 4100 ÷ 5 req = 820 exec/mes ÷ 30 dias = 27 exec/dia = ~50min
+CS2_RUN_INTERVAL_MINUTES_BRIGHTDATA = 50
+VAL_RL_LOL_RUN_HOURS_BRIGHTDATA = [6, 18]
+
+# Scrape.do (fallback): CS2 3x/dia, outros 1x/dia
+CS2_RUN_HOURS_SCRAPEDO = [6, 12, 18]
+VAL_RL_LOL_RUN_HOURS_SCRAPEDO = [6]
 
 
 # ==================== MODELOS ====================
@@ -130,6 +154,9 @@ LOL_TEAMS = {
 
 # ==================== FILTROS ====================
 
+from functools import lru_cache
+
+@lru_cache(maxsize=512)
 def normalize_team(name: str) -> str:
     """Normaliza nome do time: lowercase + strip para comparacao case-insensitive."""
     return (name or "").lower().strip()

@@ -4,9 +4,9 @@ Automatic esports calendar generator in iCalendar format (.ics). Tracks matches 
 
 ## 🌐 Live Website
 
-**🔗 Frontend Interativo:** [https://otaviozanon.github.io/esportCalendar/](https://otaviozanon.github.io/esportCalendar/)
+**🔗 Frontend :** [https://otaviozanon.github.io/esportCalendar/](https://otaviozanon.github.io/esportCalendar/)
 
-**📅 Calendário direto (.ics):** [https://is.gd/EsportCalendar](https://is.gd/EsportCalendar)
+**📅 Calendar (.ics):** [https://is.gd/EsportCalendar](https://is.gd/EsportCalendar)
 
 ## 📖 About
 
@@ -17,12 +17,12 @@ Automatic esports calendar generator in iCalendar format (.ics). Tracks matches 
 ## ✨ Features
 
 - 🎯 **Automatic Generation**: Creates iCalendar (.ics) files from esports event data
-- 🌐 **Web Scraping**: Extracts event information from [tips.gg](https://tips.gg) using Scrape.do
+- 🌐 **Web Scraping**: Extracts event information from [tips.gg](https://tips.gg) using Bright Data or Scrape.do
 - 📅 **iCalendar Format**: Generates calendars in standard format, compatible with any calendar application
 - 🎮 **Multiple Esports**: Supports CS2, Valorant, League of Legends, and Rocket League
 - 🇧🇷 **Brazilian Teams**: Tracks specific Brazilian teams in each game
-- ⚡ **Efficient Execution**: ~990 requests/month (1000 limit)
-- 🔄 **Scheduling**: Runs every 48 minutes via GitHub Actions
+- ⚡ **Dual-API Fallback**: Primary: Bright Data (5k/month) → Fallback: Scrape.do (1k/month)
+- 🔄 **Smart Scheduling**: CS2 every 50min, others 2x/day (auto-adjusts on API fallback)
 - 🪶 **Lightweight**: No heavy dependencies (no Selenium/ChromeDriver)
 - 🔔 **Reminders**: Adds alerts 15 minutes before each event
 
@@ -32,7 +32,8 @@ Automatic esports calendar generator in iCalendar format (.ics). Tracks matches 
 git clone https://github.com/otaviozanon/esportCalendar.git
 cd esportCalendar
 pip install -r scripts/requirements.txt
-python scripts/generate_ics.py
+export BRIGHT_DATA_API_KEY="your_key"  # or SCRAPE_DO_API_KEY
+python scripts/core/generate_ics.py
 ```
 
 This will generate a `calendar.ics` file that you can import into your calendar.
@@ -42,7 +43,8 @@ This will generate a `calendar.ics` file that you can import into your calendar.
 ### Prerequisites
 
 - Python 3.8+
-- [Scrape.do](https://scrape.do) API Key
+- [Bright Data](https://brightdata.com) API Key (primary, 5k/month free) OR
+- [Scrape.do](https://scrape.do) API Key (fallback, 1k/month free)
 
 ### Steps
 
@@ -59,16 +61,17 @@ This will generate a `calendar.ics` file that you can import into your calendar.
    pip install -r scripts/requirements.txt
    ```
 
-3. **Configure Scrape.do API key:**
+3. **Configure API keys:**
 
    ```bash
-   export SCRAPE_DO_API_KEY="your_api_key_here"
+   export BRIGHT_DATA_API_KEY="your_brightdata_key"  # Primary
+   export SCRAPE_DO_API_KEY="your_scrapedo_key"     # Fallback
    ```
 
 4. **Run the script:**
 
    ```bash
-   python scripts/generate_ics.py
+   python scripts/core/generate_ics.py
    ```
 
 5. **Import the calendar:**
@@ -79,12 +82,15 @@ This will generate a `calendar.ics` file that you can import into your calendar.
 ### Environment Variables
 
 ```bash
-SCRAPE_DO_API_KEY  # Your Scrape.do API key (required)
+BRIGHT_DATA_API_KEY  # Bright Data API key (primary, optional)
+SCRAPE_DO_API_KEY    # Scrape.do API key (fallback, optional)
 ```
+
+At least one API key is required. If both are provided, Bright Data is used first with automatic fallback to Scrape.do on errors.
 
 ### Customizing Teams
 
-Edit `scripts/generate_ics.py` to modify `GAMES_CONFIG`:
+Edit `scripts/core/config.py` to modify `GAMES_CONFIG`:
 
 ```python
 GAMES_CONFIG = {
@@ -99,35 +105,59 @@ GAMES_CONFIG = {
 
 The dashboard is built with a modular architecture:
 
-- **GSAP**: High-performance animations.
-- **Lucide**: Modern icon set.
-- **Tailwind**: Utility-first styling.
-- **ES6 Modules**: Clean, component-based logic.
+- **GSAP**: High-performance animations
+- **Lucide**: Modern icon set
+- **Tailwind CSS**: Utility-first styling
+- **ical.js**: Live calendar parsing
+- **ES6 Modules**: Clean, component-based logic
+
+### Live Calendar
+
+Real-time upcoming matches display:
+
+- Auto-refresh every 5 minutes
+- Filter by game (CS2, VAL, LOL, RL)
+- Responsive card-based layout
+- Grouped by esport with event counts
 
 ## 🎯 Execution Logic
 
-### CS2
+### With Bright Data (Primary - 5k req/month)
 
-- Scrapes the next 3 days
-- Runs every time the script executes
-- Rotative: day 1 → day 2 → day 3 → day 1
+**CS2:**
 
-### Valorant, LOL, RL
+- Every 50 minutes (~27x/day)
+- Scrapes rotating days (day 0 → 1 → 2)
 
-- Scrapes only the current day
-- Runs only 1x per day (starting at 00:00)
-- Stores execution state in `scripts/data/state.json`
+**Valorant, LOL, RL:**
+
+- 2x per day (06:00 and 18:00)
+- Scrapes current day only
+
+### With Scrape.do (Fallback - 1k req/month)
+
+**CS2:**
+
+- 3x per day (06:00, 12:00, 18:00)
+- Scrapes rotating days (day 0 → 1 → 2)
+
+**Valorant, LOL, RL:**
+
+- 1x per day (06:00)
+- Scrapes current day only
+
+State tracked in `scripts/data/state.json` - automatic API fallback on errors/limits.
 
 ## ❓ FAQ
 
-**Q: Why Scrape.do instead of Selenium?**
-A: Scrape.do is faster, more reliable (99.98% uptime), and doesn't require heavy ChromeDriver.
+**Q: Why Bright Data/Scrape.do instead of Selenium?**
+A: Cloud APIs are faster, more reliable, and don't require heavy ChromeDriver. Bright Data offers 5k free requests/month.
 
 **Q: How do I add new esports?**
 A: Add an entry to the `GAMES` dictionary with the tips.gg base_path and desired teams.
 
 **Q: Can I use this offline?**
-A: No, the script needs internet access to reach tips.gg via Scrape.do.
+A: No, the script needs internet access to reach tips.gg via the scraping APIs.
 
 **Q: What timezone is used?**
 A: America/Sao_Paulo (BRT)
@@ -142,7 +172,8 @@ This project is under the MIT License. See the LICENSE file for details.
 ## 🙏 Acknowledgments
 
 - [tips.gg](https://tips.gg) - Esports data source
-- [Scrape.do](https://scrape.do) - Web scraping API
+- [Bright Data](https://brightdata.com) - Primary web scraping API (5k free/month)
+- [Scrape.do](https://scrape.do) - Fallback web scraping API (1k free/month)
 - [icalendar](https://github.com/icalendar/icalendar) - .ics file generation
 - [requests](https://github.com/psf/requests) - HTTP requests
 - [beautifulsoup4](https://www.crummy.com/software/BeautifulSoup/) - HTML parsing
