@@ -49,4 +49,20 @@ DESCRIPTION:Lembrete: [CS2] Imperial vs Isurus Gaming
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] largadosypelados vs Imperial
+DTSTART:20260712T210000Z
+DTEND:20260712T230000Z
+DTSTAMP:20260711T220234Z
+UID:6ccd1f85651fb17a09e832a5cd9b646301c2968db85fbb9e69c255faa9a43c6b
+DESCRIPTION:🏆 largadosypelados vs Imperial\, Thunderpick World Champion
+ ship 2026: South America Series #2\n📍 Thunderpick World Championship 20
+ 26: South America Series #2\n🌐 https://tips.gg/matches/counter-strike/1
+ 2-07-2026/largadosypelados-vs-imperial/10-00/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] largadosypelados vs Imperial
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
 END:VCALENDAR
