@@ -33,4 +33,20 @@ DESCRIPTION:Lembrete: [CS2] paiN Gaming vs Sharks Esports
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] Imperial vs Isurus Gaming
+DTSTART:20260711T190000Z
+DTEND:20260711T210000Z
+DTSTAMP:20260711T105311Z
+UID:4b94b7bb41e053f21fdb001f9af826ea01bfe019ed63b3731ba8fd99904baa6f
+DESCRIPTION:🏆 Imperial vs Isurus Gaming\, Thunderpick World Championshi
+ p 2026: South America Series #2\n📍 Thunderpick World Championship 2026:
+  South America Series #2\n🌐 https://tips.gg/matches/counter-strike/11-0
+ 7-2026/imperial-vs-isurus-gaming/08-00/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] Imperial vs Isurus Gaming
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
 END:VCALENDAR
