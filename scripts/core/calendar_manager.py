@@ -27,18 +27,33 @@ BR_TZ = pytz.timezone(BR_TZ_NAME)
 URL_PATTERN = re.compile(r'\U0001f310\s*(.+)', re.MULTILINE)
 
 
+def _ensure_calendar_props(cal: Calendar) -> None:
+    props = {
+        "x-wr-calname": "eSports Calendar",
+        "x-wr-caldesc": "Calendario de jogos de eSports",
+        "x-wr-timezone": BR_TZ_NAME,
+        "refresh-interval;VALUE=DURATION": "PT1H",
+        "x-published-ttl": "PT1H",
+    }
+    for key, value in props.items():
+        if key not in cal:
+            cal.add(key, value)
+
+
 def load_calendar(path: str = CALENDAR_FILENAME) -> Calendar:
-    """Carrega arquivo ICS do disco. Cria calendario vazio se arquivo nao existe ou invalido."""
     if os.path.exists(path):
         try:
             with open(path, "rb") as f:
-                return Calendar.from_ical(f.read())
+                cal = Calendar.from_ical(f.read())
+                _ensure_calendar_props(cal)
+                return cal
         except (FileNotFoundError, ValueError, PermissionError):
             pass
 
     cal = Calendar()
     cal.add("prodid", "-//Esport Calendar BR//tips.gg//")
     cal.add("version", "2.0")
+    _ensure_calendar_props(cal)
     return cal
 
 

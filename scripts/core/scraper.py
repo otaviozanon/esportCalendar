@@ -196,6 +196,15 @@ def parse_event_time(match_time_str: str) -> Optional[datetime]:
         return None
 
 
+def clean_tournament_name(raw_name: str, team1: str, team2: str) -> str:
+    match_prefix = f"{team1} vs {team2}"
+    if raw_name.startswith(match_prefix):
+        raw_name = raw_name[len(match_prefix):].strip()
+        if raw_name.startswith(","):
+            raw_name = raw_name[1:].strip()
+    return raw_name
+
+
 def scrape_days_for_game(
     game_key: str,
     cfg: GameConfig,
@@ -280,7 +289,7 @@ def scrape_days_for_game(
                     continue
 
                 event_summary = f"{cfg.prefix}{team1_raw} vs {team2_raw}"
-                description = event.get("name", "")
+                description = clean_tournament_name(event.get("name", ""), team1_raw, team2_raw)
                 organizer_name = event.get("organizer", {}).get("name", "")
                 match_url = event.get("url", "")
 
@@ -309,7 +318,6 @@ def scrape_days_for_game(
 
                 event_description = (
                     f"\U0001f3c6 {description}\n"
-                    f"\U0001f4cd {organizer_name}\n"
                     f"\U0001f310 {match_url}\n"
                     f"{SOURCE_MARKER}"
                 )
