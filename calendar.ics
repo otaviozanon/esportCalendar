@@ -5,6 +5,7 @@ X-WR-CALDESC:Calendario de jogos de eSports
 X-WR-CALNAME:eSports Calendar
 REFRESH-INTERVAL;VALUE=DURATION:PT1H
 REFRESH-INTERVAL;VALUE=DURATION:PT1H
+REFRESH-INTERVAL;VALUE=DURATION:PT1H
 X-PUBLISHED-TTL:PT1H
 X-WR-TIMEZONE:America/Sao_Paulo
 BEGIN:VEVENT
@@ -65,6 +66,21 @@ DESCRIPTION:🏆 largadosypelados vs Imperial\, Thunderpick World Champion
  ship 2026: South America Series #2\n📍 Thunderpick World Championship 20
  26: South America Series #2\n🌐 https://tips.gg/matches/counter-strike/1
  2-07-2026/largadosypelados-vs-imperial/10-00/\nX-SETT-SOURCE:TIPSGG
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Lembrete: [CS2] largadosypelados vs Imperial
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:[CS2] largadosypelados vs Imperial
+DTSTART:20260712T210000Z
+DTEND:20260712T230000Z
+DTSTAMP:20260712T083557Z
+UID:886d3bebed365bef742ffc6808753e5cdde33d8cd8eab62d7e63f824748f589e
+DESCRIPTION:🏆 Thunderpick World Championship 2026: South America Series
+  #2\n🌐 https://tips.gg/matches/counter-strike/12-07-2026/largadosypelad
+ os-vs-imperial/10-00/\nX-SETT-SOURCE:TIPSGG
 BEGIN:VALARM
 ACTION:DISPLAY
 DESCRIPTION:Lembrete: [CS2] largadosypelados vs Imperial
