@@ -1,18 +1,18 @@
 {
-  "timestamp": "2026-07-25T06:29:44.420362+00:00",
+  "timestamp": "2026-07-25T08:31:42.134333+00:00",
   "success": true,
   "stats": {
-    "events_added": 1,
-    "events_scraped": 7,
-    "execution_time_seconds": 5.86
+    "events_added": 0,
+    "events_scraped": 25,
+    "execution_time_seconds": 11.16
   },
   "games": {
     "CS2": {
-      "added": 1,
-      "scraped": 7,
-      "filtered": 6,
+      "added": 0,
+      "scraped": 25,
+      "filtered": 21,
       "skipped_tbd": 0,
-      "skipped_past": 0
+      "skipped_past": 3
     }
   },
   "errors": [],
