@@ -167,7 +167,7 @@ A: Open the `calendar.ics` file and import it into your calendar (Google Calenda
 
 ## 📝 License
 
-This project is under the MIT License. See the LICENSE file for details.
+This project is under the GPL-3.0 License. See the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
