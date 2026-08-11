@@ -313,6 +313,8 @@ def scrape_days_for_game(
                     ScrapedMatch(
                         teams=f"{team1_raw} x {team2_raw}",
                         time=match_time_br.strftime("%H:%M"),
+                        date=target_day.strftime("%d/%m"),
+                        game=game_key,
                     )
                 )
 

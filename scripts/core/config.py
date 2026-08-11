@@ -84,6 +84,8 @@ class GameConfig:
 class ScrapedMatch:
     teams: str
     time: str
+    date: str = ""
+    game: str = ""
 
 
 @dataclass

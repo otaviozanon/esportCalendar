@@ -2,6 +2,7 @@
 Esport Calendar Scraper - Raspa eventos de tips.gg e gera calendario ICS.
 Suporta CS2, Valorant, Rocket League, League of Legends.
 
+CS2 raspa sempre hoje e amanha (2 dias) em cada execucao.
 Ponto de entrada principal. Delega orquestracao para os modulos especializados.
 """
 
@@ -10,7 +11,7 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta, date
-from typing import List, Tuple
+from typing import List
 
 import pytz
 
@@ -30,6 +31,7 @@ from config import (
     VAL_RL_LOL_RUN_HOURS_SCRAPEDO,
     GameConfig,
     GameKey,
+    ScrapStats,
 )
 from logger import setup_logger
 from calendar_manager import (
@@ -50,7 +52,7 @@ GAMES_CONFIG = {
     GameKey.CS2: GameConfig(
         prefix="[CS2] ",
         base_path="https://tips.gg/csgo/matches/",
-        days_to_scrape=3,
+        days_to_scrape=2,
         once_per_day=False,
         run_at_hour=0,
         teams=CS2_TEAMS,
@@ -106,7 +108,7 @@ def load_state() -> dict:
             logger = setup_logger("state")
             logger.warning(f"Falha ao carregar state.json: {e}")
 
-    _state_cache = {"last_run": {}, "cs2_day_offset": 0}
+    _state_cache = {"last_run": {}}
     return _state_cache
 
 
@@ -196,7 +198,7 @@ def mark_game_as_run(game_key: GameKey) -> None:
 
     now = datetime.now(BR_TZ)
 
-    # CS2: salva timestamp completo (ISO) para controle de 4h
+    # CS2: salva timestamp completo (ISO) para controle de intervalo
     if game_key == GameKey.CS2:
         state["last_run"][game_key] = now.isoformat()
     else:
@@ -207,20 +209,8 @@ def mark_game_as_run(game_key: GameKey) -> None:
 
 
 def get_cs2_target_days(today: date) -> List[date]:
-    """Retorna dias-alvo para CS2 baseado no offset rotativo (0, 1, 2)."""
-    state = load_state()
-    offset = state.get("cs2_day_offset", 0)
-    return [today + timedelta(days=offset)]
-
-
-def advance_cs2_offset() -> Tuple[int, int]:
-    """Avança offset rotativo do CS2: (0→1, 1→2, 2→0). Retorna (antigo, novo)."""
-    state = load_state()
-    current = state.get("cs2_day_offset", 0)
-    next_offset = (current + 1) % 3
-    state["cs2_day_offset"] = next_offset
-    save_state(state)
-    return current, next_offset
+    """Retorna dias-alvo para CS2: hoje e amanha, sempre."""
+    return [today, today + timedelta(days=1)]
 
 
 def main() -> bool:
@@ -317,45 +307,56 @@ def main() -> bool:
                 continue
 
             if game_key == GameKey.CS2:
-                current_offset = state.get("cs2_day_offset", 0)
                 target_days = get_cs2_target_days(today)
-                next_offset = (current_offset + 1) % 3
+                days_str = ", ".join(d.strftime("%d/%m/%Y") for d in target_days)
                 logger.info(
-                    f"\U0001f4c5 {game_key.value} offset {current_offset}\u2192{next_offset} "
-                    f"| LIMPANDO {target_days[0].strftime('%d/%m/%Y')}"
+                    f"\U0001f4c5 {game_key.value} | LIMPANDO {days_str}"
                 )
             else:
                 target_days = [today]
                 logger.info(f"\U0001f4c5 {game_key.value} | LIMPANDO {today.strftime('%d/%m/%Y')}")
 
-            new_events, stats = scrape_days_for_game(game_key, cfg, target_days, existing_uids)
+            aggregated_stats = ScrapStats()
+            all_new_events = []
 
-            for ev in new_events:
+            for target_day in target_days:
+                new_events, stats = scrape_days_for_game(game_key, cfg, [target_day], existing_uids)
+
+                all_new_events.extend(new_events)
+                aggregated_stats.scripts_total += stats.scripts_total
+                aggregated_stats.skipped_not_allowed += stats.skipped_not_allowed
+                aggregated_stats.skipped_tbd += stats.skipped_tbd
+                aggregated_stats.skipped_past += stats.skipped_past
+                aggregated_stats.added += stats.added
+                aggregated_stats.matches.extend(stats.matches)
+
+                prefix = "   " if len(target_days) > 1 else ""
+                logger.info(
+                    f"{prefix}{target_day.strftime('%d/%m/%Y')} | ENCONTRADOS ( {stats.scripts_total} ) "
+                    f"| NAO PERMITIDOS ( {stats.skipped_not_allowed} ) "
+                    f"| ADICIONADOS ( {stats.added} )"
+                )
+
+            for ev in all_new_events:
                 cal.add_component(ev)
 
-            total_added += stats.added
+            total_added += aggregated_stats.added
 
             # Coleta stats por jogo para healthcheck
             games_stats[game_key.value] = {
-                "added": stats.added,
-                "scraped": stats.scripts_total,
-                "filtered": stats.skipped_not_allowed,
-                "skipped_tbd": stats.skipped_tbd,
-                "skipped_past": stats.skipped_past
+                "added": aggregated_stats.added,
+                "scraped": aggregated_stats.scripts_total,
+                "filtered": aggregated_stats.skipped_not_allowed,
+                "skipped_tbd": aggregated_stats.skipped_tbd,
+                "skipped_past": aggregated_stats.skipped_past
             }
 
-            logger.info(
-                f"- ENCONTRADOS ( {stats.scripts_total} ) "
-                f"| NAO PERMITIDOS ( {stats.skipped_not_allowed} ) "
-                f"| ADICIONADOS ( {stats.added} )"
-            )
-
-            if stats.matches:
+            if aggregated_stats.matches:
                 matches_str = " | ".join(
-                    [f"{m.teams} - {m.time}" for m in stats.matches]
+                    [f"[{m.game}] {m.date} {m.teams} - {m.time}" for m in aggregated_stats.matches]
                 )
                 logger.info(
-                    f"- JOGOS {target_days[0].strftime('%d/%m/%Y')} | {matches_str}"
+                    f"- JOGOS | {matches_str}"
                 )
 
             logger.info("-" * 60)
@@ -364,11 +365,7 @@ def main() -> bool:
             if game_key == GameKey.CS2 or cfg.once_per_day:
                 mark_game_as_run(game_key)
 
-            if game_key == GameKey.CS2:
-                current, next_offset = advance_cs2_offset()
-                next_day = today + timedelta(days=next_offset)
-                logger.info(f"CS2 proximo offset: {next_offset} ({next_day.strftime('%d/%m/%Y')})")
-                logger.info("-" * 60)
+            logger.info("-" * 60)
 
         deduped_final = dedupe_by_uid(cal)
         if deduped_final > 0:

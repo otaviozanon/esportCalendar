@@ -3,7 +3,7 @@ name: Atualizar Calendário E-sports
 on:
   schedule:
     # Executa a cada 10 minutos, mas o script controla internamente:
-    # - CS2: scrape a cada 50min (Bright Data limit: 5000 req/mês)
+    # - CS2: scrape a cada 50min (Bright Data limit: 5000 req/mês) - raspa hoje + amanha sempre
     # - VAL/LOL/RL: scrape a cada 60min (Scrape.do fallback)
     # O código verifica timestamps em state.json antes de fazer requisições
     - cron: "*/10 * * * *" # A cada 10 minutos
