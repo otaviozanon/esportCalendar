@@ -97,6 +97,19 @@ def _event_start_date_local(component) -> date | None:
     return None
 
 
+def _get_event_start(component) -> datetime | None:
+    """Extrai dtstart de um VEVENT como datetime UTC-aware para comparacao."""
+    try:
+        dt = component.get("dtstart").dt
+        if isinstance(dt, datetime):
+            if dt.tzinfo is None:
+                dt = pytz.utc.localize(dt)
+            return dt.astimezone(pytz.utc)
+    except (AttributeError, ValueError, TypeError):
+        pass
+    return None
+
+
 def dedupe_by_uid(cal: Calendar) -> int:
     """Remove eventos duplicados por UID. Mantem primeira ocorrencia. Retorna qtd removida."""
     seen = set()
@@ -125,33 +138,100 @@ def dedupe_by_uid(cal: Calendar) -> int:
 
 
 def dedupe_by_url(cal: Calendar) -> int:
-    """Remove eventos duplicados por URL (link da partida). Remove os duplicados, mantem o primeiro."""
-    url_seen = set()
+    """Remove eventos duplicados por URL. Mantem o de horario mais recente."""
+    best_by_url = {}
+
+    for comp in cal.subcomponents[:]:
+        if comp.name != 'VEVENT' or not is_ours(comp):
+            continue
+
+        desc = str(comp.get("description", ""))
+        match = URL_PATTERN.search(desc)
+        url = match.group(1).strip() if match else None
+
+        if not url:
+            continue
+
+        dtstart = _get_event_start(comp)
+        if dtstart is None:
+            continue
+
+        if url not in best_by_url:
+            best_by_url[url] = comp
+        else:
+            existing_dt = _get_event_start(best_by_url[url])
+            if existing_dt and dtstart > existing_dt:
+                best_by_url[url] = comp
+
+    to_keep = set(id(c) for c in best_by_url.values())
     unique_components = []
     removed = 0
 
     for comp in cal.subcomponents[:]:
-        if comp.name == 'VEVENT':
-            if not is_ours(comp):
-                unique_components.append(comp)
-                continue
-
+        if comp.name == 'VEVENT' and is_ours(comp):
             desc = str(comp.get("description", ""))
-
-            # Usa regex compilado (3x mais rapido)
             match = URL_PATTERN.search(desc)
             url = match.group(1).strip() if match else None
 
-            if url:
-                if url not in url_seen:
-                    url_seen.add(url)
-                    unique_components.append(comp)
-                else:
-                    removed += 1
-            else:
-                unique_components.append(comp)
+            if url and id(comp) not in to_keep:
+                removed += 1
+                continue
+
+        unique_components.append(comp)
+
+    cal.subcomponents = unique_components
+    return removed
+
+
+def dedupe_by_matchup(cal: Calendar) -> int:
+    """Remove eventos do mesmo confronto na mesma data. Mantem o de horario mais recente."""
+    best_by_key = {}
+
+    for comp in cal.subcomponents[:]:
+        if comp.name != 'VEVENT' or not is_ours(comp):
+            continue
+
+        summary = str(comp.get("summary", ""))
+        event_date = _event_start_date_local(comp)
+        if not summary or not event_date:
+            continue
+
+        key = (summary, event_date)
+        dtstart = _get_event_start(comp)
+
+        if key not in best_by_key:
+            best_by_key[key] = comp
         else:
-            unique_components.append(comp)
+            existing_dt = _get_event_start(best_by_key[key])
+            if dtstart and (not existing_dt or dtstart > existing_dt):
+                best_by_key[key] = comp
+
+    key_count = {}
+    for comp in cal.subcomponents[:]:
+        if comp.name != 'VEVENT' or not is_ours(comp):
+            continue
+        summary = str(comp.get("summary", ""))
+        event_date = _event_start_date_local(comp)
+        if not summary or not event_date:
+            continue
+        key = (summary, event_date)
+        key_count[key] = key_count.get(key, 0) + 1
+
+    to_keep = set(id(c) for c in best_by_key.values())
+    unique_components = []
+    removed = 0
+
+    for comp in cal.subcomponents[:]:
+        if comp.name == 'VEVENT' and is_ours(comp):
+            summary = str(comp.get("summary", ""))
+            event_date = _event_start_date_local(comp)
+            if summary and event_date:
+                key = (summary, event_date)
+                if key_count.get(key, 0) > 1 and id(comp) not in to_keep:
+                    removed += 1
+                    continue
+
+        unique_components.append(comp)
 
     cal.subcomponents = unique_components
     return removed

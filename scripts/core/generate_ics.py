@@ -40,6 +40,7 @@ from calendar_manager import (
     get_existing_uids,
     dedupe_by_uid,
     dedupe_by_url,
+    dedupe_by_matchup,
     prune_older_than,
 )
 from scraper import scrape_days_for_game, get_active_api, ScraperAPI
@@ -240,6 +241,10 @@ def main() -> bool:
     if deduped_url > 0:
         logger.info(f"\U0001f5d1\ufe0f  Removidos {deduped_url} eventos duplicados (URL)")
 
+    deduped_matchup = dedupe_by_matchup(cal)
+    if deduped_matchup > 0:
+        logger.info(f"\U0001f5d1\ufe0f  Removidos {deduped_matchup} eventos duplicados por confronto")
+
     existing_uids = get_existing_uids(cal)
 
     cutoff = today - timedelta(days=DELETE_OLDER_THAN_DAYS)
@@ -369,7 +374,15 @@ def main() -> bool:
 
         deduped_final = dedupe_by_uid(cal)
         if deduped_final > 0:
-            logger.info(f"\U0001f5d1\ufe0f  Removidos {deduped_final} eventos duplicados (final)")
+            logger.info(f"\U0001f5d1\ufe0f  Removidos {deduped_final} eventos duplicados (UID final)")
+
+        deduped_url_final = dedupe_by_url(cal)
+        if deduped_url_final > 0:
+            logger.info(f"\U0001f5d1\ufe0f  Removidos {deduped_url_final} eventos duplicados (URL final)")
+
+        deduped_matchup_final = dedupe_by_matchup(cal)
+        if deduped_matchup_final > 0:
+            logger.info(f"\U0001f5d1\ufe0f  Removidos {deduped_matchup_final} eventos duplicados por confronto (final)")
 
     except Exception as e:
         error_msg = f"{type(e).__name__}: {e}"
