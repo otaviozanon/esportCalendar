@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-08-14T21:01:13.793806+00:00",
+  "timestamp": "2026-08-14T21:27:11.650791+00:00",
   "success": true,
   "stats": {
     "events_added": 0,
-    "events_scraped": 24,
-    "execution_time_seconds": 73.44
+    "events_scraped": 25,
+    "execution_time_seconds": 29.15
   },
   "games": {
     "VAL": {
@@ -16,10 +16,10 @@
     },
     "RL": {
       "added": 0,
-      "scraped": 5,
+      "scraped": 6,
       "filtered": 0,
       "skipped_tbd": 0,
-      "skipped_past": 5
+      "skipped_past": 6
     },
     "LOL": {
       "added": 0,
