@@ -1,12 +1,20 @@
 {
-  "timestamp": "2026-08-20T10:11:31.752618+00:00",
+  "timestamp": "2026-08-20T10:47:43.373643+00:00",
   "success": true,
   "stats": {
     "events_added": 0,
-    "events_scraped": 0,
-    "execution_time_seconds": 0.06
+    "events_scraped": 61,
+    "execution_time_seconds": 5.56
   },
-  "games": {},
+  "games": {
+    "CS2": {
+      "added": 0,
+      "scraped": 61,
+      "filtered": 54,
+      "skipped_tbd": 0,
+      "skipped_past": 5
+    }
+  },
   "errors": [],
   "version": "1.0.0"
 }
