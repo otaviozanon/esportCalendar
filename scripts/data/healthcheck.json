@@ -1,39 +1,18 @@
 {
-  "timestamp": "2026-09-15T09:59:48.129759+00:00",
+  "timestamp": "2026-09-15T14:39:37.826030+00:00",
   "success": true,
   "stats": {
     "events_added": 0,
-    "events_scraped": 56,
-    "execution_time_seconds": 22.68
+    "events_scraped": 44,
+    "execution_time_seconds": 30.51
   },
   "games": {
     "CS2": {
       "added": 0,
-      "scraped": 45,
-      "filtered": 29,
+      "scraped": 44,
+      "filtered": 19,
       "skipped_tbd": 0,
-      "skipped_past": 16
-    },
-    "VAL": {
-      "added": 0,
-      "scraped": 5,
-      "filtered": 1,
-      "skipped_tbd": 0,
-      "skipped_past": 4
-    },
-    "RL": {
-      "added": 0,
-      "scraped": 0,
-      "filtered": 0,
-      "skipped_tbd": 0,
-      "skipped_past": 0
-    },
-    "LOL": {
-      "added": 0,
-      "scraped": 6,
-      "filtered": 1,
-      "skipped_tbd": 0,
-      "skipped_past": 5
+      "skipped_past": 25
     }
   },
   "errors": [],
