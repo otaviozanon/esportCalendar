@@ -117,6 +117,19 @@ def _get_event_start(component) -> datetime | None:
     return None
 
 
+def _get_event_stamp(component) -> datetime | None:
+    """Extrai dtstamp de um VEVENT (momento de criacao) como datetime UTC-aware."""
+    try:
+        dt = component.get("dtstamp").dt
+        if isinstance(dt, datetime):
+            if dt.tzinfo is None:
+                dt = pytz.utc.localize(dt)
+            return dt.astimezone(pytz.utc)
+    except (AttributeError, ValueError, TypeError):
+        pass
+    return None
+
+
 def dedupe_by_uid(cal: Calendar) -> int:
     """Remove eventos duplicados por UID. Mantem primeira ocorrencia. Retorna qtd removida."""
     seen = set()
@@ -145,7 +158,7 @@ def dedupe_by_uid(cal: Calendar) -> int:
 
 
 def dedupe_by_url(cal: Calendar) -> int:
-    """Remove eventos duplicados por URL. Mantem o de horario mais recente."""
+    """Remove eventos duplicados por URL. Mantem o evento mais recente (dtstamp)."""
     best_by_url = {}
 
     for comp in cal.subcomponents[:]:
@@ -159,15 +172,17 @@ def dedupe_by_url(cal: Calendar) -> int:
         if not url:
             continue
 
-        dtstart = _get_event_start(comp)
-        if dtstart is None:
+        if _get_event_start(comp) is None:
             continue
 
         if url not in best_by_url:
             best_by_url[url] = comp
         else:
-            existing_dt = _get_event_start(best_by_url[url])
-            if existing_dt and dtstart > existing_dt:
+            # Mantem o evento criado mais recentemente (dtstamp), nao o de horario de
+            # inicio mais tarde. Corrige remarcacao de partida movida para mais cedo.
+            new_stamp = _get_event_stamp(comp)
+            existing_stamp = _get_event_stamp(best_by_url[url])
+            if new_stamp is not None and (existing_stamp is None or new_stamp > existing_stamp):
                 best_by_url[url] = comp
 
     to_keep = set(id(c) for c in best_by_url.values())
@@ -191,7 +206,7 @@ def dedupe_by_url(cal: Calendar) -> int:
 
 
 def dedupe_by_matchup(cal: Calendar) -> int:
-    """Remove eventos do mesmo confronto na mesma data. Mantem o de horario mais recente."""
+    """Remove eventos do mesmo confronto na mesma data. Mantem o evento mais recente (dtstamp)."""
     best_by_key = {}
 
     for comp in cal.subcomponents[:]:
@@ -204,13 +219,15 @@ def dedupe_by_matchup(cal: Calendar) -> int:
             continue
 
         key = (summary, event_date)
-        dtstart = _get_event_start(comp)
 
         if key not in best_by_key:
             best_by_key[key] = comp
         else:
-            existing_dt = _get_event_start(best_by_key[key])
-            if dtstart and (not existing_dt or dtstart > existing_dt):
+            # Mantem o evento criado mais recentemente (dtstamp), nao o de horario de
+            # inicio mais tarde. Corrige remarcacao de partida movida para mais cedo.
+            new_stamp = _get_event_stamp(comp)
+            existing_stamp = _get_event_stamp(best_by_key[key])
+            if new_stamp is not None and (existing_stamp is None or new_stamp > existing_stamp):
                 best_by_key[key] = comp
 
     key_count = {}
