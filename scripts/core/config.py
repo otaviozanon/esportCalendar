@@ -149,6 +149,7 @@ VALORANT_TEAMS = {
 
 ROCKET_LEAGUE_TEAMS = {
     "FURIA Esports",
+    "MIBR",
     "Team Secret",
 }
 
