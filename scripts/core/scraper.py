@@ -1,11 +1,12 @@
 """
-Web scraping de partidas via tips.gg com fallback automatico entre APIs.
+Web scraping de partidas (egamersworld primario + tips.gg fallback) com fallback automatico entre APIs.
 Primario: Bright Data (5k req/mes) | Fallback: Scrape.do (1k req/mes)
+egamersworld usa Scrape.do direto (Bright Data bloqueia por politica de gambling).
 """
 
 import json
 import time
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Optional, List, Tuple, Set
 from enum import Enum
 
@@ -22,6 +23,9 @@ from config import (
     MAX_RETRIES,
     RETRY_BACKOFF,
     SOURCE_MARKER,
+    SOURCE_MARKER_EGAMERSWORLD,
+    EGAMERSWORLD_BASE_URL,
+    EGAMERSWORLD_TZ_OFFSET_HOURS,
     BR_TZ_NAME,
     match_has_allowed_team,
 )
@@ -116,10 +120,15 @@ def _fetch_scrapedo(url: str, timeout: int = 60) -> Optional[str]:
     return response.text
 
 
-def fetch_with_retry(url: str, max_retries: int = MAX_RETRIES) -> Optional[str]:
+def fetch_with_retry(
+    url: str,
+    max_retries: int = MAX_RETRIES,
+    force_api: Optional[ScraperAPI] = None,
+) -> Optional[str]:
     """
     Busca pagina com retry e fallback automatico entre APIs.
     Tenta Bright Data primeiro, faz fallback para Scrape.do se falhar.
+    force_api: ignora a API ativa e usa a informada (egamersworld so funciona via Scrape.do).
     """
     global _last_request_time, _active_api, _brightdata_failed_count
 
@@ -132,8 +141,10 @@ def fetch_with_retry(url: str, max_retries: int = MAX_RETRIES) -> Optional[str]:
 
             timeout = 60 if attempt == 0 else 90
 
+            api = force_api if force_api is not None else _active_api
+
             # Tenta API ativa
-            if _active_api == ScraperAPI.BRIGHT_DATA:
+            if api == ScraperAPI.BRIGHT_DATA:
                 try:
                     html = _fetch_brightdata(url, timeout)
                     if html:
@@ -334,5 +345,148 @@ def scrape_days_for_game(
                 new_events.append(cal_event)
                 existing_uids.add(event_uid)
                 stats.added += 1
+
+    return new_events, stats
+
+
+def parse_egamersworld_datetime(date_str: str, time_str: str) -> Optional[datetime]:
+    """Converte 'DD.MM.YY' + 'HH:MM' (fuso de exibicao do site) para datetime UTC."""
+    try:
+        day, month, year = date_str.split(".")
+        hour, minute = time_str.split(":")
+        naive = datetime(2000 + int(year), int(month), int(day), int(hour), int(minute))
+    except (ValueError, AttributeError):
+        return None
+
+    # O site exibe horarios em UTC-2 (offset fixo, sem DST). Soma o offset para obter UTC.
+    return pytz.utc.localize(naive + timedelta(hours=EGAMERSWORLD_TZ_OFFSET_HOURS))
+
+
+def scrape_egamersworld(
+    game_key: str,
+    cfg: GameConfig,
+    url: str,
+    target_days: List[date],
+    existing_uids: Set[str],
+) -> Tuple[List, ScrapStats]:
+    """
+    Scrapeia partidas de egamersworld (pagina 'upcoming-matches'). Fonte primaria.
+    Retorna (eventos, stats). Levanta excecao se fetch ou parse falhar, para que o
+    chamador acione o fallback para tips.gg.
+    """
+    stats = ScrapStats()
+    new_events = []
+
+    html = fetch_with_retry(url, force_api=ScraperAPI.SCRAPE_DO)
+    if not html:
+        raise RuntimeError("egamersworld: falha ao buscar HTML (Scrape.do)")
+
+    try:
+        soup = BeautifulSoup(html, "lxml")
+    except Exception:
+        soup = BeautifulSoup(html, "html.parser")
+
+    # Seletores por prefixo de classe CSS (o hash apos '__' muda a cada build do site)
+    matches_found = soup.select('[class*="match_teams__"]')
+    if not matches_found:
+        raise RuntimeError("egamersworld: nenhuma partida encontrada (estrutura HTML alterada?)")
+
+    stats.days_scraped = 1
+    stats.scripts_total = len(matches_found)
+
+    target_days_set = set(target_days)
+    now_utc = datetime.now(pytz.utc)
+
+    for a in matches_found:
+        try:
+            names = a.select('[class*="match_teamName__"]')
+            if len(names) < 2:
+                continue
+
+            team1_raw = names[0].get_text(strip=True)
+            team2_raw = names[1].get_text(strip=True)
+
+            if not team1_raw or not team2_raw or "TBD" in team1_raw or "TBD" in team2_raw:
+                stats.skipped_tbd += 1
+                continue
+
+            date_el = a.select_one('[class*="match_date__"]')
+            time_el = a.select_one('[class*="match_time__"]')
+            if date_el is None or time_el is None:
+                continue
+
+            match_time_utc = parse_egamersworld_datetime(
+                date_el.get_text(strip=True), time_el.get_text(strip=True)
+            )
+            if not match_time_utc:
+                continue
+
+            # Mantem a mesma janela de dias do tips.gg (hoje/amanha p/ CS2, hoje p/ demais)
+            if match_time_utc.astimezone(BR_TZ).date() not in target_days_set:
+                continue
+
+            if match_time_utc < now_utc:
+                stats.skipped_past += 1
+                continue
+
+            if not match_has_allowed_team(team1_raw, team2_raw, cfg):
+                stats.skipped_not_allowed += 1
+                continue
+
+            # Torneio fica no container pai (match_wrap), irmao do link de times
+            container = a.parent
+            tournament = ""
+            if container is not None:
+                event_el = container.select_one('[class*="match_event__"]')
+                if event_el is not None:
+                    tournament = event_el.get_text(strip=True)
+
+            match_url = a.get("href", "")
+            if match_url and not match_url.startswith("http"):
+                match_url = f"{EGAMERSWORLD_BASE_URL}{match_url}"
+
+            event_summary = f"{cfg.prefix}{team1_raw} vs {team2_raw}"
+
+            event_uid = build_stable_uid(
+                game_key=game_key,
+                event_summary=event_summary,
+                match_time_utc=match_time_utc,
+                tournament_desc=tournament,
+                organizer_name="",
+                match_url=match_url,
+            )
+
+            if event_uid in existing_uids:
+                continue
+
+            match_time_br = match_time_utc.astimezone(BR_TZ)
+            stats.matches.append(
+                ScrapedMatch(
+                    teams=f"{team1_raw} x {team2_raw}",
+                    time=match_time_br.strftime("%H:%M"),
+                    date=match_time_br.strftime("%d/%m"),
+                    game=game_key,
+                )
+            )
+
+            event_description = (
+                f"\U0001f3c6 {tournament}\n"
+                f"\U0001f310 {match_url}\n"
+                f"{SOURCE_MARKER_EGAMERSWORLD}"
+            )
+
+            cal_event = create_event(
+                summary=event_summary,
+                start_utc=match_time_utc,
+                description=event_description,
+                uid=event_uid,
+            )
+
+            new_events.append(cal_event)
+            existing_uids.add(event_uid)
+            stats.added += 1
+
+        except Exception:
+            continue
 
     return new_events, stats

@@ -21,6 +21,13 @@ DELETE_OLDER_THAN_DAYS = 7
 SOURCE_MARKER = "X-SETT-SOURCE:TIPSGG"
 TIPS_URL_HINT = "https://tips.gg/matches/"
 
+# Egamersworld (fonte primaria)
+SOURCE_MARKER_EGAMERSWORLD = "X-SETT-SOURCE:EGAMERSWORLD"
+EGAMERSWORLD_URL_HINT = "egamersworld.com"
+EGAMERSWORLD_BASE_URL = "https://pt.egamersworld.com"
+# O site exibe horarios em UTC-2 (offset fixo, sem DST). Soma este offset para obter UTC.
+EGAMERSWORLD_TZ_OFFSET_HOURS = 2
+
 # ==================== APIs DE SCRAPING ====================
 
 # Scrape.do (Fallback)

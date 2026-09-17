@@ -16,6 +16,8 @@ from config import (
     BR_TZ_NAME,
     SOURCE_MARKER,
     TIPS_URL_HINT,
+    SOURCE_MARKER_EGAMERSWORLD,
+    EGAMERSWORLD_URL_HINT,
     DELETE_OLDER_THAN_DAYS,
     EVENT_DURATION_HOURS,
     ALARM_MINUTES_BEFORE,
@@ -79,7 +81,12 @@ def get_existing_uids(cal: Calendar) -> Set[str]:
 def is_ours(component) -> bool:
     """Verifica se evento foi gerado por este scraper (marcador no description)."""
     desc = str(component.get("description", ""))
-    return SOURCE_MARKER in desc or TIPS_URL_HINT in desc
+    return (
+        SOURCE_MARKER in desc
+        or TIPS_URL_HINT in desc
+        or SOURCE_MARKER_EGAMERSWORLD in desc
+        or EGAMERSWORLD_URL_HINT in desc
+    )
 
 
 def _event_start_date_local(component) -> date | None:

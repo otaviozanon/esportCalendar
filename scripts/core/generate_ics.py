@@ -1,7 +1,8 @@
 """
-Esport Calendar Scraper - Raspa eventos de tips.gg e gera calendario ICS.
+Esport Calendar Scraper - Raspa eventos de esports e gera calendario ICS.
 Suporta CS2, Valorant, Rocket League, League of Legends.
 
+Fonte primaria: egamersworld. Fallback: tips.gg.
 CS2 raspa sempre hoje e amanha (2 dias) em cada execucao.
 Ponto de entrada principal. Delega orquestracao para os modulos especializados.
 """
@@ -43,7 +44,7 @@ from calendar_manager import (
     dedupe_by_matchup,
     prune_older_than,
 )
-from scraper import scrape_days_for_game, get_active_api, ScraperAPI
+from scraper import scrape_days_for_game, scrape_egamersworld, get_active_api, ScraperAPI
 from healthcheck import save_healthcheck
 
 
@@ -86,6 +87,14 @@ GAMES_CONFIG = {
         teams=LOL_TEAMS,
         exclusions=set(),
     ),
+}
+
+# URLs da fonte primaria (egamersworld). tips.gg fica como fallback.
+EGAMERSWORLD_GAMES = {
+    GameKey.CS2: "https://pt.egamersworld.com/counterstrike/matches/upcoming-matches",
+    GameKey.VAL: "https://pt.egamersworld.com/valorant/matches/upcoming-matches",
+    GameKey.RL: "https://pt.egamersworld.com/rocketleague/matches/upcoming-matches",
+    GameKey.LOL: "https://pt.egamersworld.com/lol/matches/upcoming-matches",
 }
 
 
@@ -324,23 +333,53 @@ def main() -> bool:
             aggregated_stats = ScrapStats()
             all_new_events = []
 
-            for target_day in target_days:
-                new_events, stats = scrape_days_for_game(game_key, cfg, [target_day], existing_uids)
+            # Fonte primaria: egamersworld. Em caso de falha, fallback para tips.gg.
+            used_egamersworld = False
+            egw_url = EGAMERSWORLD_GAMES.get(game_key)
+            if egw_url:
+                try:
+                    new_events, stats = scrape_egamersworld(
+                        game_key, cfg, egw_url, target_days, existing_uids
+                    )
+                    used_egamersworld = True
 
-                all_new_events.extend(new_events)
-                aggregated_stats.scripts_total += stats.scripts_total
-                aggregated_stats.skipped_not_allowed += stats.skipped_not_allowed
-                aggregated_stats.skipped_tbd += stats.skipped_tbd
-                aggregated_stats.skipped_past += stats.skipped_past
-                aggregated_stats.added += stats.added
-                aggregated_stats.matches.extend(stats.matches)
+                    all_new_events.extend(new_events)
+                    aggregated_stats.scripts_total += stats.scripts_total
+                    aggregated_stats.skipped_not_allowed += stats.skipped_not_allowed
+                    aggregated_stats.skipped_tbd += stats.skipped_tbd
+                    aggregated_stats.skipped_past += stats.skipped_past
+                    aggregated_stats.added += stats.added
+                    aggregated_stats.matches.extend(stats.matches)
 
-                prefix = "   " if len(target_days) > 1 else ""
-                logger.info(
-                    f"{prefix}{target_day.strftime('%d/%m/%Y')} | ENCONTRADOS ( {stats.scripts_total} ) "
-                    f"| NAO PERMITIDOS ( {stats.skipped_not_allowed} ) "
-                    f"| ADICIONADOS ( {stats.added} )"
-                )
+                    logger.info(
+                        f"FONTE egamersworld | ENCONTRADOS ( {stats.scripts_total} ) "
+                        f"| NAO PERMITIDOS ( {stats.skipped_not_allowed} ) "
+                        f"| ADICIONADOS ( {stats.added} )"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"\u26a0\ufe0f  {game_key.value} | egamersworld falhou "
+                        f"({type(e).__name__}: {e}) - usando fallback tips.gg"
+                    )
+
+            if not used_egamersworld:
+                for target_day in target_days:
+                    new_events, stats = scrape_days_for_game(game_key, cfg, [target_day], existing_uids)
+
+                    all_new_events.extend(new_events)
+                    aggregated_stats.scripts_total += stats.scripts_total
+                    aggregated_stats.skipped_not_allowed += stats.skipped_not_allowed
+                    aggregated_stats.skipped_tbd += stats.skipped_tbd
+                    aggregated_stats.skipped_past += stats.skipped_past
+                    aggregated_stats.added += stats.added
+                    aggregated_stats.matches.extend(stats.matches)
+
+                    prefix = "   " if len(target_days) > 1 else ""
+                    logger.info(
+                        f"{prefix}{target_day.strftime('%d/%m/%Y')} | ENCONTRADOS ( {stats.scripts_total} ) "
+                        f"| NAO PERMITIDOS ( {stats.skipped_not_allowed} ) "
+                        f"| ADICIONADOS ( {stats.added} )"
+                    )
 
             for ev in all_new_events:
                 cal.add_component(ev)

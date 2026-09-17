@@ -10,18 +10,19 @@ Automatic esports calendar generator in iCalendar format (.ics). Tracks matches 
 
 ## 📖 About
 
-`esportCalendar` is a Python script that automates the creation of iCalendar (.ics) files for esports events. It solves the challenge of manually tracking tournaments and esports matches across different platforms, simplifying the process by scraping data from [tips.gg](https://tips.gg) and generating a calendar file compatible with Google Calendar, Outlook, and Apple Calendar.
+`esportCalendar` is a Python script that automates the creation of iCalendar (.ics) files for esports events. It solves the challenge of manually tracking tournaments and esports matches across different platforms, simplifying the process by scraping data from [egamersworld](https://egamersworld.com) (primary) with [tips.gg](https://tips.gg) as fallback, and generating a calendar file compatible with Google Calendar, Outlook, and Apple Calendar.
 
 **Target audience:** Esports enthusiasts, professional players, teams, and organizations who want to track events without manual entry.
 
 ## ✨ Features
 
 - 🎯 **Automatic Generation**: Creates iCalendar (.ics) files from esports event data
-- 🌐 **Web Scraping**: Extracts event information from [tips.gg](https://tips.gg) using Bright Data or Scrape.do
+- 🌐 **Web Scraping**: Extracts event information from [egamersworld](https://egamersworld.com) (primary) with automatic fallback to [tips.gg](https://tips.gg), using Scrape.do or Bright Data
 - 📅 **iCalendar Format**: Generates calendars in standard format, compatible with any calendar application
 - 🎮 **Multiple Esports**: Supports CS2, Valorant, League of Legends, and Rocket League
 - 🇧🇷 **Brazilian Teams**: Tracks specific Brazilian teams in each game
-- ⚡ **Dual-API Fallback**: Primary: Bright Data (5k/month) → Fallback: Scrape.do (1k/month)
+- ⚡ **Source Fallback**: Primary: egamersworld → Fallback: tips.gg (auto-switches on scrape failure)
+- 🔄 **Dual-API**: egamersworld via Scrape.do; tips.gg via Bright Data (with Scrape.do fallback)
 - 🔄 **Smart Scheduling**: CS2 every 50min, others 2x/day (auto-adjusts on API fallback)
 - 🪶 **Lightweight**: No heavy dependencies (no Selenium/ChromeDriver)
 - 🔔 **Reminders**: Adds alerts 15 minutes before each event
@@ -154,10 +155,10 @@ State tracked in `scripts/data/state.json` - automatic API fallback on errors/li
 A: Cloud APIs are faster, more reliable, and don't require heavy ChromeDriver. Bright Data offers 5k free requests/month.
 
 **Q: How do I add new esports?**
-A: Add an entry to the `GAMES` dictionary with the tips.gg base_path and desired teams.
+A: Add an entry to the `GAMES_CONFIG` (tips.gg `base_path`) and `EGAMERSWORLD_GAMES` dictionaries with the desired teams.
 
 **Q: Can I use this offline?**
-A: No, the script needs internet access to reach tips.gg via the scraping APIs.
+A: No, the script needs internet access to reach egamersworld/tips.gg via the scraping APIs.
 
 **Q: What timezone is used?**
 A: America/Sao_Paulo (BRT)
@@ -171,7 +172,8 @@ This project is under the GPL-3.0 License. See the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
-- [tips.gg](https://tips.gg) - Esports data source
+- [egamersworld](https://egamersworld.com) - Esports data source (primary)
+- [tips.gg](https://tips.gg) - Esports data source (fallback)
 - [Bright Data](https://brightdata.com) - Primary web scraping API (5k free/month)
 - [Scrape.do](https://scrape.do) - Fallback web scraping API (1k free/month)
 - [icalendar](https://github.com/icalendar/icalendar) - .ics file generation
