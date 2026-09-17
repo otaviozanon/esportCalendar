@@ -26,6 +26,8 @@ from config import (
     SOURCE_MARKER_EGAMERSWORLD,
     EGAMERSWORLD_BASE_URL,
     EGAMERSWORLD_TZ_OFFSET_HOURS,
+    EGAMERSWORLD_FETCH_ATTEMPTS,
+    EGAMERSWORLD_RETRY_DELAY,
     BR_TZ_NAME,
     match_has_allowed_team,
 )
@@ -377,17 +379,31 @@ def scrape_egamersworld(
     stats = ScrapStats()
     new_events = []
 
-    html = fetch_with_retry(url, force_api=ScraperAPI.SCRAPE_DO)
-    if not html:
-        raise RuntimeError("egamersworld: falha ao buscar HTML (Scrape.do)")
+    # Scrape.do (render=true) as vezes retorna a pagina antes do conteudo carregar.
+    # Re-tenta o fetch quando nenhuma partida e encontrada no HTML.
+    soup = None
+    matches_found = []
+    for attempt in range(EGAMERSWORLD_FETCH_ATTEMPTS):
+        html = fetch_with_retry(url, force_api=ScraperAPI.SCRAPE_DO)
+        if not html:
+            time.sleep(EGAMERSWORLD_RETRY_DELAY)
+            continue
 
-    try:
-        soup = BeautifulSoup(html, "lxml")
-    except Exception:
-        soup = BeautifulSoup(html, "html.parser")
+        try:
+            soup = BeautifulSoup(html, "lxml")
+        except Exception:
+            soup = BeautifulSoup(html, "html.parser")
 
-    # Seletores por prefixo de classe CSS (o hash apos '__' muda a cada build do site)
-    matches_found = soup.select('[class*="match_teams__"]')
+        # Seletores por prefixo de classe CSS (o hash apos '__' muda a cada build do site)
+        matches_found = soup.select('[class*="match_teams__"]')
+        if matches_found:
+            break
+
+        logger.info(
+            f"egamersworld: 0 partidas (tentativa {attempt + 1}/{EGAMERSWORLD_FETCH_ATTEMPTS}) - re-tentando..."
+        )
+        time.sleep(EGAMERSWORLD_RETRY_DELAY)
+
     if not matches_found:
         raise RuntimeError("egamersworld: nenhuma partida encontrada (estrutura HTML alterada?)")
 

@@ -27,6 +27,10 @@ EGAMERSWORLD_URL_HINT = "egamersworld.com"
 EGAMERSWORLD_BASE_URL = "https://pt.egamersworld.com"
 # O site exibe horarios em UTC-2 (offset fixo, sem DST). Soma este offset para obter UTC.
 EGAMERSWORLD_TZ_OFFSET_HOURS = 2
+# Scrape.do (render=true) as vezes retorna a pagina antes do conteudo carregar.
+# Numero de tentativas de fetch e espera entre elas.
+EGAMERSWORLD_FETCH_ATTEMPTS = 3
+EGAMERSWORLD_RETRY_DELAY = 3
 
 # ==================== APIs DE SCRAPING ====================
 
