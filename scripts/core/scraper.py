@@ -368,11 +368,12 @@ def scrape_egamersworld(
     game_key: str,
     cfg: GameConfig,
     url: str,
-    target_days: List[date],
     existing_uids: Set[str],
 ) -> Tuple[List, ScrapStats]:
     """
     Scrapeia partidas de egamersworld (pagina 'upcoming-matches'). Fonte primaria.
+    Pega TODAS as partidas futuras da pagina (sem janela de dias), ja que o scraper
+    roda varias vezes ao dia e o dedup mantem o horario mais recente em remarcacoes.
     Retorna (eventos, stats). Levanta excecao se fetch ou parse falhar, para que o
     chamador acione o fallback para tips.gg.
     """
@@ -410,7 +411,6 @@ def scrape_egamersworld(
     stats.days_scraped = 1
     stats.scripts_total = len(matches_found)
 
-    target_days_set = set(target_days)
     now_utc = datetime.now(pytz.utc)
 
     for a in matches_found:
@@ -435,10 +435,6 @@ def scrape_egamersworld(
                 date_el.get_text(strip=True), time_el.get_text(strip=True)
             )
             if not match_time_utc:
-                continue
-
-            # Mantem a mesma janela de dias do tips.gg (hoje/amanha p/ CS2, hoje p/ demais)
-            if match_time_utc.astimezone(BR_TZ).date() not in target_days_set:
                 continue
 
             if match_time_utc < now_utc:

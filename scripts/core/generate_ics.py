@@ -339,7 +339,7 @@ def main() -> bool:
             if egw_url:
                 try:
                     new_events, stats = scrape_egamersworld(
-                        game_key, cfg, egw_url, target_days, existing_uids
+                        game_key, cfg, egw_url, existing_uids
                     )
                     used_egamersworld = True
 
