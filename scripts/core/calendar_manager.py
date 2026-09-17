@@ -34,12 +34,16 @@ def _ensure_calendar_props(cal: Calendar) -> None:
         "x-wr-calname": "eSports Calendar",
         "x-wr-caldesc": "Calendario de jogos de eSports",
         "x-wr-timezone": BR_TZ_NAME,
-        "refresh-interval;VALUE=DURATION": "PT1H",
         "x-published-ttl": "PT1H",
     }
     for key, value in props.items():
         if key not in cal:
             cal.add(key, value)
+
+    # "refresh-interval" tem parametro VALUE=DURATION. Checar pelo nome base
+    # (sem o parametro), senao o icalendar nao reconhece apos reload e acumula duplicados.
+    if "refresh-interval" not in cal:
+        cal.add("refresh-interval;VALUE=DURATION", "PT1H")
 
 
 def load_calendar(path: str = CALENDAR_FILENAME) -> Calendar:
