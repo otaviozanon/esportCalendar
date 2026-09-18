@@ -26,9 +26,9 @@ SOURCE_MARKER_EGAMERSWORLD = "X-SETT-SOURCE:EGAMERSWORLD"
 EGAMERSWORLD_URL_HINT = "egamersworld.com"
 EGAMERSWORLD_BASE_URL = "https://pt.egamersworld.com"
 # O site exibe horarios no fuso do visitante (via IP do proxy do Scrape.do).
-# Forcamos geoCode=br para renderizar em horario de Brasilia (UTC-3, sem DST).
+# Com geoCode=br o render fica deterministico em UTC-2 (offset fixo, sem DST).
 # Soma este offset para converter o horario exibido para UTC.
-EGAMERSWORLD_TZ_OFFSET_HOURS = 3
+EGAMERSWORLD_TZ_OFFSET_HOURS = 2
 # Scrape.do (render=true) as vezes retorna a pagina antes do conteudo carregar.
 # Numero de tentativas de fetch e espera entre elas.
 EGAMERSWORLD_FETCH_ATTEMPTS = 3
@@ -41,7 +41,7 @@ SCRAPE_DO_API_KEY = os.getenv("SCRAPE_DO_API_KEY", "")
 SCRAPE_DO_URL = "https://api.scrape.do/"
 # Pais do proxy usado no render (codigo ISO 3166-1 alpha-2). Fixa o fuso do
 # navegador/geolocalizacao para que o egamersworld renderize horarios de forma
-# deterministica (Brasilia, UTC-3) em vez de variar com o proxy rotativo.
+# deterministica (UTC-2) em vez de variar com o proxy rotativo.
 SCRAPE_DO_GEO_CODE = "br"
 
 # Bright Data (Primario)

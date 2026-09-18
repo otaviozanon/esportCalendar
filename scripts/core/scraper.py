@@ -363,7 +363,7 @@ def parse_egamersworld_datetime(date_str: str, time_str: str) -> Optional[dateti
         return None
 
     # O site exibe horarios no fuso do visitante. Com geoCode=br, renderiza em
-    # Brasilia (UTC-3, sem DST). Soma o offset para obter UTC.
+    # UTC-2 (offset fixo, sem DST). Soma o offset para obter UTC.
     return pytz.utc.localize(naive + timedelta(hours=EGAMERSWORLD_TZ_OFFSET_HOURS))
 
 
