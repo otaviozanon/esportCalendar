@@ -17,6 +17,7 @@ from bs4 import BeautifulSoup
 from config import (
     SCRAPE_DO_API_KEY,
     SCRAPE_DO_URL,
+    SCRAPE_DO_GEO_CODE,
     BRIGHT_DATA_API_KEY,
     BRIGHT_DATA_URL,
     BRIGHT_DATA_ZONE,
@@ -114,7 +115,8 @@ def _fetch_scrapedo(url: str, timeout: int = 60) -> Optional[str]:
     params = {
         "token": SCRAPE_DO_API_KEY,
         "url": url,
-        "render": "true"
+        "render": "true",
+        "geoCode": SCRAPE_DO_GEO_CODE,
     }
 
     response = _session.get(SCRAPE_DO_URL, params=params, timeout=timeout)
@@ -360,7 +362,8 @@ def parse_egamersworld_datetime(date_str: str, time_str: str) -> Optional[dateti
     except (ValueError, AttributeError):
         return None
 
-    # O site exibe horarios em UTC-2 (offset fixo, sem DST). Soma o offset para obter UTC.
+    # O site exibe horarios no fuso do visitante. Com geoCode=br, renderiza em
+    # Brasilia (UTC-3, sem DST). Soma o offset para obter UTC.
     return pytz.utc.localize(naive + timedelta(hours=EGAMERSWORLD_TZ_OFFSET_HOURS))
 
 
